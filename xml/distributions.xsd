@@ -1,0 +1,232 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type="text/xsl" href="./xs3p-master/xs3p.xsl" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:annotation>
+        <xs:documentation>Schema for distributions file. The distributions file defines the distributions used by various elements of the model.</xs:documentation>
+    </xs:annotation>
+    <!--
+    Very basic types
+    -->
+    <xs:simpleType name="uuid">
+        <xs:annotation>
+            <xs:documentation>Universally unique identifier.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="standard-deviation">
+        <xs:annotation>
+            <xs:documentation>Standard deviation to be used in a normal distribution. This value must be non-negative.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="enum-share-occurence">
+        <xs:annotation>
+            <xs:documentation>Relative share to be used in an enumerable distribution. This value must be non-negative.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
+    <!-- 
+    Distribution types
+    -->
+    <xs:complexType name="distribution-normal">
+        <xs:annotation>
+            <xs:documentation>Represents a normal distribution.</xs:documentation>
+            <xs:documentation>In addition to the expected characteristics of the normal distribution, this data structure allows reversibility and truncatability.</xs:documentation>
+            <xs:documentation>Reversibility, set by the optional 'reverse' property, allows the CDF to be reversed, so that lower probabilities correspond to higher values and vice versa.</xs:documentation>
+            <xs:documentation>Truncatability, set by the 'min-value' and 'max-value' properties, ensures that the distribution will provide logical minimum and/or maximum values. These properties are optional. If both are provided, the 'min-value' property should be less than the 'max-value' property, and the results are undefined if it is not.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="mean" type="xs:decimal" use="required" />
+        <xs:attribute name="standard-deviation" type="standard-deviation" use="required" />
+        <xs:attribute name="reverse" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>'true' reverses the probability under the bell curve. For example, if μ=2 and σ=1, a random number draw of 0.2 would yield 1.158 if 'false' but 2.842 if true.</xs:documentation>
+                <xs:documentation>The purpose for reversal is that by convention, a lower random number draw results in less aggressive behavior. If the value of a parameter increases as aggression increases, such as target speed, the reversal is not necessary.</xs:documentation>
+                <xs:documentation>However, some parameters, such as following distance, decrease as aggression increases, and if a parameter such as this is normally distributed, then the analyst will want to set the 'reverse' attribute to 'true'.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="min-value" type="xs:decimal">
+            <xs:annotation>
+                <xs:documentation>Optional. If provided, the distribution will be truncated at this value.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-value" type="xs:decimal">
+            <xs:annotation>
+                <xs:documentation>Optional. If provided, the distribution will be truncated at this value.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="distribution-empirical-observation">
+        <xs:annotation>
+            <xs:documentation>An observation defined by its cumulative probability and its value.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="prob" use="required">
+            <xs:annotation>
+                <xs:documentation>The probability, in the range [0, 1], that corresponds to the provided value.</xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:decimal">
+                    <xs:minInclusive value="0" />
+                    <xs:maxInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="val" type="xs:decimal" use="required">
+            <xs:annotation>
+                <xs:documentation>The value assigned to the provided probability.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="distribution-empirical">
+        <xs:annotation>
+            <xs:documentation>A distribution that is essentially based on observed values. It translates a probability to a value based on (x, F(x)) pairs.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="dp" type="distribution-empirical-observation" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>A point that makes up the distribution.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="distribution-empirical-raw-observation">
+        <xs:annotation>
+            <xs:documentation>Observation for a distribution that is based on observed values.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:decimal" use="required">
+            <xs:annotation>
+                <xs:documentation>The observed value</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="distribution-empirical-raw">
+        <xs:annotation>
+            <xs:documentation>A set of observations to be used to mimic some behavior in the model. An example could be spot speeds from a speed study.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="dp" type="distribution-empirical-raw-observation" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>An observation</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:group name="real-number-distribution">
+        <xs:annotation>
+            <xs:documentation>A generalization of distributions that provide a number based on a probability.</xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="empirical-distribution" type="distribution-empirical" />
+            <xs:element name="normal-distribution" type="distribution-normal" />
+            <xs:element name="raw-empirical-distribution" type="distribution-empirical-raw" />
+        </xs:choice>
+    </xs:group>
+
+    <!-- 
+    Connector Link Selection Behaviors
+    -->
+    <xs:simpleType name="connector-link-selection-behavior-type">
+        <xs:annotation>
+            <xs:documentation>Behaviors that vehicles will observe when selecting a link in a connector.</xs:documentation>
+            <xs:documentation>Background: connectors are driven by vehicles to move from one road to another. Connectors may have several links originating from one lane on the upstream road, with each link ending on a different lane of the downstream road. Vehicles generally have infinite knowledge of network topology, and so they can select connector links using several methods, enumerated here.</xs:documentation>
+            <xs:documentation>NEAREST means that the vehicle will select the nearest lane on the downstream road. This is the subset of vehicles that are strictly law-abiding.</xs:documentation>
+            <xs:documentation>FARTHEST means that the vehicle will select the farthest lane on the downstream road. This is the subset of vehicles that wants to maximize turnings speed.</xs:documentation>
+            <xs:documentation>BEST means that the vehicle will select the link that minimizes downstream lane changes to continue on its route.</xs:documentation>
+            <xs:documentation>RANDOM means that the vehicle will select a link at random.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NEAREST" />
+            <xs:enumeration value="FARTHEST" />
+            <xs:enumeration value="BEST" />
+            <xs:enumeration value="RANDOM" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="connector-link-selection-behavior-share">
+        <xs:annotation>
+            <xs:documentation>A relation of relative occurence of a link selection behavior. </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="occurence" type="enum-share-occurence" use="required">
+            <xs:annotation>
+                <xs:documentation>Relative number of vehicles selecting this behavior.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="connector-link-selection-behavior-type" use="required">
+            <xs:annotation>
+                <xs:documentation>The selected behavior.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="connector-link-selection-behavior-distribution">
+        <xs:annotation>
+            <xs:documentation>A distribution of link selection behaviors. Every available behavior is not required to appear.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:annotation>
+                <xs:documentation>If an enumeration value is used, it should only appear once. If it appears multiple times, one of the supplied occurences will be used, but which one is undefined.</xs:documentation>
+            </xs:annotation>
+            <xs:element name="share" type="connector-link-selection-behavior-share" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+
+    <!-- 
+    The actual document!
+    -->
+    <xs:element name="distributions">
+        <xs:annotation>
+            <xs:documentation>The root element, containing all distribution collections.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <!--
+                Connector Link Selection Behaviors
+                -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Connector Link Selection Behaviors</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="connector-link-selection-behavior-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="connector-link-selection-behaviors" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!--
+                Connector Maximum Positioning Distances
+                -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Connector Maximum Positioning Distances</xs:documentation>
+                        <xs:documentation>Background: Because vehicles generally have infinite knowledge of the network topology, they can make their lane changes as early as possible. In some instances, however, you may wish to limit the upstream lane change behavior for a particular connector. This distribution provides the maximum upstream positioning distance where applied to a connector.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:group ref="real-number-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="connector-max-positioning-distance" use="required" />
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
