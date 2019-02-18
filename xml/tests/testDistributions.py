@@ -2,61 +2,125 @@ from lxml import etree
 from uuid import uuid4 as UUID
 import unittest
 
-def addConnLinkSelBehaviorShare(distr, occur, value):
-    shareElement = etree.SubElement(distr, 'share')
-    shareElement.attrib['occurence'] = str(occur)
-    shareElement.attrib['value'] = value 
+class EnumDistributionShareConstants:
+    OCCURENCE_ATTR = 'occurence'
+    VALUE_ATTR = 'value'
+
+class EnumDistributionSetConstants:
+    CHILD_TAG = 'distribution'
+
+class EnumDistributionConstants:
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    SHARE_TAG = 'share'
+
+class ConnectorLinkSelectionBehaviorDistributionConstants:
+    NEAREST = 'NEAREST'
+    FARTHEST = 'FARTHEST'
+    BEST = 'BEST'
+    RANDOM = 'RANDOM'
+
+class NormalDistributionConstants:
+    TAG = 'normal-distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    MEAN_ATTR = 'mean'
+    SD_ATTR = 'standard-deviation'
+    MIN_VALUE_ATTR = 'min-value'
+    MAX_VALUE_ATTR = 'max-value'
+    REVERSE_ATTR = 'reverse'
+
+class EmpiricalDistributionConstants:
+    TAG = 'empirical-distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    DATA_POINT_TAG = 'dp'
+    DATA_POINT_PROBABILITY_ATTR = 'prob'
+    DATA_POINT_VALUE_ATTR = 'val'
+
+class RawEmpiricalDistributionConstants:
+    TAG = 'raw-empirical-distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    DATA_POINT_TAG = 'dp'
+    DATA_POINT_VALUE_ATTR = 'value'
+
+def addEnumDistributionShare(distr, occur, value):
+    shareElement = etree.SubElement(distr, EnumDistributionConstants.SHARE_TAG)
+    shareElement.attrib[EnumDistributionShareConstants.OCCURENCE_ATTR] = str(occur)
+    shareElement.attrib[EnumDistributionShareConstants.VALUE_ATTR] = value 
     shareElement.attrib['alias'] = value.lower()
 
     return shareElement
 
+def addEmpiricalDataPoint(distributionNode, probability = None, value = None):
+    ret = etree.SubElement(distributionNode, EmpiricalDistributionConstants.DATA_POINT_TAG)
+
+    if (probability is not None):
+        ret.attrib[EmpiricalDistributionConstants.DATA_POINT_PROBABILITY_ATTR] = str(probability)
+    if (value is not None):
+        ret.attrib[EmpiricalDistributionConstants.DATA_POINT_VALUE_ATTR] = str(value)
+    
+    return ret
+
 def createCleanConnLinkSelBehavior():
-    e = etree.Element('distribution')
-    e.attrib['name'] = 'Default'
-    e.attrib['uuid'] = str(UUID())
+    e = etree.Element(EnumDistributionSetConstants.CHILD_TAG)
+    e.attrib[EnumDistributionConstants.NAME_ATTR] = 'Default'
+    e.attrib[EnumDistributionConstants.UUID_ATTR] = str(UUID())
     e.attrib['isdefault'] = 'true'
 
-    addConnLinkSelBehaviorShare(e, 0.15, 'NEAREST')
-    addConnLinkSelBehaviorShare(e, 0.35, 'FARTHEST')
-    addConnLinkSelBehaviorShare(e, 0.35, 'BEST')
-    addConnLinkSelBehaviorShare(e, 0.15, 'RANDOM')
+    addEnumDistributionShare(e, 0.15, ConnectorLinkSelectionBehaviorDistributionConstants.NEAREST)
+    addEnumDistributionShare(e, 0.35, ConnectorLinkSelectionBehaviorDistributionConstants.FARTHEST)
+    addEnumDistributionShare(e, 0.35, ConnectorLinkSelectionBehaviorDistributionConstants.BEST)
+    addEnumDistributionShare(e, 0.15, ConnectorLinkSelectionBehaviorDistributionConstants.RANDOM)
 
     return e
 
-def createCleanNormalDistributionNode(name, mean, sd, minValue = None, maxValue = None):
-    e = etree.Element('normal-distribution')
-    e.attrib['name'] = name
-    e.attrib['uuid'] = str(UUID())
-    e.attrib['mean'] = str(mean)
-    e.attrib['standard-deviation'] = str(sd)
-    if (minValue):
-        e.attrib['min-value'] = str(minValue)
-    if (maxValue):
-        e.attrib['max-value'] = str(maxValue)
+def createNormalDistributionNode(name, mean, sd, minValue = None, maxValue = None):
+    e = etree.Element(NormalDistributionConstants.TAG)
+    e.attrib[NormalDistributionConstants.NAME_ATTR] = name
+    e.attrib[NormalDistributionConstants.UUID_ATTR] = str(UUID())
+    e.attrib[NormalDistributionConstants.MEAN_ATTR] = str(mean)
+    e.attrib[NormalDistributionConstants.SD_ATTR] = str(sd)
+    if (minValue is not None):
+        e.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = str(minValue)
+    if (maxValue is not None):
+        e.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = str(maxValue)
     
     return e
 
-def createCleanEmpiricalDistributionNode(name, valuesTuples):
-    e = etree.Element('empirical-distribution')
-    e.attrib['name'] = name
-    e.attrib['uuid'] = str(UUID())
+def createCleanNormalDistributionNode():
+    return createNormalDistributionNode('a normal distribution', 0, 1)
+
+def createCleanEmpiricalDistributionNode():
+    return createEmpiricalDistributionNode('an empirical distribution', [(0, 5), (0.15, 10), (0.85, 15), (1, 20)])
+
+def createEmpiricalDistributionNode(name, valuesTuples):
+    e = etree.Element(EmpiricalDistributionConstants.TAG)
+    if (name is not None):
+        e.attrib[EmpiricalDistributionConstants.NAME_ATTR] = name
+    e.attrib[EmpiricalDistributionConstants.UUID_ATTR] = str(UUID())
     for mapping in valuesTuples:
-        dp = etree.SubElement(e, 'dp')
-        dp.attrib['prob'] = str(mapping[0])
-        dp.attrib['val'] = str(mapping[1])
+        dp = addEmpiricalDataPoint(e, mapping[0], mapping[1])
         if (mapping[0] == 0.85):
             dp.attrib['desc'] = '85th percentile'
 
     return e 
 
-def createCleanRawEmpiricalDistributionNode(name, values):
-    e = etree.Element('raw-empirical-distribution')
-    e.attrib['name'] = name
-    e.attrib['uuid'] = str(UUID())
-    for i, value in enumerate(values):
-        dp = etree.SubElement(e, 'dp', {'value': str(value), 'customAttribute': str(i)})
-        e.append(dp)
+def createRawEmpiricalDistributionNode(name, values):
+    e = etree.Element(RawEmpiricalDistributionConstants.TAG)
+    e.attrib[RawEmpiricalDistributionConstants.NAME_ATTR] = name
+    e.attrib[RawEmpiricalDistributionConstants.UUID_ATTR] = str(UUID())
+    for value in values:
+        addRawEmpiricalDistributionObservation(e, value)
     return e
+
+def addRawEmpiricalDistributionObservation(node, value = None):
+    ret = etree.SubElement(node, RawEmpiricalDistributionConstants.DATA_POINT_TAG)
+    if (value is not None):
+        ret.attrib[RawEmpiricalDistributionConstants.DATA_POINT_VALUE_ATTR] = str(value)
+    
+    return ret 
 
 class CleanDistributionsDocument:
     def __init__(self):
@@ -71,18 +135,18 @@ class CleanDistributionsDocument:
 
         self.connectorMaxPositioningDistancesNode = etree.SubElement(self.documentRoot, 'distribution-set')
         self.connectorMaxPositioningDistancesNode.attrib['type'] = 'connector-max-positioning-distance'
-        firstNormalDist = createCleanNormalDistributionNode('Default', 1609, 402, minValue=400)
+        firstNormalDist = createNormalDistributionNode('Default', 1609, 402, minValue=400)
         firstNormalDist.attrib['median'] = '1600'
         self.connectorMaxPositioningDistancesNode.append(firstNormalDist)
-        self.connectorMaxPositioningDistancesNode.append(createCleanNormalDistributionNode('Aggressive', 804.5, 201, minValue=300, maxValue=1000))
-        self.connectorMaxPositioningDistancesNode.append(createCleanEmpiricalDistributionNode("Observed by advanced technology", 
+        self.connectorMaxPositioningDistancesNode.append(createNormalDistributionNode('Aggressive', 804.5, 201, minValue=300, maxValue=1000))
+        self.connectorMaxPositioningDistancesNode.append(createEmpiricalDistributionNode("Observed by advanced technology", 
             [(0, 2000), (0.15, 1500), (0.85, 800), (1, 400)]))
         values = [1525.1118, 2202.5331, 1257.0525, 1577.4787,  831.2836,
                   1304.6679, 1109.5408, 1702.9872, 1945.2201, 2457.4059,
                   1692.9078, 1556.1454, 1397.7309, 1578.0382, 2232.6108,
                   2037.6286, 1629.7739,  897.0939,  910.1857, 1023.5309, 
                   1756.4594]
-        self.connectorMaxPositioningDistancesNode.append(createCleanRawEmpiricalDistributionNode('Observed LC Distances', values))
+        self.connectorMaxPositioningDistancesNode.append(createRawEmpiricalDistributionNode('Observed LC Distances', values))
 
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
@@ -133,13 +197,14 @@ class TestsForSimpleDataTypes(unittest.TestCase):
         self.doc = CleanDistributionsDocument()
     
     def testThatUuidsAreBeingValidated(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['uuid'] = 'invalid-uuid'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.UUID_ATTR] = 'invalid-uuid'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationsAreBeingValidated(self):
-        node = createCleanNormalDistributionNode('name', 0, -1)
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
@@ -152,213 +217,231 @@ class TestsForNormalDistributions(unittest.TestCase):
         self.doc = CleanDistributionsDocument()
 
     def testThatMeanIsRequired(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib.pop('mean')
+        node = createCleanNormalDistributionNode()
+        node.attrib.pop(NormalDistributionConstants.MEAN_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatMeanMustBeNumeric(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['mean'] = 'not numeric!'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.MEAN_ATTR] = 'not numeric!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationIsRequired(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib.pop('standard-deviation')
+        node = createCleanNormalDistributionNode()
+        node.attrib.pop(NormalDistributionConstants.SD_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatStandardDeviationMustBeNumeric(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['standard-deviation'] = 'not numeric!'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.SD_ATTR] = 'not numeric!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationMustBeNonnegative(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['standard-deviation'] = '-1'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatStandardDeviationZeroIsOkay(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['standard-deviation'] = '0'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.SD_ATTR] = '0'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatReverseIsBoolean(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['reverse'] = 'truuuue'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'truuuue'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatReverseIsBoolean2(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['reverse'] = 'true'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'true'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
     def testThatReverseIsBoolean3(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['reverse'] = 'false'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'false'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatUuidIsRequired(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib.pop('uuid')
+        node = createCleanNormalDistributionNode()
+        node.attrib.pop(NormalDistributionConstants.UUID_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValid(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib['uuid'] = 'not a uuid!'
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.UUID_ATTR] = 'not a uuid!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatNameIsOptional(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
-        node.attrib.pop('name')
+        node = createCleanNormalDistributionNode()
+        node.attrib.pop(NormalDistributionConstants.NAME_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatBothLimitsAreAllowed(self):
-        node = createCleanNormalDistributionNode('name', 0, 1, -2, 2)
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = '-2'
+        node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = '2'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
     def testThatLowerLimitOnlyIsAllowed(self):
-        node = createCleanNormalDistributionNode('name', 0, 1, -2)
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = '-2'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
     def testThatUpperLimitOnlyIsAllowed(self):
-        node = createCleanNormalDistributionNode('name', 0, 1, maxValue=2)
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = '2'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
+
+    def testThatLowerLimitMustBeNumeric(self):
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = 'non-numeric'
+        self.doc.getConnectorMaxPositioningDistancesNode().append(node)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatUpperLimitMustBeNumeric(self):
+        node = createCleanNormalDistributionNode()
+        node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = 'non-numeric'
+        self.doc.getConnectorMaxPositioningDistancesNode().append(node)
+        self.assertFalse(self.doc.validate())
     
     def testThatElementCannotHaveSubelements(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
+        node = createCleanNormalDistributionNode()
         etree.SubElement(node, 'subelement')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherAttributesAreOkay(self):
-        node = createCleanNormalDistributionNode('name', 0, 1)
+        node = createCleanNormalDistributionNode()
         node.attrib['a-new-attribute'] = 'okay!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
-
 
 class TestsForEmpiricalDistributions(unittest.TestCase):
     def setUp(self):
         self.doc = CleanDistributionsDocument()
 
     def testThatDataCountCannotBeZero(self):
-        node = createCleanEmpiricalDistributionNode('name', [])
+        node = createEmpiricalDistributionNode('an empirical distribution', [])
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityMustNotBeNegative(self):
-        node = createCleanEmpiricalDistributionNode('name', [(-1, 4)])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, -1, 4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatProbabilityMustNotBeGreaterThanOne(self):
-        node = createCleanEmpiricalDistributionNode('name', [(2, 4)])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, 2, 4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityOfZeroIsOkay(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0, 4)])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, 0, 4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityOfOneIsOkay(self):
-        node = createCleanEmpiricalDistributionNode('name', [(1, 4)])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, 1, 4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityOfOneHalfIsOkay(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, 0.5, 4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityIsRequired(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0, 4)])
-        etree.SubElement(node, 'dp', {'val': '4'})
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, value=4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityMustBeNumeric(self):
-        node = createCleanEmpiricalDistributionNode('name', [('probability', 4)])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, 'probability', 4)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueIsRequired(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0, 4)])
-        etree.SubElement(node, 'dp', {'prob': '0.5'})
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, probability = 0.5)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueMustBeNumeric(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 'value')])
+        node = createCleanEmpiricalDistributionNode()
+        addEmpiricalDataPoint(node, 0.5, 'value')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatNameIsOptional(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
-        node.attrib.pop('name')
+        node = createCleanEmpiricalDistributionNode()
+        node.attrib.pop(EmpiricalDistributionConstants.NAME_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatUuidIsRequired(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
-        node.attrib.pop('uuid')
+        node = createCleanEmpiricalDistributionNode()
+        node.attrib.pop(EmpiricalDistributionConstants.UUID_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValid(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
-        node.attrib['uuid'] = 'not a uuid!'
+        node = createCleanEmpiricalDistributionNode()
+        node.attrib[EmpiricalDistributionConstants.UUID_ATTR] = 'not a uuid!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
-    def testThatMultiplePointsAreOkay(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4), (0.8, 5), (0.9, 10), (1.0, 15)])
-        self.doc.getConnectorMaxPositioningDistancesNode().append(node)
-        self.assertTrue(self.doc.validate())
-    
-    def testThatOneThousandsPointsAreOkay(self):
+    def testThatOneThousandPointsAreOkay(self):
         points = [(i * 0.001, i) for i in range(1000)]
-        node = createCleanEmpiricalDistributionNode('name', points)
+        node = createEmpiricalDistributionNode('an empirical distribution', points)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatOtherSubelementsAreBanned(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
+        node = createCleanEmpiricalDistributionNode()
         etree.SubElement(node, 'another-subelement')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherAttributesAreOkay(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
+        node = createCleanEmpiricalDistributionNode()
         node.attrib['a-new-attribute'] = 'okay!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
-    def testThatObservationSubAttributesAreBanned(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
-        observation = etree.Element('dp', {'prob': '0.6', 'val': '5'})
+    def testThatObservationSubElementsAreBanned(self):
+        node = createCleanEmpiricalDistributionNode()
+        observation = addEmpiricalDataPoint(node, 0.6, 5)
         etree.SubElement(observation, 'subelement')
         node.append(observation)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherObservationAttributesAreOkay(self):
-        node = createCleanEmpiricalDistributionNode('name', [(0.5, 4)])
-        etree.SubElement(node, 'dp', {'prob': '0.6', 'val': '5', 'otherattribute': 'okay!'})
+        node = createCleanEmpiricalDistributionNode()
+        observation = addEmpiricalDataPoint(node, 0.6, 5)
+        observation.attrib['other-attribute'] = 'okay!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
@@ -372,75 +455,80 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
                 101.74,  91.67,  50.82,  85.34, 111.96,
                  82.23, 117.07, 123.26,  70.19,  92.38,
                  78.59, 107.46, 103.81, 124.06,  54.93]
+                
+    def createCleanDistributionNode(self):
+        return createRawEmpiricalDistributionNode('a raw empirical distribution', self.values)
     
     def testThatNameIsOptional(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        node.attrib.pop('name')
+        node = self.createCleanDistributionNode()
+        node.attrib.pop(RawEmpiricalDistributionConstants.NAME_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatUuidIsRequired(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        node.attrib.pop('uuid')
+        node = self.createCleanDistributionNode()
+        node.attrib.pop(RawEmpiricalDistributionConstants.UUID_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
 
     def testThatUuidIsValid(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        node.attrib['uuid'] = 'not a uuid!'
+        node = self.createCleanDistributionNode()
+        node.attrib[RawEmpiricalDistributionConstants.UUID_ATTR] = 'not a uuid!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherSubelementsAreBanned(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
+        node = self.createCleanDistributionNode()
         etree.SubElement(node, 'another-subelement')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherAttributesAreOkay(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
+        node = self.createCleanDistributionNode()
         node.attrib['another-attribute'] = 'okay!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatObservationSubAttributesAreBanned(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        dpNode = etree.SubElement(node, 'dp', {'value': '1234'})
+        node = self.createCleanDistributionNode()
+        dpNode = addRawEmpiricalDistributionObservation(node, 1234)
         etree.SubElement(dpNode, 'another-subelement')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherObservationAttributesAreOkay(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        etree.SubElement(node, 'dp', {'value': '1234', 'another-attr': 'okay!'})
+        node = self.createCleanDistributionNode()
+        dpNode = addRawEmpiricalDistributionObservation(node, 1234)
+        dpNode.attrib['another-attr'] = 'okay!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatValueIsRequired(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        etree.SubElement(node, 'dp', {'other-attr': 'blah'})
+        node = self.createCleanDistributionNode()
+        dpNode = addRawEmpiricalDistributionObservation(node)
+        dpNode.attrib['other-attr'] = 'blah'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueMustBeNumeric(self):
-        node = createCleanRawEmpiricalDistributionNode('name', self.values)
-        etree.SubElement(node, 'dp', {'value': 'not numeric!'})
+        node = self.createCleanDistributionNode()
+        addRawEmpiricalDistributionObservation(node, 'not numeric!')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCannotBeZero(self):
-        node = createCleanRawEmpiricalDistributionNode('name', [])
+        node = createRawEmpiricalDistributionNode('an empty raw empirical distribution', [])
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCanBeOne(self):
-        node = createCleanRawEmpiricalDistributionNode('name', [5])
+        node = createRawEmpiricalDistributionNode('a raw empirical distribution with one point', [5])
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatOneThousandsPointsAreOkay(self):
         points = [i * 0.25 for i in range(1000)]
-        node = createCleanRawEmpiricalDistributionNode('name', points)
+        node = createRawEmpiricalDistributionNode('a raw empirical distribution with 1000 points', points)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
@@ -466,48 +554,48 @@ class TestsForConnectorLinkSelectionBehaviorDistributions(unittest.TestCase):
         self.assertFalse(self.doc.validate())
 
     def testThatNameIsOptional(self):
-        self.cleanDistr.attrib.pop('name')
+        self.cleanDistr.attrib.pop(EnumDistributionConstants.NAME_ATTR)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertTrue(self.doc.validate())
     
     def testThatUuidIsRequired(self):
-        self.cleanDistr.attrib.pop('uuid')
+        self.cleanDistr.attrib.pop(EnumDistributionConstants.UUID_ATTR)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValid(self):
-        self.cleanDistr.attrib['uuid'] = 'not a uuid!'
+        self.cleanDistr.attrib[EnumDistributionConstants.UUID_ATTR] = 'not a uuid!'
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
     def testThatShareMustBeNumeric(self):
-        addConnLinkSelBehaviorShare(self.cleanDistr, 'non numeric!', 'BEST')
+        addEnumDistributionShare(self.cleanDistr, 'non numeric!', ConnectorLinkSelectionBehaviorDistributionConstants.BEST)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
 
     def testThatShareMustBeNonnegative(self):
-        addConnLinkSelBehaviorShare(self.cleanDistr, -0.25, 'BEST')
+        addEnumDistributionShare(self.cleanDistr, -0.25, ConnectorLinkSelectionBehaviorDistributionConstants.BEST)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
 
     def testThatShareMayBeZero(self):
-        addConnLinkSelBehaviorShare(self.cleanDistr, 0.00, 'BEST')
+        addEnumDistributionShare(self.cleanDistr, 0.00, ConnectorLinkSelectionBehaviorDistributionConstants.BEST)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertTrue(self.doc.validate())
 
     def testThatInvalidValuesCannotBeUsed(self):
-        addConnLinkSelBehaviorShare(self.cleanDistr, 0.30, 'DOPIEST')
+        addEnumDistributionShare(self.cleanDistr, 0.30, 'DOPIEST')
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
     def testThatShareSubelementsAreBanned(self):
-        sub = addConnLinkSelBehaviorShare(self.cleanDistr, 0.25, 'BEST')
+        sub = addEnumDistributionShare(self.cleanDistr, 0.25, ConnectorLinkSelectionBehaviorDistributionConstants.BEST)
         etree.SubElement(sub, 'sub-element')
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherShareAttributesAreOkay(self):
-        sub = addConnLinkSelBehaviorShare(self.cleanDistr, 0.25, 'BEST')
+        sub = addEnumDistributionShare(self.cleanDistr, 0.25, ConnectorLinkSelectionBehaviorDistributionConstants.BEST)
         sub.attrib['another-element'] = 'ok!'
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertTrue(self.doc.validate())
@@ -518,19 +606,19 @@ class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
 
     def testThatNormalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
-        distr = createCleanNormalDistributionNode('name', 1, 2)
+        distr = createNormalDistributionNode('a normal distribution', 1, 2)
         node.append(distr)
         self.assertTrue(self.doc.validate())
 
     def testThatEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
-        distr = createCleanEmpiricalDistributionNode('name', [(0, 3), (0.15, 4), (0.85, 5), (1.0, 6)])
+        distr = createEmpiricalDistributionNode('an empirical distribution', [(0, 3), (0.15, 4), (0.85, 5), (1.0, 6)])
         node.append(distr)
         self.assertTrue(self.doc.validate())
     
     def testThatRawEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
-        distr = createCleanRawEmpiricalDistributionNode('name', [3, 4, 5, 6])
+        distr = createRawEmpiricalDistributionNode('a raw empirical distribution', [3, 4, 5, 6])
         node.append(distr)
         self.assertTrue(self.doc.validate())
 
