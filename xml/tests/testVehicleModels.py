@@ -480,9 +480,5 @@ class TestsForTrailers(unittest.TestCase):
         self.testLeadVehicle.append(trailer)
         self.assertTrue(self.doc.validate())
     
-    #
-    # TODO complete documentation in xsd file.
-    #
-
 if (__name__ == '__main__'):
     unittest.main()
