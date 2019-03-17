@@ -42,4 +42,10 @@
             <dp value="1756.4594" />
         </raw-empirical-distribution>
     </distribution-set>
+    <distribution-set type="vehicle-models">
+        <distribution name="Cars" uuid="a952fcb9-b7e3-4b79-a201-85094a6c67a7">
+            <share occurence="0.34" value="52dac3ee-4683-46db-8089-025ccb555b90" />
+            <share occurence="0.30" value="a95d0c78-c53c-4974-8885-7065a5da7284" />
+        </distribution>
+    </distribution-set>
 </distributions>

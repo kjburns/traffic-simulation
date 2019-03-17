@@ -188,6 +188,40 @@
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
 
+    <!--
+    Vehicle Model Distributions
+    -->
+    <xs:complexType name="vehicle-model-share">
+        <xs:annotation>
+            <xs:documentation>A relation of relative occurence of a vehicle model. </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="occurence" type="enum-share-occurence" use="required">
+            <xs:annotation>
+                <xs:documentation>Relative number occurences of this vehicle model.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="uuid" use="required">
+            <xs:annotation>
+                <xs:documentation>UUID of the vehicle model in this share.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="vehicle-model-distribution">
+        <xs:annotation>
+            <xs:documentation>A distribution of vehicle models.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:annotation>
+                <xs:documentation>If a vehicle model is used, it should only appear once. If it appears multiple times, all the shares for that vehicle model will be added together.</xs:documentation>
+            </xs:annotation>
+            <xs:element name="share" type="vehicle-model-share" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+
     <!-- 
     The actual document!
     -->
@@ -224,6 +258,20 @@
                             <xs:group ref="real-number-distribution" minOccurs="1" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="connector-max-positioning-distance" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!--
+                Vehicle Models
+                -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Vehicle Models</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="vehicle-model-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="vehicle-models" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>

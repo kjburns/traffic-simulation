@@ -2,9 +2,17 @@ from lxml import etree
 from uuid import uuid4 as UUID
 import unittest
 
-class EnumDistributionShareConstants:
+class DistributionSetConstants:
+    TAG = 'distribution-set'
+    TYPE_ATTR = 'type' 
+
+class DistributionShareConstants:
+    TAG = 'share'
     OCCURENCE_ATTR = 'occurence'
     VALUE_ATTR = 'value'
+
+class EnumDistributionShareConstants(DistributionShareConstants):
+    pass
 
 class EnumDistributionSetConstants:
     CHILD_TAG = 'distribution'
@@ -12,7 +20,11 @@ class EnumDistributionSetConstants:
 class EnumDistributionConstants:
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
-    SHARE_TAG = 'share'
+
+class VehicleModelDistributionConstants:
+    TAG = 'distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
 
 class ConnectorLinkSelectionBehaviorDistributionConstants:
     NEAREST = 'NEAREST'
@@ -46,7 +58,7 @@ class RawEmpiricalDistributionConstants:
     DATA_POINT_VALUE_ATTR = 'value'
 
 def addEnumDistributionShare(distr, occur, value):
-    shareElement = etree.SubElement(distr, EnumDistributionConstants.SHARE_TAG)
+    shareElement = etree.SubElement(distr, EnumDistributionShareConstants.TAG)
     shareElement.attrib[EnumDistributionShareConstants.OCCURENCE_ATTR] = str(occur)
     shareElement.attrib[EnumDistributionShareConstants.VALUE_ATTR] = value 
     shareElement.attrib['alias'] = value.lower()
@@ -120,7 +132,33 @@ def addRawEmpiricalDistributionObservation(node, value = None):
     if (value is not None):
         ret.attrib[RawEmpiricalDistributionConstants.DATA_POINT_VALUE_ATTR] = str(value)
     
-    return ret 
+    return ret
+
+def addVehicleModelShare(distributionNode, occurence, value):
+    ret = etree.SubElement(
+        distributionNode, 
+        DistributionShareConstants.TAG, 
+        {
+            EnumDistributionShareConstants.OCCURENCE_ATTR: str(occurence),
+            EnumDistributionShareConstants.VALUE_ATTR: str(value)
+        }
+    )        
+
+    return ret
+
+def createVehicleModelsDistributionNode(attachTo, shareTuplesAsOccurence_Value, name = 'a vehicle model distribution'):
+    ret = etree.SubElement(
+        attachTo, 
+        VehicleModelDistributionConstants.TAG, 
+        {
+            VehicleModelDistributionConstants.NAME_ATTR: name,
+            VehicleModelDistributionConstants.UUID_ATTR: str(UUID())
+        }
+    )
+    for shareTuple in shareTuplesAsOccurence_Value:
+        addVehicleModelShare(ret, shareTuple[0], shareTuple[1])
+
+    return ret
 
 class CleanDistributionsDocument:
     def __init__(self):
@@ -129,12 +167,12 @@ class CleanDistributionsDocument:
         self.documentRoot = etree.Element('distributions', nsmap = NSMAP)
         self.documentRoot.attrib['{http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation'] = '../distributions.xsd'
 
-        self.connectorLinkSelectionBehaviorsNode = etree.SubElement(self.documentRoot, 'distribution-set')
-        self.connectorLinkSelectionBehaviorsNode.attrib['type'] = 'connector-link-selection-behaviors'
+        self.connectorLinkSelectionBehaviorsNode = etree.SubElement(self.documentRoot, DistributionSetConstants.TAG)
+        self.connectorLinkSelectionBehaviorsNode.attrib[DistributionSetConstants.TYPE_ATTR] = 'connector-link-selection-behaviors'
         self.connectorLinkSelectionBehaviorsNode.append(createCleanConnLinkSelBehavior())
 
-        self.connectorMaxPositioningDistancesNode = etree.SubElement(self.documentRoot, 'distribution-set')
-        self.connectorMaxPositioningDistancesNode.attrib['type'] = 'connector-max-positioning-distance'
+        self.connectorMaxPositioningDistancesNode = etree.SubElement(self.documentRoot, DistributionSetConstants.TAG)
+        self.connectorMaxPositioningDistancesNode.attrib[DistributionSetConstants.TYPE_ATTR] = 'connector-max-positioning-distance'
         firstNormalDist = createNormalDistributionNode('Default', 1609, 402, minValue=400)
         firstNormalDist.attrib['median'] = '1600'
         self.connectorMaxPositioningDistancesNode.append(firstNormalDist)
@@ -148,9 +186,25 @@ class CleanDistributionsDocument:
                   1756.4594]
         self.connectorMaxPositioningDistancesNode.append(createRawEmpiricalDistributionNode('Observed LC Distances', values))
 
+        self.vehicleModelsNode = etree.SubElement(
+                self.documentRoot, 
+                DistributionSetConstants.TAG, 
+                {
+                    DistributionSetConstants.TYPE_ATTR: 'vehicle-models'
+                }
+        )
+        createVehicleModelsDistributionNode(
+            self.vehicleModelsNode, 
+            [
+                (35, '47e301a2-f905-4245-94ef-127daf6736b7'),
+                (30, '9c344e0f-30cc-44e9-ba3b-b3c1b6137bda'),
+                (20, '223367cb-69a6-474c-b55f-2405f0c1ba18')
+            ]
+        )
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
-                xml_declaration=True, pretty_print=True, encoding='UTF-8')) 
+                xml_declaration=False, pretty_print=True, encoding='unicode')) 
     
     def writeDocumentToFile(self, filename):
         fp = open(filename, 'w')
@@ -175,15 +229,21 @@ class CleanDistributionsDocument:
     def getConnectorMaxPositioningDistancesNode(self):
         return self.connectorMaxPositioningDistancesNode
 
+    def getVehicleModelsNode(self):
+        return self.vehicleModelsNode
+
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
         self.doc = CleanDistributionsDocument()
 
     def testThatConnectorLinkSelectionBehaviorNodeExists(self):
-        self.assertIsNotNone(self.doc.getConnectorLinkSelectionBehaviorsNode)
+        self.assertIsNotNone(self.doc.getConnectorLinkSelectionBehaviorsNode()) 
 
     def testThatConnectorMaxPositioningDistancesNodeExists(self):
-        self.assertIsNotNone(self.doc.getConnectorMaxPositioningDistancesNode)
+        self.assertIsNotNone(self.doc.getConnectorMaxPositioningDistancesNode()) 
+
+    def testThatVehicleModelsNodeExists(self):
+        self.assertIsNotNone(self.doc.getVehicleModelsNode())
 
     #
     #   TODO As more data is added to the parameters file, add more testThatXxxNodeExists() methods
@@ -631,6 +691,150 @@ class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         node.attrib['new-attribute'] = 'banned'
         self.assertFalse(self.doc.validate())
+
+class TestsForVehicleModelDistributions(unittest.TestCase):
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+        self.cleanDistr = createVehicleModelsDistributionNode(
+            self.doc.getVehicleModelsNode(), 
+            [
+                (35, '47e301a2-f905-4245-94ef-127daf6736b7'),
+                (30, '9c344e0f-30cc-44e9-ba3b-b3c1b6137bda'),
+                (20, '223367cb-69a6-474c-b55f-2405f0c1ba18')
+            ]
+        )
+
+    def testThatOtherAttributesAreBannedOnDistributionsElement(self):
+        self.doc.getVehicleModelsNode().attrib['another-attr'] = 'banned'
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOtherSubelementsAreBannedOnDistributionsElement(self):
+        node = self.doc.getVehicleModelsNode()
+        etree.SubElement(node, 'another-element')
+        self.assertFalse(self.doc.validate())
+
+    def testThatDistributionCountMayNotBeZero(self):
+        node = self.doc.getVehicleModelsNode()
+        elementsToRemove = []
+        for element in node:
+            elementsToRemove.append(element)
+        
+        for element in elementsToRemove:
+            node.remove(element)
+        
+        self.assertFalse(self.doc.validate())
+
+    def testThatDistributionCountMayBeOneThousand(self):
+        node = self.doc.getVehicleModelsNode()
+        for i in range(1000):
+            createVehicleModelsDistributionNode(node, [
+                (35, UUID()),
+                (40, UUID()),
+                (55, UUID())
+            ], 'Vehicle Models ' + str(i))
+        
+        self.assertTrue(self.doc.validate())
+    
+    def testThatNameIsOptional(self):
+        node = self.cleanDistr
+        node.attrib.pop(VehicleModelDistributionConstants.NAME_ATTR)
+
+        self.assertTrue(self.doc.validate())
+    
+    def testThatNameMayBeEmptyString(self):
+        node = self.cleanDistr
+        node.attrib[VehicleModelDistributionConstants.NAME_ATTR] = ''
+
+        self.assertTrue(self.doc.validate())
+    
+    def testThatUuidIsRequired(self):
+        self.cleanDistr.attrib.pop(VehicleModelDistributionConstants.UUID_ATTR)
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatUuidIsValid(self):
+        self.cleanDistr.attrib[VehicleModelDistributionConstants.UUID_ATTR] = 'not a valid uuid'
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOtherAttributesAreOkay(self):
+        self.cleanDistr.attrib['another-attribute'] = 'another value'
+
+        self.assertTrue(self.doc.validate())
+    
+    def testThatOtherSubelementsAreBanned(self):
+        etree.SubElement(self.cleanDistr, 'another-element')
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatZeroSharesIsNotOkay(self):
+        createVehicleModelsDistributionNode(self.doc.getVehicleModelsNode(), [])
+        self.assertFalse(self.doc.validate())
+
+    def testThatOneThousandSharesIsOkay(self):
+        tuples = [(10, UUID()) for _ in range(1000)]
+        createVehicleModelsDistributionNode(self.doc.getVehicleModelsNode(), tuples)
+
+        self.assertTrue(self.doc.validate())
+    
+    def testThatOccurenceCannotBeNegative(self):
+        createVehicleModelsDistributionNode(self.doc.getVehicleModelsNode(), [(-3, UUID())])
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOccurenceCanBeZero(self):
+        createVehicleModelsDistributionNode(self.doc.getVehicleModelsNode(), [(0, UUID())])
+        self.assertTrue(self.doc.validate())
+    
+    def testThatOccurenceIsRequired(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib.pop(DistributionShareConstants.OCCURENCE_ATTR)
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOccurenceMayNotBeEmpty(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib[DistributionShareConstants.OCCURENCE_ATTR] = ''
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOccurenceMayNotBeString(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib[DistributionShareConstants.OCCURENCE_ATTR] = 'not a number'
+
+        self.assertFalse(self.doc.validate())
+
+    def testThatValueIsRequired(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib.pop(DistributionShareConstants.VALUE_ATTR)
+
+        self.assertFalse(self.doc.validate())
+
+    def testThatValueMayNotBeEmpty(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = ''
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatValueMayNotBeArbitraryString(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = 'not a uuid'
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatValueMayNotBeArbitraryNumber(self):
+        firstNode = self.cleanDistr[0]
+        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = '12345'
+
+        self.assertFalse(self.doc.validate())
+    
+    def testThatMultipleSharesWithTheSameUuidAreAllowedInADistribution(self):
+        tuples = []
+        for i in range(5):
+            uuid = tuples[0][1] if (i == 4) else UUID()
+            tuples.append(((i + 1) * 10, uuid))
+        
+        createVehicleModelsDistributionNode(self.doc.getVehicleModelsNode(), tuples)
+        self.assertTrue(self.doc.validate())
 
 if (__name__ == '__main__'):
     unittest.main()
