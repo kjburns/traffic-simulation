@@ -18,7 +18,7 @@
             <dp prob="0.85" val="800" />
             <dp prob="1" val="400" />
         </empirical-distribution>
-        <raw-empirical-distribution name="Observed LC Distances" uuid="1a48383c-800c-46ac-8828-43d4c373332f">
+        <raw-empirical-distribution name="Observed LC Distances" uuid="1a48383c-800c-46ac-8828-43d4c373332f" aggression="negative">
             <dp value="1525.1118" />
             <dp value="2202.5331" />
             <dp value="1257.0525" />

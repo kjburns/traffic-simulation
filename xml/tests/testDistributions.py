@@ -54,6 +54,9 @@ class RawEmpiricalDistributionConstants:
     TAG = 'raw-empirical-distribution'
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
+    AGGRESSION_ATTR = 'aggression'
+    AGGRESSION_VALUE_POSITIVE = 'positive'
+    AGGRESSION_VALUE_NEGATIVE = 'negative'
     DATA_POINT_TAG = 'dp'
     DATA_POINT_VALUE_ATTR = 'value'
 
@@ -119,10 +122,11 @@ def createEmpiricalDistributionNode(name, valuesTuples):
 
     return e 
 
-def createRawEmpiricalDistributionNode(name, values):
+def createRawEmpiricalDistributionNode(name, values, aggrDir):
     e = etree.Element(RawEmpiricalDistributionConstants.TAG)
     e.attrib[RawEmpiricalDistributionConstants.NAME_ATTR] = name
     e.attrib[RawEmpiricalDistributionConstants.UUID_ATTR] = str(UUID())
+    e.attrib[RawEmpiricalDistributionConstants.AGGRESSION_ATTR] = aggrDir
     for value in values:
         addRawEmpiricalDistributionObservation(e, value)
     return e
@@ -184,7 +188,9 @@ class CleanDistributionsDocument:
                   1692.9078, 1556.1454, 1397.7309, 1578.0382, 2232.6108,
                   2037.6286, 1629.7739,  897.0939,  910.1857, 1023.5309, 
                   1756.4594]
-        self.connectorMaxPositioningDistancesNode.append(createRawEmpiricalDistributionNode('Observed LC Distances', values))
+        self.connectorMaxPositioningDistancesNode.append(
+                createRawEmpiricalDistributionNode('Observed LC Distances', values, 
+                        RawEmpiricalDistributionConstants.AGGRESSION_VALUE_NEGATIVE))
 
         self.vehicleModelsNode = etree.SubElement(
                 self.documentRoot, 
@@ -246,7 +252,7 @@ class TestsForCleanDocument(unittest.TestCase):
         self.assertIsNotNone(self.doc.getVehicleModelsNode())
 
     #
-    #   TODO As more data is added to the parameters file, add more testThatXxxNodeExists() methods
+    #   As more data is added to the parameters file, add more testThatXxxNodeExists() methods
     #
 
     def testThatCleanDocumentValidates(self):
@@ -267,9 +273,14 @@ class TestsForSimpleDataTypes(unittest.TestCase):
         node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
+    
+    def testThatAggressionDirectionsAreBeingValidated(self):
+        node = createRawEmpiricalDistributionNode('test-distr', [0, 3, 4], 'invalid-direction')
+        self.doc.getConnectorMaxPositioningDistancesNode().append(node)
+        self.assertFalse(self.doc.validate())
 
     #
-    #   TODO As more simple types are added to the parameters file, add more of these methods
+    #   As more simple types are added to the parameters file, add more of these methods
     #
 
 class TestsForNormalDistributions(unittest.TestCase):
@@ -517,7 +528,8 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
                  78.59, 107.46, 103.81, 124.06,  54.93]
                 
     def createCleanDistributionNode(self):
-        return createRawEmpiricalDistributionNode('a raw empirical distribution', self.values)
+        return createRawEmpiricalDistributionNode('a raw empirical distribution', self.values, 
+                RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
     
     def testThatNameIsOptional(self):
         node = self.createCleanDistributionNode()
@@ -534,6 +546,12 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
     def testThatUuidIsValid(self):
         node = self.createCleanDistributionNode()
         node.attrib[RawEmpiricalDistributionConstants.UUID_ATTR] = 'not a uuid!'
+        self.doc.getConnectorMaxPositioningDistancesNode().append(node)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatAggressionDirectionIsRequired(self):
+        node = self.createCleanDistributionNode()
+        node.attrib.pop(RawEmpiricalDistributionConstants.AGGRESSION_ATTR)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
@@ -577,18 +595,21 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCannotBeZero(self):
-        node = createRawEmpiricalDistributionNode('an empty raw empirical distribution', [])
+        node = createRawEmpiricalDistributionNode('an empty raw empirical distribution', [], 
+                RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCanBeOne(self):
-        node = createRawEmpiricalDistributionNode('a raw empirical distribution with one point', [5])
+        node = createRawEmpiricalDistributionNode('a raw empirical distribution with one point', [5], 
+                RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
     def testThatOneThousandsPointsAreOkay(self):
         points = [i * 0.25 for i in range(1000)]
-        node = createRawEmpiricalDistributionNode('a raw empirical distribution with 1000 points', points)
+        node = createRawEmpiricalDistributionNode('a raw empirical distribution with 1000 points', points, 
+                RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
 
@@ -678,7 +699,8 @@ class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
     
     def testThatRawEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
-        distr = createRawEmpiricalDistributionNode('a raw empirical distribution', [3, 4, 5, 6])
+        distr = createRawEmpiricalDistributionNode('a raw empirical distribution', [3, 4, 5, 6], 
+                RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
         node.append(distr)
         self.assertTrue(self.doc.validate())
 
