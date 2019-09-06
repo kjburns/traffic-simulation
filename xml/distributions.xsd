@@ -31,6 +31,17 @@
             <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="aggression-trend-direction-enumeration">
+        <xs:annotation>
+            <xs:documentation>Used in a raw empirical distribution to note the correlation direction between value and aggression.</xs:documentation>
+            <xs:documentation>'positive' means that higher values indicate higher aggression.</xs:documentation>
+            <xs:documentation>'negative' means that higher values indicate lower aggression.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="positive" />
+            <xs:enumeration value="negative" />
+        </xs:restriction>
+    </xs:simpleType>
     <!-- 
     Distribution types
     -->
@@ -125,6 +136,7 @@
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:group name="real-number-distribution">
