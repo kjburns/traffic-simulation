@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+	<distr name="Normal Bell" 
+		uuid="04497709-504b-4263-a22d-8b318f1cc031" 
+		mean="3.0" 
+		standard-deviation="6.0" />
+	<distr name="Reverse Bell" 
+		uuid="b9bc34f6-ab03-4ae5-8f13-b5319ef3c003" 
+		mean="3.0" 
+		standard-deviation="6.0" 
+		reverse="true" />
+	<distr name="Truncated Bell"
+		uuid="fd07c30f-73ee-45ee-b7df-fbb594a1bcd9" 
+		mean="3.0" 
+		standard-deviation="6.0"
+		min-value="0.0"
+		max-value="10.0" 
+		reverse="false" />
+</test>
