@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+	<distr name="Complete" 
+		uuid="502f1967-8924-4c05-b9ca-5f8a3e748834" >
+		<dp prob="0.0" val="10.0" /> 
+		<dp prob="0.1" val="11.0" /> 
+		<dp prob="0.2" val="12.0" /> 
+		<dp prob="0.3" val="13.0" /> 
+		<dp prob="0.4" val="14.0" /> 
+		<dp prob="0.5" val="15.0" /> 
+		<dp prob="0.6" val="16.0" /> 
+		<dp prob="0.7" val="17.0" /> 
+		<dp prob="0.8" val="18.0" /> 
+		<dp prob="0.9" val="19.0" /> 
+		<dp prob="1.0" val="20.0" /> 
+	</distr>
+	<distr name="Incomplete" 
+		uuid="759911ca-33e7-427c-8584-e732d2c84c61" >
+		<dp prob="0.2" val="12.0" /> 
+		<dp prob="0.3" val="13.0" /> 
+		<dp prob="0.4" val="14.0" /> 
+		<dp prob="0.5" val="15.0" /> 
+		<dp prob="0.6" val="16.0" /> 
+		<dp prob="0.7" val="17.0" /> 
+		<dp prob="0.8" val="18.0" /> 
+	</distr>
+</test>
