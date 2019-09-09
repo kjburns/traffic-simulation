@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+	<raw-empirical-distribution name="Test Raw Empirical Distribution" 
+		uuid="e3c0c098-3360-4c3e-b159-58217e9f79e1"
+		aggression="positive" >
+		<dp value="60.0" /> 
+		<dp value="45.0" /> 
+		<dp value="65.0" /> 
+		<dp value="50.0" /> 
+		<dp value="55.0" /> 
+	</raw-empirical-distribution>
+</test>

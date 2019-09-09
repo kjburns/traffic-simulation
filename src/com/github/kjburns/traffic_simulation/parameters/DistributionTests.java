@@ -28,6 +28,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	NormalDistributionTruncatableXmlTest.class,
 	EmpiricalDistributionTest.class,
 	EmpiricalDistributionXmlTest.class,
+	RawEmpiricalDistributionTest.class,
+	RawEmpiricalDistributionXmlTest.class,
 })
 public class DistributionTests {
 
