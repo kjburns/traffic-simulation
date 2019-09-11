@@ -18,54 +18,21 @@
  */
 package com.github.kjburns.traffic_simulation.parameters;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ConnectorLinkSelectionBehaviorDistribution 
-		extends AbstractDistribution<ConnectorLinkSelectionBehaviorEnum> {
+		extends EnumDistribution<ConnectorLinkSelectionBehaviorEnum> {
 	public static class Factory {
-		public static class Builder {
-			private final String name;
-			private final UUID uuid;
-			private final Map<ConnectorLinkSelectionBehaviorEnum, Double> shares = new HashMap<>();
-			
+		public static class Builder extends EnumDistribution.Factory.Builder<ConnectorLinkSelectionBehaviorEnum> {
 			public Builder(String _name, UUID _uuid) {
-				name = _name;
-				uuid = _uuid;
-			}
-			
-			public void setShare(ConnectorLinkSelectionBehaviorEnum behavior, double share) {
-				shares.put(behavior, share);
+				super(_name, _uuid);
 			}
 			
 			public Distribution<ConnectorLinkSelectionBehaviorEnum> build() {
 				final ConnectorLinkSelectionBehaviorDistribution ret = 
-						new ConnectorLinkSelectionBehaviorDistribution(name, uuid);
+						new ConnectorLinkSelectionBehaviorDistribution(getName(), getUuid());
 				
-				final double total = shares.values().stream().mapToDouble((value) -> {
-					return value;
-				}).sum();
-				
-				if (total == 0.) {
-					throw new RuntimeException("Total of shares in distribution must be greater than zero.");
-				}
-
-				double runningTotal = 0.;
-				final List<ConnectorLinkSelectionBehaviorEnum> keysInOrder = 
-						shares.keySet().stream().sorted((x, y) -> {
-							return Integer.compare(x.ordinal(), y.ordinal());
-						}).collect(Collectors.toList());
-				
-				for(ConnectorLinkSelectionBehaviorEnum key : keysInOrder) {
-					final double proportion = shares.get(key) / total;
-					final double nextRunningTotal = runningTotal + proportion;
-					ret.sharesInOrder.add(new Share(runningTotal, nextRunningTotal, key));
-					runningTotal = nextRunningTotal;
-				}
+				loadShares(ret);
 				
 				return ret;
 			}
@@ -76,46 +43,14 @@ public class ConnectorLinkSelectionBehaviorDistribution
 		}
 	}
 	
-	private static class Share {
-		private final double startParameter;
-		private final double endParameter;
-		private final ConnectorLinkSelectionBehaviorEnum value;
-		
-		public Share(double startParameter, double endParameter, ConnectorLinkSelectionBehaviorEnum value) {
-			this.startParameter = startParameter;
-			this.endParameter = endParameter;
-			this.value = value;
-		}
-		
-		public boolean parameterMatches(double t) {
-			return (this.startParameter - t) * (this.endParameter - t) <= 0.;
-		}
-
-		public final ConnectorLinkSelectionBehaviorEnum getValue() {
-			return this.value;
-		}
-	}
-	
-	private final List<Share> sharesInOrder = new ArrayList<>();
+	private static final ConnectorLinkSelectionBehaviorEnum[] SUPPORTED_VALUES = {
+		ConnectorLinkSelectionBehaviorEnum.BEST,
+		ConnectorLinkSelectionBehaviorEnum.FARTHEST,
+		ConnectorLinkSelectionBehaviorEnum.NEAREST,
+		ConnectorLinkSelectionBehaviorEnum.RANDOM,
+	};
 	
 	private ConnectorLinkSelectionBehaviorDistribution(String _name, UUID _uuid) {
-		super(_name, _uuid);
-	}
-
-	@Override
-	public ConnectorLinkSelectionBehaviorEnum getValue(double t) {
-		if (t < 0. || t > 1.) {
-			throw new IllegalArgumentException(
-					"Connector Link Selection Behavior Distribution: parameter must be in range [0, 1].");
-		}
-		
-		for (Share share : sharesInOrder) {
-			if (share.parameterMatches(t)) {
-				return share.getValue();
-			}
-		}
-
-		// should never happen
-		return null;
+		super(_name, _uuid, SUPPORTED_VALUES);
 	}
 }
