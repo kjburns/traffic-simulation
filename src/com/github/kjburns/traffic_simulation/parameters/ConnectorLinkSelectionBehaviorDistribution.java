@@ -20,9 +20,18 @@ package com.github.kjburns.traffic_simulation.parameters;
 
 import java.util.UUID;
 
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 public class ConnectorLinkSelectionBehaviorDistribution 
 		extends EnumDistribution<ConnectorLinkSelectionBehaviorEnum> {
 	public static class Factory {
+		private static final String SHARE_VALUE_ATTR = "value";
+		private static final String SHARE_OCCURENCE_ATTR = "occurence";
+		private static final String SHARE_TAG = "share";
+		private static final String UUID_ATTR = "uuid";
+		private static final String NAME_ATTR = "name";
+
 		public static class Builder extends EnumDistribution.Factory.Builder<ConnectorLinkSelectionBehaviorEnum> {
 			public Builder(String _name, UUID _uuid) {
 				super(_name, _uuid);
@@ -40,6 +49,25 @@ public class ConnectorLinkSelectionBehaviorDistribution
 		
 		public static Builder createBuilder(String _name, UUID _uuid) {
 			return new Builder(_name, _uuid);
+		}
+		
+		public static Distribution<ConnectorLinkSelectionBehaviorEnum> fromXml(Element from) {
+			final String name = from.hasAttribute(Factory.NAME_ATTR) ?
+					from.getAttribute(Factory.NAME_ATTR) : "";
+			final UUID uuid = UUID.fromString(from.getAttribute(Factory.UUID_ATTR));
+			
+			final Builder builder = createBuilder(name, uuid);
+			final NodeList shareElements = from.getElementsByTagName(Factory.SHARE_TAG);
+			for (int i = 0; i < shareElements.getLength(); i++) {
+				final Element shareElement = (Element)shareElements.item(i);
+				final double occurence = Double.parseDouble(shareElement.getAttribute(Factory.SHARE_OCCURENCE_ATTR));
+				final ConnectorLinkSelectionBehaviorEnum value = 
+						ConnectorLinkSelectionBehaviorEnum.valueOf(shareElement.getAttribute(Factory.SHARE_VALUE_ATTR));
+				
+				builder.setShare(value, occurence);
+			}
+			
+			return builder.build();
 		}
 	}
 	

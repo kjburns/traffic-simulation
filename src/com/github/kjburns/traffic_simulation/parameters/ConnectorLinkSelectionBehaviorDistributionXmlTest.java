@@ -20,14 +20,31 @@ package com.github.kjburns.traffic_simulation.parameters;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.UUID;
+import java.io.InputStream;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
-import com.github.kjburns.traffic_simulation.parameters.ConnectorLinkSelectionBehaviorDistribution.Factory.Builder;
+import com.github.kjburns.traffic_simulation.parameters.ConnectorLinkSelectionBehaviorDistribution.Factory;
 
-class ConnectorLinkSelectionBehaviorDistributionTest {
-	private final Distribution<ConnectorLinkSelectionBehaviorEnum> testDistribution = createTestDistribution();
+class ConnectorLinkSelectionBehaviorDistributionXmlTest {
+	private final Distribution<ConnectorLinkSelectionBehaviorEnum> testDistribution;
+	
+	public ConnectorLinkSelectionBehaviorDistributionXmlTest() throws Exception {
+		try(final InputStream is = this.getClass().getClassLoader().getResourceAsStream(
+				"res/ConnectorLinkSelectionBehaviorDistributionTest.xml")) {
+			final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder db = dbf.newDocumentBuilder();
+			final Document doc = db.parse(is);
+			
+			final NodeList nodes = doc.getDocumentElement().getElementsByTagName("distribution");
+			testDistribution = Factory.fromXml((Element)nodes.item(0));
+		}
+	}
 	
 	@Test void parameterBoundsTest0() {
 		assertThrows(IllegalArgumentException.class, () -> {
@@ -60,16 +77,5 @@ class ConnectorLinkSelectionBehaviorDistributionTest {
 		final ConnectorLinkSelectionBehaviorEnum expected = ConnectorLinkSelectionBehaviorEnum.RANDOM;
 		final ConnectorLinkSelectionBehaviorEnum actual = testDistribution.getValue(0.9);
 		assertEquals(expected, actual);
-	}
-	
-	private Distribution<ConnectorLinkSelectionBehaviorEnum> createTestDistribution() {
-		final Builder builder = ConnectorLinkSelectionBehaviorDistribution.Factory.createBuilder(
-				"test distr", UUID.randomUUID());
-		builder.setShare(ConnectorLinkSelectionBehaviorEnum.BEST, 30);      // 3rd
-		builder.setShare(ConnectorLinkSelectionBehaviorEnum.FARTHEST, 30);  // 2nd
-		builder.setShare(ConnectorLinkSelectionBehaviorEnum.NEAREST, 20);   // 1st
-		builder.setShare(ConnectorLinkSelectionBehaviorEnum.RANDOM, 20);    // 4th
-
-		return builder.build();
 	}
 }
