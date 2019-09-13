@@ -31,6 +31,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.github.kjburns.traffic_simulation.main.ProjectInputStreamProvider;
 import com.github.kjburns.traffic_simulation.xml.ValidatingDocumentLoader;
 
 public class ModelParametersImpl implements ModelParameters {
@@ -50,19 +51,21 @@ public class ModelParametersImpl implements ModelParameters {
 	private ConnectorLinkSelectionBehaviorDistributionCollection connectorLinkSelectionBehaviors = null;
 	private ConnectorMaxPositioningDistanceDistributionCollection connectorMaxPositioningDistances = null;
 
-	public ModelParametersImpl(InputStream xmlStream) throws ParserConfigurationException, SAXException, IOException {
-		Document doc = ValidatingDocumentLoader.loadDocument(xmlStream, XSD_PATH);
-		
-		final Element docElement = doc.getDocumentElement();
-		final NodeList elements = docElement.getElementsByTagName(DISTRIBUTION_SET_TAG);
-		for (int i = 0; i < elements.getLength(); i++) {
-			Element e = (Element)elements.item(i);
-			String type = e.getAttribute(ModelParametersImpl.TYPE_ATTR);
-			final DistributionSetLoader loader = distributionSetLoaders.get(type);
-			if (loader != null) {
-				loader.loadDistributionSet(e);
-			} else {
-				System.err.println("Error: Could not find loader for " + type);
+	public ModelParametersImpl(ProjectInputStreamProvider isProvider) throws ParserConfigurationException, SAXException, IOException {
+		try(final InputStream distributionsStream = isProvider.createInputStreamForDistributions()) {
+			Document doc = ValidatingDocumentLoader.loadDocument(distributionsStream, XSD_PATH);
+			
+			final Element docElement = doc.getDocumentElement();
+			final NodeList elements = docElement.getElementsByTagName(DISTRIBUTION_SET_TAG);
+			for (int i = 0; i < elements.getLength(); i++) {
+				Element e = (Element)elements.item(i);
+				String type = e.getAttribute(ModelParametersImpl.TYPE_ATTR);
+				final DistributionSetLoader loader = distributionSetLoaders.get(type);
+				if (loader != null) {
+					loader.loadDistributionSet(e);
+				} else {
+					System.err.println("Error: Could not find loader for " + type);
+				}
 			}
 		}
 		
