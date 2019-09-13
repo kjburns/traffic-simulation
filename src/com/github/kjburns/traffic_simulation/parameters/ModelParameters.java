@@ -20,6 +20,7 @@ package com.github.kjburns.traffic_simulation.parameters;
 
 public interface ModelParameters {
 	DistributionCollection<ConnectorLinkSelectionBehaviorEnum> getConnectorLinkSelectionBehaviors();
+	DistributionCollection<Double> getConnectorMaxPositioningDistances();
 	
 	/*
 	 * Add new distribution set getters above this comment

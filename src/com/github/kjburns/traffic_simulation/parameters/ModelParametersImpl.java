@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -47,6 +48,7 @@ public class ModelParametersImpl implements ModelParameters {
 	 * Add distribution set instances here
 	 */
 	private ConnectorLinkSelectionBehaviorDistributionCollection connectorLinkSelectionBehaviors = null;
+	private ConnectorMaxPositioningDistanceDistributionCollection connectorMaxPositioningDistances = null;
 
 	public ModelParametersImpl(InputStream xmlStream) throws ParserConfigurationException, SAXException, IOException {
 		Document doc = ValidatingDocumentLoader.loadDocument(xmlStream, XSD_PATH);
@@ -63,13 +65,28 @@ public class ModelParametersImpl implements ModelParameters {
 				System.err.println("Error: Could not find loader for " + type);
 			}
 		}
+		
+		testLatestFeature();
 	}
 	
+	private void testLatestFeature() {
+		connectorMaxPositioningDistances.stream().forEach((item) -> {
+			System.out.println(item.getName());
+		});
+		final Distribution<Double> distr = connectorMaxPositioningDistances.getByUuid(
+				UUID.fromString("1a48383c-800c-46ac-8828-43d4c373332f"));
+		System.out.println(distr.getValue(0.47));
+	}
+
 	private Map<String, DistributionSetLoader> defineDistributionSetLoaders() {
 		Map<String, DistributionSetLoader> ret = new HashMap<>();
 		ret.put(ConnectorLinkSelectionBehaviorDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
 			connectorLinkSelectionBehaviors = 
 					new ConnectorLinkSelectionBehaviorDistributionCollection(from);
+		});
+		ret.put(ConnectorMaxPositioningDistanceDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
+			connectorMaxPositioningDistances =
+					new ConnectorMaxPositioningDistanceDistributionCollection(from);
 		});
 		
 		/*
@@ -82,5 +99,10 @@ public class ModelParametersImpl implements ModelParameters {
 	@Override
 	public DistributionCollection<ConnectorLinkSelectionBehaviorEnum> getConnectorLinkSelectionBehaviors() {
 		return connectorLinkSelectionBehaviors;
+	}
+
+	@Override
+	public DistributionCollection<Double> getConnectorMaxPositioningDistances() {
+		return connectorMaxPositioningDistances;
 	}
 }
