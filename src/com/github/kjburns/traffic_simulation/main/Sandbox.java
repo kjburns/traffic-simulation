@@ -15,7 +15,7 @@ public class Sandbox {
 	private static ProjectInputStreamProvider isProvider = new ProjectInputStreamProvider() {
 		@Override
 		public InputStream createInputStreamForVehicleModels() {
-			final String path = "/home/kevin/kevin.burns.eit@gmail.com/code/kevinsim-libre/xml/distributions-test-file.xml";
+			final String path = "/home/kevin/kevin.burns.eit@gmail.com/code/kevinsim-libre/xml/vehicle-models-test-file.xml";
 			try {
 				return new FileInputStream(path);
 			} catch (FileNotFoundException ex) {

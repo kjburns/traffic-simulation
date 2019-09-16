@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+    <vehicle-model 
+    	name="Ford Focus" 
+    	uuid="cbc7d427-a5d6-4001-b8f4-bf13f05c8ca6" 
+    	length="4.534" 
+    	width="1.823" 
+    	source="https://en.wikipedia.org/wiki/Ford_Focus_(third_generation)"
+   	/>
+    <vehicle-model 
+    	name="Ford F-150 with trailer" 
+    	uuid="eaf74e42-d357-4297-a78e-7802c62fef24" 
+    	length="5.7887" 
+    	width="2.029" 
+    	articulation-point="5.78" 
+    	source="https://en.wikipedia.org/wiki/Ford_F-Series_(thirteenth_generation)"
+   	>
+        <trailer 
+        	name="6x10 cargo trailer" 
+        	length="4.2926" 
+        	width="2.3622" 
+        	towing-point="0.05" 
+       	/>
+    </vehicle-model>
+    <vehicle-model
+    	name="Double-trailer semi for testing"
+    	uuid="7cf24d4e-0844-420b-acb8-5661c727a23a"
+    	length="6.0"
+    	width="2.5"
+    	articulation-point="5.5" 
+    >
+    	<trailer
+    		name="front trailer"
+    		length="12.0"
+    		width="2.5"
+    		articulation-point="11.5"
+    		towing-point="0.5"
+    	>
+    		<trailer
+    			name="back, slightly narrower trailer"
+    			length="12.0"
+    			width="2.0"
+    			towing-point="0.5" 
+    		/>
+    	</trailer>
+    </vehicle-model>
+</test>
