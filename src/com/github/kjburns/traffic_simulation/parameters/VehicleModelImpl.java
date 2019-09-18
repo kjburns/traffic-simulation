@@ -30,6 +30,7 @@ import org.w3c.dom.NodeList;
 import com.github.kjburns.traffic_simulation.main.UnitsEnum;
 
 class VehicleModelImpl implements VehicleModel {
+	public static final String TAG = "vehicle-model";
 	private static final String ARTICULATION_POINT_ATTR = "articulation-point";
 	private static final String NAME_ATTR = "name";
 	private static final String WIDTH_ATTR = "width";
@@ -59,7 +60,7 @@ class VehicleModelImpl implements VehicleModel {
 						Double.parseDouble(from.getAttribute(ARTICULATION_POINT_ATTR))));
 			}
 			
-			final NodeList trailerElements = from.getElementsByTagName(TrailerImpl.TAG);
+			final NodeList trailerElements = from.getElementsByTagName(TrailerImpl.XML_TAG);
 			for (int i = 0; i < trailerElements.getLength(); i++) {
 				Element tr = (Element)trailerElements.item(i);
 				if (tr.getParentNode() == from) {
@@ -117,7 +118,7 @@ class VehicleModelImpl implements VehicleModel {
 	private class TrailerImpl extends VehicleUnitImpl 
 			implements Trailer {
 		private static final String TOWING_POINT_ATTR = "towing-point";
-		public static final String TAG = "trailer";
+		public static final String XML_TAG = "trailer";
 		private final double towingDistanceFromFront;
 		
 		protected TrailerImpl(double width, double length, double _towingDistanceFromFront) {

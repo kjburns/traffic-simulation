@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
@@ -35,34 +33,45 @@ import com.github.kjburns.traffic_simulation.main.ProjectInputStreamProvider;
 import com.github.kjburns.traffic_simulation.xml.ValidatingDocumentLoader;
 
 public class ModelParametersImpl implements ModelParameters {
-	private interface DistributionSetLoader {
-		void loadDistributionSet(Element from);
+	private interface CollectionLoader {
+		void loadCollection(Element from);
 	}
 	
 	private static final String TYPE_ATTR = "type";
-	private static final String XSD_PATH = 
+	private static final String DISTRIBUTIONS_XSD_PATH = 
 			"https://raw.githubusercontent.com/kjburns/traffic-simulation/develop/xml/distributions.xsd";
+	private static final String VEHICLE_TYPE_XSD_PATH =
+			"https://raw.githubusercontent.com/kjburns/traffic-simulation/develop/xml/vehicle-models.xsd";
 	private static final String DISTRIBUTION_SET_TAG = "distribution-set";
-	private final Map<String, DistributionSetLoader> distributionSetLoaders = defineDistributionSetLoaders();
+	private final Map<String, CollectionLoader> collectionLoaders = defineCollectionLoaders();
 	
 	/*
 	 * Add distribution set instances here
 	 */
 	private ConnectorLinkSelectionBehaviorDistributionCollection connectorLinkSelectionBehaviors = null;
 	private ConnectorMaxPositioningDistanceDistributionCollection connectorMaxPositioningDistances = null;
+	private VehicleModelCollection vehicleModels = null;
 
 	public ModelParametersImpl(ProjectInputStreamProvider isProvider) throws ParserConfigurationException, SAXException, IOException {
+		try(final InputStream vehicleModelsStream = isProvider.createInputStreamForVehicleModels()) {
+			Document doc = ValidatingDocumentLoader.loadDocument(vehicleModelsStream, VEHICLE_TYPE_XSD_PATH);
+			
+			final Element docElement = doc.getDocumentElement();
+			
+			vehicleModels = new VehicleModelCollectionImpl(docElement);
+		}
+
 		try(final InputStream distributionsStream = isProvider.createInputStreamForDistributions()) {
-			Document doc = ValidatingDocumentLoader.loadDocument(distributionsStream, XSD_PATH);
+			Document doc = ValidatingDocumentLoader.loadDocument(distributionsStream, DISTRIBUTIONS_XSD_PATH);
 			
 			final Element docElement = doc.getDocumentElement();
 			final NodeList elements = docElement.getElementsByTagName(DISTRIBUTION_SET_TAG);
 			for (int i = 0; i < elements.getLength(); i++) {
 				Element e = (Element)elements.item(i);
 				String type = e.getAttribute(ModelParametersImpl.TYPE_ATTR);
-				final DistributionSetLoader loader = distributionSetLoaders.get(type);
+				final CollectionLoader loader = collectionLoaders.get(type);
 				if (loader != null) {
-					loader.loadDistributionSet(e);
+					loader.loadCollection(e);
 				} else {
 					System.err.println("Error: Could not find loader for " + type);
 				}
@@ -73,16 +82,16 @@ public class ModelParametersImpl implements ModelParameters {
 	}
 	
 	private void testLatestFeature() {
-		connectorMaxPositioningDistances.stream().forEach((item) -> {
+		vehicleModels.stream().forEach((item) -> {
 			System.out.println(item.getName());
+			System.out.print("Total Length: ");
+			System.out.println(item.getTotalLength());
+			System.out.println();
 		});
-		final Distribution<Double> distr = connectorMaxPositioningDistances.getByUuid(
-				UUID.fromString("1a48383c-800c-46ac-8828-43d4c373332f"));
-		System.out.println(distr.getValue(0.47));
 	}
 
-	private Map<String, DistributionSetLoader> defineDistributionSetLoaders() {
-		Map<String, DistributionSetLoader> ret = new HashMap<>();
+	private Map<String, CollectionLoader> defineCollectionLoaders() {
+		Map<String, CollectionLoader> ret = new HashMap<>();
 		ret.put(ConnectorLinkSelectionBehaviorDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
 			connectorLinkSelectionBehaviors = 
 					new ConnectorLinkSelectionBehaviorDistributionCollection(from);
@@ -91,7 +100,7 @@ public class ModelParametersImpl implements ModelParameters {
 			connectorMaxPositioningDistances =
 					new ConnectorMaxPositioningDistanceDistributionCollection(from);
 		});
-		
+
 		/*
 		 * Add new distribution set loaders above this comment
 		 */
@@ -107,5 +116,10 @@ public class ModelParametersImpl implements ModelParameters {
 	@Override
 	public DistributionCollection<Double> getConnectorMaxPositioningDistances() {
 		return connectorMaxPositioningDistances;
+	}
+
+	@Override
+	public VehicleModelCollection getVehicleModels() {
+		return vehicleModels;
 	}
 }

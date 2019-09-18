@@ -18,11 +18,12 @@
  */
 package com.github.kjburns.traffic_simulation.parameters;
 
-public interface ModelParameters {
-	DistributionCollection<ConnectorLinkSelectionBehaviorEnum> getConnectorLinkSelectionBehaviors();
-	DistributionCollection<Double> getConnectorMaxPositioningDistances();
-	VehicleModelCollection getVehicleModels();
-	/*
-	 * Add new distribution set getters above this comment
-	 */
+import java.util.Iterator;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+public interface VehicleModelCollection {
+	VehicleModel getByUuid(UUID id);
+	Iterator<VehicleModel> iterator();
+	Stream<VehicleModel> stream();
 }
