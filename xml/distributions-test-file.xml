@@ -41,6 +41,19 @@
             <dp value="1023.5309" />
             <dp value="1756.4594" />
         </raw-empirical-distribution>
+        <binned-distribution name="Bin observations" uuid="0411cd51-b654-49a2-bd50-d577723a1236" aggression="negative">
+            <bin min-value="200" max-value="400" count="1" />
+            <bin min-value="400" max-value="600" count="0" />
+            <bin min-value="600" max-value="800" count="1" />
+            <bin min-value="800" max-value="1000" count="1" />
+            <bin min-value="1000" max-value="1200" count="2" />
+            <bin min-value="1200" max-value="1400" count="15" />
+            <bin min-value="1400" max-value="1600" count="13" />
+            <bin min-value="1600" max-value="1800" count="8" />
+            <bin min-value="1800" max-value="2000" count="4" />
+            <bin min-value="2000" max-value="2200" count="3" />
+            <bin min-value="2200" max-value="2400" count="2" />
+        </binned-distribution>
     </distribution-set>
     <distribution-set type="vehicle-models">
         <distribution name="Cars" uuid="a952fcb9-b7e3-4b79-a201-85094a6c67a7">

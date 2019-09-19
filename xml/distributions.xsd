@@ -36,10 +36,20 @@
             <xs:documentation>Used in a raw empirical distribution to note the correlation direction between value and aggression.</xs:documentation>
             <xs:documentation>'positive' means that higher values indicate higher aggression.</xs:documentation>
             <xs:documentation>'negative' means that higher values indicate lower aggression.</xs:documentation>
+            <xs:documentation>'none' means that there is no relationship between aggression and the value of the distribution.</xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:string">
             <xs:enumeration value="positive" />
             <xs:enumeration value="negative" />
+            <xs:enumeration value="none" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="bin-observation-count">
+        <xs:annotation>
+            <xs:documentation>Count of observations in a particular bin. This value must be a non-negative integer.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
     <!-- 
@@ -139,6 +149,43 @@
         <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
+    <xs:complexType name="binned-distribution-observation">
+        <xs:annotation>
+            <xs:documentation>A range of values with the number of observations in that range.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="min-value" type="xs:decimal" use="required">
+            <xs:annotation>
+                <xs:documentation>The minimum value of the bin</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-value" type="xs:decimal" use="required">
+            <xs:annotation>
+                <xs:documentation>The maximum value of the bin</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="count" type="bin-observation-count" use="required">
+            <xs:annotation>
+                <xs:documentation>The number of observations the bin</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="distribution-binned">
+        <xs:annotation>
+            <xs:documentation>A representation of a histogram. An example could be the output of an automatic vehicle counter that provides speeds in 5mph bins.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="bin" type="binned-distribution-observation" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>A bin in the histogram</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
     <xs:group name="real-number-distribution">
         <xs:annotation>
             <xs:documentation>A generalization of distributions that provide a number based on a probability.</xs:documentation>
@@ -147,6 +194,7 @@
             <xs:element name="empirical-distribution" type="distribution-empirical" />
             <xs:element name="normal-distribution" type="distribution-normal" />
             <xs:element name="raw-empirical-distribution" type="distribution-empirical-raw" />
+            <xs:element name="binned-distribution" type="distribution-binned" />
         </xs:choice>
     </xs:group>
 
