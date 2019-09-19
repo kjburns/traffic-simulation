@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+	<distribution name="Default" uuid="8726c413-15fd-47cf-8c57-762fdfd4153f">
+	    <share occurence="0.20" value="NEAREST"/>
+	    <share occurence="0.30" value="FARTHEST"/>
+	    <share occurence="0.30" value="BEST"/>
+	    <share occurence="0.20" value="RANDOM"/>
+	</distribution>
+</test>
