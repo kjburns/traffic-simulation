@@ -19,10 +19,9 @@
 package com.github.kjburns.traffic_simulation.parameters;
 
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.stream.Stream;
 
-public interface VehicleModel {
+public interface VehicleModel extends DistributableThing {
 	public interface VehicleUnit {
 		boolean hasTrailer();
 		Trailer getTrailer_rNull();
@@ -67,7 +66,6 @@ public interface VehicleModel {
 	 */
 	double getMaximumWidth();
 	String getName();
-	UUID getUuid();
 	/**
 	 * Gets the distance <u>in metres</u> from the front of the specified 
 	 * unit to the front of the lead vehicle.

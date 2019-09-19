@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+	<distribution name="Test Distribution" uuid="e945257c-56ed-44da-80d4-fd7252f1e60a">
+		<share
+			occurence="85"
+			value="cbc7d427-a5d6-4001-b8f4-bf13f05c8ca6"
+		/>
+		<share
+			occurence="5"
+			value="7cf24d4e-0844-420b-acb8-5661c727a23a"
+		/>
+		<share
+			occurence="10"
+			value="eaf74e42-d357-4297-a78e-7802c62fef24"
+		/>
+	</distribution>
+</test>

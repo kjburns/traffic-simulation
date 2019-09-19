@@ -50,6 +50,7 @@ public class ModelParametersImpl implements ModelParameters {
 	 */
 	private ConnectorLinkSelectionBehaviorDistributionCollection connectorLinkSelectionBehaviors = null;
 	private ConnectorMaxPositioningDistanceDistributionCollection connectorMaxPositioningDistances = null;
+	private VehicleModelDistributionCollection vehicleModelDistributions = null;
 	private VehicleModelCollection vehicleModels = null;
 
 	public ModelParametersImpl(ProjectInputStreamProvider isProvider) throws ParserConfigurationException, SAXException, IOException {
@@ -82,12 +83,6 @@ public class ModelParametersImpl implements ModelParameters {
 	}
 	
 	private void testLatestFeature() {
-		vehicleModels.stream().forEach((item) -> {
-			System.out.println(item.getName());
-			System.out.print("Total Length: ");
-			System.out.println(item.getTotalLength());
-			System.out.println();
-		});
 	}
 
 	private Map<String, CollectionLoader> defineCollectionLoaders() {
@@ -99,6 +94,9 @@ public class ModelParametersImpl implements ModelParameters {
 		ret.put(ConnectorMaxPositioningDistanceDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
 			connectorMaxPositioningDistances =
 					new ConnectorMaxPositioningDistanceDistributionCollection(from);
+		});
+		ret.put(VehicleModelDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
+			vehicleModelDistributions = new VehicleModelDistributionCollection(from, getVehicleModels());
 		});
 
 		/*
@@ -121,5 +119,10 @@ public class ModelParametersImpl implements ModelParameters {
 	@Override
 	public VehicleModelCollection getVehicleModels() {
 		return vehicleModels;
+	}
+
+	@Override
+	public DistributionCollection<VehicleModel> getVehicleModelDistributions() {
+		return vehicleModelDistributions;
 	}
 }
