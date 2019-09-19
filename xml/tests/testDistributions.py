@@ -1,5 +1,6 @@
 from lxml import etree
 from uuid import uuid4 as UUID
+from random import randint
 import unittest
 
 class DistributionSetConstants:
@@ -59,6 +60,27 @@ class RawEmpiricalDistributionConstants:
     AGGRESSION_VALUE_NEGATIVE = 'negative'
     DATA_POINT_TAG = 'dp'
     DATA_POINT_VALUE_ATTR = 'value'
+
+class BinnedDistributionConstants:
+    TAG = 'binned-distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    AGGRESSION_ATTR = 'aggression'
+    AGGRESSION_VALUE_POSITIVE = 'positive'
+    AGGRESSION_VALUE_NEGATIVE = 'negative'
+    AGGRESSION_VALUE_NONE = 'none'
+    BIN_TAG = 'bin'
+    BIN_MIN_VALUE_ATTR = 'min-value'
+    BIN_MAX_VALUE_ATTR = 'max-value'
+    BIN_COUNT_ATTR = 'count'
+
+def addBinnedDistributionBin(distr, minValue, maxValue, count):
+    binElement = etree.SubElement(distr, BinnedDistributionConstants.BIN_TAG)
+    binElement.attrib[BinnedDistributionConstants.BIN_MIN_VALUE_ATTR] = str(minValue)
+    binElement.attrib[BinnedDistributionConstants.BIN_MAX_VALUE_ATTR] = str(maxValue)
+    binElement.attrib[BinnedDistributionConstants.BIN_COUNT_ATTR] = str(count)
+
+    return binElement
 
 def addEnumDistributionShare(distr, occur, value):
     shareElement = etree.SubElement(distr, EnumDistributionShareConstants.TAG)
@@ -121,6 +143,27 @@ def createEmpiricalDistributionNode(name, valuesTuples):
             dp.attrib['desc'] = '85th percentile'
 
     return e 
+
+def createBinnedDistributionNode(name, valuesTuples, aggression):
+    e = etree.Element(BinnedDistributionConstants.TAG)
+    if (name is not None):
+        e.attrib[BinnedDistributionConstants.NAME_ATTR] = name
+    e.attrib[BinnedDistributionConstants.UUID_ATTR] = str(UUID())
+    e.attrib[BinnedDistributionConstants.AGGRESSION_ATTR] = aggression
+
+    for mapping in valuesTuples:
+        addBinnedDistributionBin(e, mapping[0], mapping[1], mapping[2])
+
+    return e
+
+def createCleanBinnedDistributionNode():
+    return createBinnedDistributionNode('A binned distribution', [
+        (0, 10, 2), 
+        (10, 20, 5), 
+        (20, 30, 10), 
+        (30, 40, 6), 
+        (40, 50, 3)
+    ], BinnedDistributionConstants.AGGRESSION_VALUE_NEGATIVE)
 
 def createRawEmpiricalDistributionNode(name, values, aggrDir):
     e = etree.Element(RawEmpiricalDistributionConstants.TAG)
@@ -191,6 +234,9 @@ class CleanDistributionsDocument:
         self.connectorMaxPositioningDistancesNode.append(
                 createRawEmpiricalDistributionNode('Observed LC Distances', values, 
                         RawEmpiricalDistributionConstants.AGGRESSION_VALUE_NEGATIVE))
+        bins = [ (0, 10, 2), (10, 20, 5), (20, 30, 10), (30, 40, 6), (40, 50, 3) ]
+        self.connectorMaxPositioningDistancesNode.append(
+                createBinnedDistributionNode('A binned distribution', bins, BinnedDistributionConstants.AGGRESSION_VALUE_NEGATIVE))
 
         self.vehicleModelsNode = etree.SubElement(
                 self.documentRoot, 
@@ -515,6 +561,140 @@ class TestsForEmpiricalDistributions(unittest.TestCase):
         observation.attrib['other-attribute'] = 'okay!'
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
+    
+class TestsForBinnedDistributions(unittest.TestCase):
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+    
+    def append(self, node):
+        self.doc.getConnectorMaxPositioningDistancesNode().append(node)
+
+    def testThatNameIsOptional(self):
+        node = createCleanBinnedDistributionNode()
+        node.attrib.pop(BinnedDistributionConstants.NAME_ATTR)
+        self.append(node)
+        self.assertTrue(self.doc.validate())
+
+    def testThatUuidIsRequired(self):
+        node = createCleanBinnedDistributionNode()
+        node.attrib.pop(BinnedDistributionConstants.UUID_ATTR)
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatUuidIsValidated(self):
+        node = createCleanBinnedDistributionNode()
+        node.attrib[BinnedDistributionConstants.UUID_ATTR] = "not a uuid"
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatAggressionDirectionIsRequired(self):
+        node = createCleanBinnedDistributionNode()
+        node.attrib.pop(BinnedDistributionConstants.AGGRESSION_ATTR)
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatOtherSubelementsAreBanned(self):
+        node = createCleanBinnedDistributionNode()
+        e = etree.Element('a-sub-element')
+        node.append(e)
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOtherAttributesAreOkay(self):
+        node = createCleanBinnedDistributionNode()
+        node.attrib['a-new-attribute'] = 'attribute value'
+        self.append(node)
+        self.assertTrue(self.doc.validate())
+
+    def testThatBinSubElementsAreBanned(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.append(etree.Element('a-sub-element'))
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatOtherBinAttributesAreOkay(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib['bin-name'] = 'aggressive folks'
+        self.append(node)
+        self.assertTrue(self.doc.validate())
+    
+    def testThatMinValueIsRequired(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib.pop(BinnedDistributionConstants.BIN_MIN_VALUE_ATTR)
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatMinValueMustBeNumeric(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib[BinnedDistributionConstants.BIN_MIN_VALUE_ATTR] = 'not a number'
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatMaxValueIsRequired(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib.pop(BinnedDistributionConstants.BIN_MAX_VALUE_ATTR)
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatMaxValueMustBeNumeric(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib[BinnedDistributionConstants.BIN_MAX_VALUE_ATTR] = 'not a number'
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatCountIsRequired(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib.pop(BinnedDistributionConstants.BIN_COUNT_ATTR)
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatCountMustBeNumeric(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib[BinnedDistributionConstants.BIN_COUNT_ATTR] = 'not a number'
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatCountMustBeNonnegative(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib[BinnedDistributionConstants.BIN_COUNT_ATTR] = '-5'
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatCountMayBeZero(self):
+        node = createCleanBinnedDistributionNode()
+        firstBin = node[0]
+        firstBin.attrib[BinnedDistributionConstants.BIN_COUNT_ATTR] = '0'
+        self.append(node)
+        self.assertTrue(self.doc.validate())
+    
+    def testThatBinCountMayNotBeZero(self):
+        node = createCleanBinnedDistributionNode()
+        node[:] = []
+        self.append(node)
+        self.assertFalse(self.doc.validate())
+
+    def testThatBinCountMayBeOne(self):
+        node = createCleanBinnedDistributionNode()
+        node[1:] = []
+        self.append(node)
+        self.assertTrue(self.doc.validate())
+    
+    def testThatBinCountMayBeOneThousand(self):
+        node = createCleanBinnedDistributionNode()
+        node[:] = []
+        for i in range(1000):
+            addBinnedDistributionBin(node, i * 10, (i + 1) * 10, randint(0, 10))
+        self.append(node)
+        self.assertTrue(self.doc.validate())
 
 class TestsForRawEmpiricalDistributions(unittest.TestCase):
     def setUp(self):
@@ -567,7 +747,7 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertTrue(self.doc.validate())
     
-    def testThatObservationSubAttributesAreBanned(self):
+    def testThatObservationSubElementsAreBanned(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node, 1234)
         etree.SubElement(dpNode, 'another-subelement')

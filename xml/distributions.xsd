@@ -36,10 +36,20 @@
             <xs:documentation>Used in a raw empirical distribution to note the correlation direction between value and aggression.</xs:documentation>
             <xs:documentation>'positive' means that higher values indicate higher aggression.</xs:documentation>
             <xs:documentation>'negative' means that higher values indicate lower aggression.</xs:documentation>
+            <xs:documentation>'none' means that there is no relationship between aggression and the value of the distribution.</xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:string">
             <xs:enumeration value="positive" />
             <xs:enumeration value="negative" />
+            <xs:enumeration value="none" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="bin-observation-count">
+        <xs:annotation>
+            <xs:documentation>Count of observations in a particular bin. This value must be a non-negative integer.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
     <!-- 
@@ -153,7 +163,7 @@
                 <xs:documentation>The maximum value of the bin</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="count" type="xs:integer" use="required">
+        <xs:attribute name="count" type="bin-observation-count" use="required">
             <xs:annotation>
                 <xs:documentation>The number of observations the bin</xs:documentation>
             </xs:annotation>
