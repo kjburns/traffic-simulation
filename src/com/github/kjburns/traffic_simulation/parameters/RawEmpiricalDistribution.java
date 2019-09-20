@@ -27,17 +27,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 final class RawEmpiricalDistribution extends AbstractDistribution<Double> {
-	public enum AggressionTrend {
-		/**
-		 * Higher aggression causes higher values
-		 */
-		POSITIVE,
-		/**
-		 * Higher aggression causes lower values
-		 */
-		NEGATIVE;
-	};
-	
 	public static class Factory {
 		private static final String AGGRESSION_ATTR_VALUE_NEGATIVE = "negative";
 		private static final String AGGRESSION_ATTR_VALUE_POSITIVE = "positive";
