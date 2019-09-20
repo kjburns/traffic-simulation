@@ -24,6 +24,7 @@ class RealNumberDistributionFactory {
 	private static final String NORMAL_DISTRIBUTION = "normal-distribution";
 	private static final String EMPIRICAL_DISTRIBUTION = "empirical-distribution";
 	private static final String RAW_EMPIRICAL_DISTRIBUTION = "raw-empirical-distribution";
+	private static final String BINNED_DISTRIBUTION = "binned-distribution";
 	
 	public static Distribution<Double> createDistribution(Element from) {
 		if (NORMAL_DISTRIBUTION.equals(from.getTagName())) {
@@ -36,6 +37,10 @@ class RealNumberDistributionFactory {
 		
 		if (RAW_EMPIRICAL_DISTRIBUTION.equals(from.getTagName())) {
 			return RawEmpiricalDistribution.Factory.fromXml(from);
+		}
+		
+		if (BINNED_DISTRIBUTION.equals(from.getTagName())) {
+			return BinnedDistribution.fromXml(from);
 		}
 		
 		return null;
