@@ -61,4 +61,14 @@
             <share occurence="0.30" value="eaf74e42-d357-4297-a78e-7802c62fef24" />
         </distribution>
     </distribution-set>
+    <distribution-set type="colors">
+        <distribution name="Rainbow" uuid="38c52e3a-1bf9-409f-b0dc-ec27f90f65cf">
+            <share occurence="1" value="#ff0000" />
+            <share occurence="1" value="#ff8000" />
+            <share occurence="1" value="#ffff00" />
+            <share occurence="1" value="#00b000" />
+            <share occurence="1" value="#0000ff" />
+            <share occurence="1" value="#ff00ff" />
+        </distribution>
+    </distribution-set>
 </distributions>
