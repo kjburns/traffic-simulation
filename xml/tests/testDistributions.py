@@ -207,6 +207,44 @@ def createVehicleModelsDistributionNode(attachTo, shareTuplesAsOccurence_Value, 
 
     return ret
 
+class ColorDistributionConstants:
+    DISTRIBUTION_TYPE = 'colors'
+    DISTRIBUTION_TAG = 'distribution'
+    DISTRIBUTION_NAME_ATTR = 'name'
+    DISTRIBUTION_UUID_ATTR = 'uuid'
+    SHARE_TAG = 'share'
+    SHARE_OCCURENCE_ATTR = 'occurence'
+    SHARE_VALUE_ATTR = 'value'
+
+def createAndAddColorShare(distr, occurence, color):
+    ret = etree.SubElement(distr, ColorDistributionConstants.SHARE_TAG, {
+        ColorDistributionConstants.SHARE_OCCURENCE_ATTR: str(occurence),
+        ColorDistributionConstants.SHARE_VALUE_ATTR: color,
+    })
+
+    return ret
+
+def createAndAddColorDistributionNode(attachTo, shareTuplesAsOccurence_Value, name = 'a color distribution'):
+    ret = etree.SubElement(attachTo, ColorDistributionConstants.DISTRIBUTION_TAG, {
+        ColorDistributionConstants.DISTRIBUTION_NAME_ATTR: name,
+        ColorDistributionConstants.DISTRIBUTION_UUID_ATTR: str(UUID()),
+    })
+
+    for shareTuple in shareTuplesAsOccurence_Value:
+        createAndAddColorShare(ret, shareTuple[0], shareTuple[1])
+
+    return ret
+
+def createAndAddCleanColorDistributionNode(attachTo):
+    return createAndAddColorDistributionNode(attachTo, [
+        [1, '#ff0000',],
+        [2, '#ff8000',],
+        [3, '#ffff00',],
+        [4, '#00ff00',],
+        [5, '#0000ff',],
+        [6, '#ff00ff',],
+    ])
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -254,6 +292,14 @@ class CleanDistributionsDocument:
             ]
         )
 
+        self.colorsNode = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: ColorDistributionConstants.DISTRIBUTION_TYPE,
+            }
+        )
+        createAndAddCleanColorDistributionNode(self.colorsNode)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -283,6 +329,9 @@ class CleanDistributionsDocument:
 
     def getVehicleModelsNode(self):
         return self.vehicleModelsNode
+    
+    def getColorsNode(self):
+        return self.colorsNode
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
@@ -324,6 +373,8 @@ class TestsForSimpleDataTypes(unittest.TestCase):
         node = createRawEmpiricalDistributionNode('test-distr', [0, 3, 4], 'invalid-direction')
         self.doc.getConnectorMaxPositioningDistancesNode().append(node)
         self.assertFalse(self.doc.validate())
+
+    # Color simple-type is tested with color distributions below
 
     #
     #   As more simple types are added to the parameters file, add more of these methods
@@ -1037,6 +1088,112 @@ class TestsForVehicleModelDistributions(unittest.TestCase):
         
         createVehicleModelsDistributionNode(self.doc.getVehicleModelsNode(), tuples)
         self.assertTrue(self.doc.validate())
+
+class TestsForColorDistributions(unittest.TestCase):
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()        
+        self.targetNode = self.doc.getColorsNode()
+
+    def testThatNameIsOptional(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        node.attrib.pop(ColorDistributionConstants.DISTRIBUTION_NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def testThatUuidIsRequired(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        node.attrib.pop(ColorDistributionConstants.DISTRIBUTION_UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatUuidIsValidated(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        node.attrib[ColorDistributionConstants.DISTRIBUTION_UUID_ATTR] = 'an invalid uuid'
+        self.assertFalse(self.doc.validate())
+
+    def testThatOtherSubelementsAreBanned(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        etree.SubElement(node, 'a-child-node')
+        self.assertFalse(self.doc.validate())
+
+    def testThatOtherAttributesAreOkay(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        node.attrib['another-attribute'] = 'value'
+        self.assertTrue(self.doc.validate())
+
+    def testThatShareSubElementsAreBanned(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        firstShare = node[0]
+        etree.SubElement(firstShare, 'a-child-node')
+        self.assertFalse(self.doc.validate())
+    
+    def testThatOtherShareAttributesAreOkay(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        firstShare = node[0]
+        firstShare.attrib['another-attribute'] = 'value'
+        self.assertTrue(self.doc.validate())
+    
+    def testThatColorIsValidated(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        createAndAddColorShare(node, 20, 'an invalid color')
+        self.assertFalse(self.doc.validate())
+    
+    def testThatLowerCaseColorsAreOkay(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        createAndAddColorShare(node, 20, '#abcdef')
+        self.assertTrue(self.doc.validate())
+    
+    def testThatUpperCaseColorsAreOkay(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        createAndAddColorShare(node, 20, '#ABCDEF')
+        self.assertTrue(self.doc.validate())
+    
+    def testThatShareCountCannotBeZero(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def testThatShareCountMayBeOne(self):
+        node = createAndAddCleanColorDistributionNode(self.targetNode)
+        node[:] = []
+        createAndAddColorShare(node, 30, "#000000")
+        self.assertTrue(self.doc.validate())
+    
+    def testThatOneThousandSharesIsOkay(self):
+        def createRandomShare():
+            red = hex(randint(16, 255))[2:]
+            green = hex(randint(16, 255))[2:]
+            blue = hex(randint(16, 255))[2:]
+            return [randint(0, 100), '#' + red + green + blue,]
+
+        shares = [createRandomShare() for _ in range(0, 1000)]
+        createAndAddColorDistributionNode(self.targetNode, shares) 
+        self.assertTrue(self.doc.validate())
+    
+    def testThatShareOccurenceMustBeNonnegative(self):
+        shares = [[-5, '#ffffff']]
+        createAndAddColorDistributionNode(self.targetNode, shares) 
+        self.assertFalse(self.doc.validate())
+
+    def testThatShareOccurenceMayBeZero(self):
+        shares = [[0, '#ffffff']]
+        createAndAddColorDistributionNode(self.targetNode, shares) 
+        self.assertTrue(self.doc.validate())
+    
+    def testThatShareOccurenceMustBeNumeric(self):
+        shares = [['five', '#ffffff']]
+        createAndAddColorDistributionNode(self.targetNode, shares) 
+        self.assertFalse(self.doc.validate())
+    
+    def testThatShareOccurenceIsRequired(self):
+        shares = [[5, '#ffffff']]
+        node = createAndAddColorDistributionNode(self.targetNode, shares) 
+        node[0].attrib.pop(ColorDistributionConstants.SHARE_OCCURENCE_ATTR)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatShareValueIsRequired(self):
+        shares = [[5, '#ffffff']]
+        node = createAndAddColorDistributionNode(self.targetNode, shares) 
+        node[0].attrib.pop(ColorDistributionConstants.SHARE_VALUE_ATTR)
+        self.assertFalse(self.doc.validate())
 
 if (__name__ == '__main__'):
     unittest.main()
