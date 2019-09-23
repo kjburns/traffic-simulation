@@ -911,6 +911,10 @@ class TestsForConnectorLinkSelectionBehaviorDistributions(unittest.TestCase):
         sub.attrib['another-element'] = 'ok!'
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertTrue(self.doc.validate())
+    
+    def testThatDistributionCountMayNotBeZero(self):
+        self.doc.getConnectorLinkSelectionBehaviorsNode()[:] = []
+        self.assertFalse(self.doc.validate())
 
 class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
     def setUp(self):
@@ -944,6 +948,10 @@ class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         node.attrib['new-attribute'] = 'banned'
         self.assertFalse(self.doc.validate())
+    
+    def testThatDistributionCountMayBeZero(self):
+        self.doc.getConnectorMaxPositioningDistancesNode()[:] = []
+        self.assertTrue(self.doc.validate())
 
 class TestsForVehicleModelDistributions(unittest.TestCase):
     def setUp(self):
@@ -1193,6 +1201,10 @@ class TestsForColorDistributions(unittest.TestCase):
         shares = [[5, '#ffffff']]
         node = createAndAddColorDistributionNode(self.targetNode, shares) 
         node[0].attrib.pop(ColorDistributionConstants.SHARE_VALUE_ATTR)
+        self.assertFalse(self.doc.validate())
+    
+    def testThatDistributionCountMayNotBeZero(self):
+        self.doc.getColorsNode()[:] = []
         self.assertFalse(self.doc.validate())
 
 if (__name__ == '__main__'):
