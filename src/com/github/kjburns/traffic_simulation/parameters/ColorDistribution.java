@@ -30,6 +30,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 class ColorDistribution extends AbstractDistribution<Color> {
+	public static final String TAG = "distribution";
 	private static final String SHARE_VALUE_ATTR = "value";
 	private static final String SHARE_OCCURENCE_ATTR = "occurence";
 	private static final String SHARE_TAG = "share";

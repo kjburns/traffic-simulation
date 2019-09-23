@@ -18,7 +18,10 @@
  */
 package com.github.kjburns.traffic_simulation.parameters;
 
+import java.awt.Color;
+
 public interface ModelParameters {
+	DistributionCollection<Color> getColorDistributions();
 	DistributionCollection<ConnectorLinkSelectionBehaviorEnum> getConnectorLinkSelectionBehaviors();
 	DistributionCollection<Double> getConnectorMaxPositioningDistances();
 	VehicleModelCollection getVehicleModels();
