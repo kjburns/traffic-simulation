@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test>
+  <distribution name="Rainbow" uuid="4f984cfa-6d8c-4fa0-98b4-eea0e393e1af">
+  	<share occurence="0" value="#ff0000" note="position 2; sum = 16711680" />
+  	<share occurence="1" value="#ff8000" note="position 4; sum = 16744448" />
+  	<share occurence="2" value="#ffff00" note="position 5; sum = 16776960" />
+  	<share occurence="3" value="#00ff00" note="position 1; sum = 65280" />
+  	<share occurence="4" value="#0000ff" note="position 0; sum = 255" />
+  	<share occurence="5" value="#ff00ff" note="position 3; sum = 16711935" />
+  </distribution>
+</test>
