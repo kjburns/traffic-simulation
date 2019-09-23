@@ -52,6 +52,14 @@
             <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="color">
+        <xs:annotation>
+            <xs:documentation>Hex-encoded color.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="#[a-fA-F0-9]{6}"/>
+        </xs:restriction>
+    </xs:simpleType>
     <!-- 
     Distribution types
     -->
@@ -283,6 +291,40 @@
     </xs:complexType>
 
     <!-- 
+    Color Distributions
+    -->
+    <xs:complexType name="color-share">
+        <xs:annotation>
+            <xs:documentation>A relation of relative occurence of a color. </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="occurence" type="enum-share-occurence" use="required">
+            <xs:annotation>
+                <xs:documentation>Relative number occurences of this color.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="color" use="required">
+            <xs:annotation>
+                <xs:documentation>Color represented by this share.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="color-distribution">
+        <xs:annotation>
+            <xs:documentation>A distribution of colors.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:annotation>
+                <xs:documentation>If a color appears multiple times, all the shares for that color will be added together.</xs:documentation>
+            </xs:annotation>
+            <xs:element name="share" type="color-share" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+
+    <!-- 
     The actual document!
     -->
     <xs:element name="distributions">
@@ -332,6 +374,20 @@
                             <xs:element name="distribution" type="vehicle-model-distribution" minOccurs="1" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="vehicle-models" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!--
+                Colors
+                -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Colors</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="color-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="colors" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>

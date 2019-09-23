@@ -18,6 +18,7 @@
  */
 package com.github.kjburns.traffic_simulation.parameters;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ public class ModelParametersImpl implements ModelParameters {
 	private ConnectorMaxPositioningDistanceDistributionCollection connectorMaxPositioningDistances = null;
 	private VehicleModelDistributionCollection vehicleModelDistributions = null;
 	private VehicleModelCollection vehicleModels = null;
+	private ColorDistributionCollection colors = null;
 
 	public ModelParametersImpl(ProjectInputStreamProvider isProvider) throws ParserConfigurationException, SAXException, IOException {
 		try(final InputStream vehicleModelsStream = isProvider.createInputStreamForVehicleModels()) {
@@ -98,6 +100,9 @@ public class ModelParametersImpl implements ModelParameters {
 		ret.put(VehicleModelDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
 			vehicleModelDistributions = new VehicleModelDistributionCollection(from, getVehicleModels());
 		});
+		ret.put(ColorDistributionCollection.DISTRIBUTION_TYPE_VALUE, (from) -> {
+			colors = new ColorDistributionCollection(from);
+		});
 
 		/*
 		 * Add new distribution set loaders above this comment
@@ -124,5 +129,10 @@ public class ModelParametersImpl implements ModelParameters {
 	@Override
 	public DistributionCollection<VehicleModel> getVehicleModelDistributions() {
 		return vehicleModelDistributions;
+	}
+
+	@Override
+	public DistributionCollection<Color> getColorDistributions() {
+		return colors;
 	}
 }
