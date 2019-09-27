@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vehicle-models units="metres" version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../xml/vehicle-models.xsd">
+	<vehicle-model 
+		length="3.821" 
+		uuid="0158ff26-ff92-40d1-b9a0-19fd89eabc1a" 
+		width="1.727"
+		name="2014 Mini Hatch 3-door"
+		source="https://en.wikipedia.org/wiki/Mini_Hatch"
+	/>
+	<vehicle-model 
+		width="1.695" 
+		uuid="06fe051f-679a-4082-b652-c043b31800d8" 
+		length="3.955" 
+		name="2015 Honda Fit"
+		source="https://en.wikipedia.org/wiki/Honda_Fit"
+	/>
+	<vehicle-model 
+		width="1.799" 
+		uuid="22e9001a-2d43-4499-9a94-4b564c7c6e95" 
+		length="4.662" 
+		name="2016 Honda Civic"
+		source="https://en.wikipedia.org/wiki/Honda_Civic_(tenth_generation)"
+	/>
+	<vehicle-model 
+		width="1.862" 
+		uuid="289dbb52-7706-481d-ab35-d9073d6a8a0a" 
+		length="4.882"
+		name="2018 Honda Accord"
+		source="https://en.wikipedia.org/wiki/Honda_Accord#Tenth_generation_(2017%E2%80%93present)" 
+	/>
+	<vehicle-model 
+		width="1.920" 
+		uuid="71890471-b781-4952-a358-e842d1fd6003" 
+		length="5.200"
+		name="2017 Genesis G90"
+		source="https://en.wikipedia.org/wiki/Genesis_G90" 
+	/>
+	<vehicle-model 
+		width="1.725" 
+		uuid="71a9e07f-a610-437d-8acb-28f15796dbb5" 
+		length="4.826"
+		name="1996 Chevy S-10 Short Bed"
+		source="https://en.wikipedia.org/wiki/Chevrolet_S-10" 
+	/>
+	<vehicle-model 
+		width="1.854" 
+		uuid="3009d384-3f09-4bcb-acc8-76177dc5c932" 
+		length="5.359"
+		name="2019 Ford Ranger"
+		source="https://en.wikipedia.org/wiki/Ford_Ranger_(fourth_generation)" 
+	/>
+	<vehicle-model 
+		width="2.029" 
+		uuid="4231f2af-8c61-48bf-babe-e75072b17aaa" 
+		length="5.3162"
+		name="2015 Ford F-150 Regular Cab"
+		source="https://en.wikipedia.org/wiki/Ford_F-Series_(thirteenth_generation)" 
+	/>
+	<vehicle-model
+		width="2.029" 
+		uuid="54c046ae-dcb0-46ad-b15a-10710e62eec5" 
+		length="6.363"
+		name="2015 Ford F-150 SuperCab with 8 ft box" 
+		source="https://en.wikipedia.org/wiki/Ford_F-Series_(thirteenth_generation)" 
+	/>
+	<vehicle-model
+		width="1.795" 
+		uuid="178efb3e-f197-48bd-85a0-0dac35d98bd3" 
+		length="4.360"
+		name="2019 Toyota C-HR"
+		source="https://en.wikipedia.org/wiki/Toyota_C-HR" 
+	/>
+	<vehicle-model 
+		width="1.855" 
+		uuid="409558c1-1830-485d-bc39-1d57419a6594"
+		length="4.595"
+		name="2019 Toyota Rav4"
+		source="https://en.wikipedia.org/wiki/Toyota_RAV4"
+	/>
+	<vehicle-model 
+		width="1.925" 
+		uuid="b1a6a649-0113-4a14-bc08-abd747f5e084" 
+		length="4.854"
+		name="2014 Toyota Highlander"
+		source="https://en.wikipedia.org/wiki/Toyota_Highlander"
+	/>
+	<vehicle-model
+		width="1.980"
+		uuid="e9487aec-fe38-4025-90d3-436db0e4baba" 
+		length="4.990"
+		name="2008 Toyota Land Cruiser"
+		source="https://en.wikipedia.org/wiki/Toyota_Land_Cruiser" 
+	/>
+	<vehicle-model 
+		width="2.029" 
+		uuid="61fa1251-12d3-41e5-bf80-cefbc0a2e45b" 
+		length="5.210"
+		name="2011 Toyota Sequoia"
+		source="https://en.wikipedia.org/wiki/Toyota_Sequoia"
+	/>
+	<vehicle-model 
+		width="1.986" 
+		uuid="db6f2897-b858-462b-98bf-7bb2bcd931d3" 
+		length="5.085"
+		name="2011 Toyota Sienna"
+		source="https://en.wikipedia.org/wiki/Toyota_Sienna"
+	/>
+	<vehicle-model 
+		width="2.0523" 
+		uuid="c1ff4978-4c11-4d04-bf85-8ef9471a600b" 
+		length="5.5321"
+		name="2014 Ford Transit (small)" 
+		source="https://en.wikipedia.org/wiki/Ford_Transit#Fourth_generation_(2013%E2%80%93present)"
+	/>
+	<vehicle-model 
+		width="2.126" 
+		uuid="b6e5d713-721d-46ef-a990-1447ffeb6639" 
+		length="6.7589"
+		name="2014 Ford Transit (large)"
+		source="https://en.wikipedia.org/wiki/Ford_Transit#Fourth_generation_(2013%E2%80%93present)"
+	/>
+	<vehicle-model 
+		width="2.59" 
+		uuid="77df7663-1e9f-43a0-a403-83e8a763558c" 
+		length="12.2"
+		articulation-point="10.9"
+		name="Novabus LFS Articulated Bus"
+	> 
+		<trailer 
+			length="9.3"
+			width="2.59"
+			towing-point="1.3"
+		/>
+	</vehicle-model>
+	<vehicle-model 
+		width="2.59" 
+		uuid="e86b3df2-fdbb-4907-b9e2-b17f76155a0f" 
+		length="12.2"
+		name="Novabus LFS HEV Bus" 
+	/>
+	<vehicle-model 
+		width="2.065" 
+		uuid="db4c11de-d707-4286-9ce6-c5fee97cc00e" 
+		length="5.0927" 
+		name="Isuzu NPR Small (Box Truck)"
+	/>
+	<vehicle-model 
+		width="2.065" 
+		uuid="e7e1dea0-05e3-4939-be01-5f58eb64e010" 
+		length="6.7945" 
+		name="Isuzu NPR Large (Box Truck)"
+	/>
+	<vehicle-model 
+		width="2.200" 
+		uuid="d0a99208-5a31-4744-a08d-ca47af7eabaa" 
+		length="7.875"
+		name="Isuzu FRR90 M (Box Truck)"
+	/>
+	<vehicle-model 
+		width="2.485" 
+		uuid="7c9f0966-ac84-4f34-8583-bb88aea0fa03" 
+		length="11.900"
+		name="Isuzu FVM34 W (Box Truck)"
+	/>
+	<vehicle-model 
+		width="2.5" 
+		uuid="57fa86d0-beec-4341-a564-2fdac619791e" 
+		length="6.1"
+		name="Semi with 40 ft trailer"
+		articulation-point="5.5"
+	>
+		<trailer towing-point="0.6" width="2.5" length="12.2" />
+	</vehicle-model>
+	<vehicle-model 
+		width="2.5" 
+		uuid="76450f0b-6b9f-413c-a7f1-adfc467e7c3f" 
+		length="6.1"
+		name="Semi with 53 ft trailer"
+		articulation-point="5.5"
+	>
+		<trailer towing-point="0.6" width="2.5" length="16.2" />
+	</vehicle-model>
+</vehicle-models>
