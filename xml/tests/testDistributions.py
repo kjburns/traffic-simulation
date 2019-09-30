@@ -317,7 +317,7 @@ class CleanDistributionsDocument:
         return self.documentRoot
 
     def validate(self) -> bool:
-        xsDoc = etree.parse('xml/distributions.xsd')
+        xsDoc = etree.parse('../distributions.xsd')
         xsd = etree.XMLSchema(xsDoc)
         return xsd.validate(self.getDocument())
 
