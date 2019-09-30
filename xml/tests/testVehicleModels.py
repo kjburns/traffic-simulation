@@ -86,7 +86,7 @@ class CleanVehicleModelsDocument:
         return self.documentRoot
 
     def validate(self) -> bool:
-        xsDoc = etree.parse('xml/vehicle-models.xsd')
+        xsDoc = etree.parse('../vehicle-models.xsd')
         xsd = etree.XMLSchema(xsDoc)
         return xsd.validate(self.getDocument())
     

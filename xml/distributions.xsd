@@ -357,7 +357,7 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:group ref="real-number-distribution" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:group ref="real-number-distribution" minOccurs="0" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="connector-max-positioning-distance" use="required" />
                     </xs:complexType>
