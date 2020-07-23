@@ -245,6 +245,29 @@ def createAndAddCleanColorDistributionNode(attachTo):
         [6, '#ff00ff',],
     ])
 
+def create_and_add_acceleration_distribution_node(attach_to, dp_tuples_as_v_m_sd, speed_unit, accel_unit, name = 'an accel distribution'):
+    main_attributes = {
+        AccelerationDistributionConstants.NAME_ATTR: name,
+        AccelerationDistributionConstants.UUID_ATTR: str(UUID()),
+        AccelerationDistributionConstants.SPEED_UNIT_ATTR: speed_unit,
+        AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit,
+    }
+    ret = etree.SubElement(attach_to, AccelerationDistributionConstants.DISTRIBUTION_TAG, attrib=main_attributes)
+    for dp in dp_tuples_as_v_m_sd:
+        dp_attributes = {
+            AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR: str(dp[0]),
+            AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR: str(dp[1]),
+            AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR: str(dp[2]),
+        }
+        etree.SubElement(ret, AccelerationDistributionConstants.DATAPOINT_TAG, attrib=dp_attributes)
+    
+    return ret
+
+def create_and_add_clean_accel_distribution_node(attach_to):
+    tuples = [(0, 10, 1), (60, 2, 0.2), (100, -0.5, 0.1)]
+    return create_and_add_acceleration_distribution_node(
+        attach_to, tuples, SpeedUnits.MILES_PER_HOUR, AccelerationUnits.FEET_PER_SECOND_SQUARED) 
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -299,6 +322,14 @@ class CleanDistributionsDocument:
             }
         )
         createAndAddCleanColorDistributionNode(self.colorsNode)
+
+        self.accel_functions_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: AccelerationDistributionConstants.DISTRIBUTION_TYPE,
+            }
+        )
+        create_and_add_clean_accel_distribution_node(self.accel_functions_node)
 
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
@@ -1206,6 +1237,32 @@ class TestsForColorDistributions(unittest.TestCase):
     def testThatDistributionCountMayNotBeZero(self):
         self.doc.getColorsNode()[:] = []
         self.assertFalse(self.doc.validate())
+
+class SpeedUnits:
+    METERS_PER_SECOND = 'meters-per-second'
+    KILOMETERS_PER_HOUR = 'kilometers-per-hour'
+    FEET_PER_SECOND = 'feet-per-second'
+    MILES_PER_HOUR = 'miles-per-hour'
+
+class AccelerationUnits:
+    METERS_PER_SECOND_SQUARED = 'meters-per-second-squared'
+    FEET_PER_SECOND_SQUARED = 'feet-per-second-squared'
+    G = 'g'
+
+class AccelerationDistributionConstants:
+    DISTRIBUTION_TAG = 'distribution'
+    DISTRIBUTION_TYPE = 'acceleration'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    SPEED_UNIT_ATTR = 'speed-unit'
+    ACCELERATION_UNIT_ATTR = 'acceleration-unit'
+    DATAPOINT_TAG = 'dp'
+    DATAPOINT_VELOCITY_ATTR = 'velocity'
+    DATAPOINT_MEAN_ATTR = 'mean'
+    DATAPOINT_STDEV_ATTR = 'standard-deviation'
+
+class AccelerationDistributionTests(unittest.TestCase):
+    pass
 
 if (__name__ == '__main__'):
     unittest.main()

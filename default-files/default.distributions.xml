@@ -51,4 +51,11 @@
       <share occurence="3" value="#ff8000"/>
     </distribution>
   </distribution-set>
+  <distribution-set type="acceleration">
+    <distribution uuid="16cab362-3de3-462f-b117-7238ec56199b" name="Passenger Cars" speed-unit="meters-per-second" acceleration-unit="meters-per-second-squared" >
+      <dp velocity="0" mean="2.5" standard-deviation="0.5" />
+      <dp velocity="30" mean="0.15" standard-deviation="0.05" />
+      <dp velocity="42" mean="-0.2" standard-deviation="0.05" />
+    </distribution>
+  </distribution-set>
 </distributions>
