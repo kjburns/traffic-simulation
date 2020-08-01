@@ -3,3 +3,4 @@ vs workspace.code-workspace
 xml/xs3p-master/
 .vscode/
 /bin/
+*.pyc

@@ -23,6 +23,14 @@
             <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="speed">
+        <xs:annotation>
+            <xs:documentation>Magnitude of speed. This value must be non-negative.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
     <xs:simpleType name="enum-share-occurence">
         <xs:annotation>
             <xs:documentation>Relative share to be used in an enumerable distribution. This value must be non-negative.</xs:documentation>
@@ -58,6 +66,21 @@
         </xs:annotation>
         <xs:restriction base="xs:string">
             <xs:pattern value="#[a-fA-F0-9]{6}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="speed-unit-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="meters-per-second" />
+            <xs:enumeration value="kilometers-per-hour" />
+            <xs:enumeration value="feet-per-second" />
+            <xs:enumeration value="miles-per-hour" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="acceleration-unit-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="meters-per-second-squared" />
+            <xs:enumeration value="feet-per-second-squared" />
+            <xs:enumeration value="g" />
         </xs:restriction>
     </xs:simpleType>
     <!-- 
@@ -324,6 +347,32 @@
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
 
+    <!--
+        Acceleration Distributions
+    -->
+    <xs:complexType name="acceleration-function-point">
+        <xs:attribute name="velocity" type="speed" use="required" />
+        <xs:attribute name="mean" type="xs:decimal" use="required" />
+        <xs:attribute name="standard-deviation" type="standard-deviation" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="acceleration-function">
+        <xs:annotation>
+            <xs:documentation>A relationship between a set of speeds and the acceleration at each of the speeds.</xs:documentation>
+            <xs:documentation>At each speed, the distribution of acceleration is given by a mean and a standard deviation.</xs:documentation>
+            <xs:documentation>In practice mean and standard deviation should be monotonic, but there is no way to enforce this.</xs:documentation>
+            <xs:documentation>Negative means are allowed because when combined with standard deviation the result could still be nonnegative.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="dp" type="acceleration-function-point" minOccurs="2" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="speed-unit" type="speed-unit-enum" use="required" />
+        <xs:attribute name="acceleration-unit" type="acceleration-unit-enum" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+
     <!-- 
     The actual document!
     -->
@@ -356,6 +405,7 @@
                         <xs:documentation>Background: Because vehicles generally have infinite knowledge of the network topology, they can make their lane changes as early as possible. In some instances, however, you may wish to limit the upstream lane change behavior for a particular connector. This distribution provides the maximum upstream positioning distance where applied to a connector.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
+                        <!-- FIXME needs units -->
                         <xs:sequence>
                             <xs:group ref="real-number-distribution" minOccurs="0" maxOccurs="unbounded" />
                         </xs:sequence>
@@ -388,6 +438,20 @@
                             <xs:element name="distribution" type="color-distribution" minOccurs="1" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="colors" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!--
+                    Acceleration functions
+                -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Acceleration Functions</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="acceleration-function" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="acceleration" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>

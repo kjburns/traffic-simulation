@@ -44,6 +44,10 @@ def createCollectionFilterer(collectionName):
     return filterer
 
 class ConnectorLinkSelectionBehaviorTests(DistributionsTestsBase):
+    #
+    # For this distribution set, not having duplicate uuids is adequate,
+    # as there are no external references to be resolved.
+    #
     def setUp(self):
         self.collection = self.getCollectionElement('connector-link-selection-behaviors')
 
@@ -52,6 +56,11 @@ class ConnectorLinkSelectionBehaviorTests(DistributionsTestsBase):
         self.assertEqual(max(uuidCounts.values()), 1)
 
 class ConnectorMaxPositioningDistanceTests(DistributionsTestsBase):
+    #
+    # For this distribution set, not having duplicate uuids is adequate,
+    # as there are no external references to be resolved.
+    # This distribution set may be empty.
+    #
     def setUp(self):
         self.collection = self.getCollectionElement('connector-max-positioning-distance')
 
@@ -64,6 +73,10 @@ class ConnectorMaxPositioningDistanceTests(DistributionsTestsBase):
             self.assertTrue(4 == 4)
 
 class VehicleModelDistributionTests(DistributionsTestsBase):
+    #
+    # For this distribution set, not having duplicate uuids is required,
+    # and external references to vehicle models must be resolved.
+    #
     def setUp(self):
         self.collection = self.getCollectionElement('vehicle-models')
         self.vehicles = etree.parse('default.vehicle-models.xml')
@@ -104,8 +117,24 @@ class VehicleModelDistributionTests(DistributionsTestsBase):
                 self.assertIsNotNone(veh)
     
 class ColorDistributionTests(DistributionsTestsBase):
+    #
+    # For this distribution set, not having duplicate uuids is adequate,
+    # as there are no external references to be resolved.
+    #
     def setUp(self):
         self.collection = self.getCollectionElement('colors')
+
+    def testThatNoUuidsAreDuplicated(self):
+        uuidCounts = self.getUuidCounts(self.collection)
+        self.assertEqual(max(uuidCounts.values()), 1)
+
+class AccelFunctionDistributionTests(DistributionsTestsBase):
+    #
+    # For this distribution set, not having duplicate uuids is adequate,
+    # as there are no external references to be resolved.
+    #
+    def setUp(self):
+        self.collection = self.getCollectionElement('acceleration')
 
     def testThatNoUuidsAreDuplicated(self):
         uuidCounts = self.getUuidCounts(self.collection)

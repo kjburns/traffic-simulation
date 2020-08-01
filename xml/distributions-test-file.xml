@@ -71,4 +71,10 @@
             <share occurence="1" value="#ff00ff" />
         </distribution>
     </distribution-set>
+    <distribution-set type="acceleration">
+        <distribution uuid="381fdda8-adc6-418d-b0d8-cffbfa2b5063" speed-unit="meters-per-second" acceleration-unit="g">
+            <dp velocity="0" mean=".3" standard-deviation=".1" />
+            <dp velocity="40" mean="-0.02" standard-deviation="0.02" />
+        </distribution>
+    </distribution-set>
 </distributions>
