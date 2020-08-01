@@ -354,6 +354,7 @@
         <xs:attribute name="velocity" type="speed" use="required" />
         <xs:attribute name="mean" type="xs:decimal" use="required" />
         <xs:attribute name="standard-deviation" type="standard-deviation" use="required" />
+        <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:complexType name="acceleration-function">
         <xs:annotation>
