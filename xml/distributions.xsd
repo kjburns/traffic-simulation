@@ -68,6 +68,14 @@
             <xs:pattern value="#[a-fA-F0-9]{6}"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="distance-unit-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="meters" />
+            <xs:enumeration value="kilometers" />
+            <xs:enumeration value="feet" />
+            <xs:enumeration value="miles" />
+        </xs:restriction>
+    </xs:simpleType>
     <xs:simpleType name="speed-unit-enum">
         <xs:restriction base="xs:string">
             <xs:enumeration value="meters-per-second" />
@@ -93,8 +101,6 @@
             <xs:documentation>Reversibility, set by the optional 'reverse' property, allows the CDF to be reversed, so that lower probabilities correspond to higher values and vice versa.</xs:documentation>
             <xs:documentation>Truncatability, set by the 'min-value' and 'max-value' properties, ensures that the distribution will provide logical minimum and/or maximum values. These properties are optional. If both are provided, the 'min-value' property should be less than the 'max-value' property, and the results are undefined if it is not.</xs:documentation>
         </xs:annotation>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
         <xs:attribute name="mean" type="xs:decimal" use="required" />
         <xs:attribute name="standard-deviation" type="standard-deviation" use="required" />
         <xs:attribute name="reverse" type="xs:boolean" default="false">
@@ -149,8 +155,6 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:complexType name="distribution-empirical-raw-observation">
@@ -175,8 +179,6 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
         <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
@@ -212,8 +214,6 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
         <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
@@ -228,6 +228,21 @@
             <xs:element name="binned-distribution" type="distribution-binned" />
         </xs:choice>
     </xs:group>
+    <xs:complexType name="distance-distribution">
+        <xs:sequence>
+            <xs:choice minOccurs="1" maxOccurs="1">
+                <xs:element name="empirical-distribution" type="distribution-empirical" />
+                <xs:element name="normal-distribution" type="distribution-normal" />
+                <xs:element name="raw-empirical-distribution" type="distribution-empirical-raw" />
+                <xs:element name="binned-distribution" type="distribution-binned" />
+            </xs:choice>
+            <xs:any processContents="skip" minOccurs="0" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="units" type="distance-unit-enum" use="required"/>
+        <xs:anyAttribute processContents="skip"/>
+    </xs:complexType>
 
     <!-- 
     Connector Link Selection Behaviors
@@ -405,9 +420,8 @@
                         <xs:documentation>Background: Because vehicles generally have infinite knowledge of the network topology, they can make their lane changes as early as possible. In some instances, however, you may wish to limit the upstream lane change behavior for a particular connector. This distribution provides the maximum upstream positioning distance where applied to a connector.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
-                        <!-- FIXME needs units -->
                         <xs:sequence>
-                            <xs:group ref="real-number-distribution" minOccurs="0" maxOccurs="unbounded" />
+                            <xs:element name="distribution" type="distance-distribution" minOccurs="0" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="connector-max-positioning-distance" use="required" />
                     </xs:complexType>
