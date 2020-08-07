@@ -57,5 +57,18 @@
       <dp velocity="30" mean="0.15" standard-deviation="0.05" />
       <dp velocity="42" mean="-0.2" standard-deviation="0.05" />
     </distribution>
+    <distribution uuid="6ac2aa3f-990d-4e6a-aead-bfd9142ed490" name="Medium Trucks" speed-unit="meters-per-second" acceleration-unit="meters-per-second-squared" >
+      <dp velocity="0" mean="0.95" standard-deviation="0.07" />
+      <dp velocity="9" mean="0.42" standard-deviation="0.05" />
+      <dp velocity="16" mean="0.11" standard-deviation="0.02" />
+      <dp velocity="25" mean="0.03" standard-deviation="0.015" />
+      <dp velocity="38" mean="-0.03" standard-deviation="0.01" />
+    </distribution>
+    <distribution uuid="80764b12-c76b-4bab-b05c-7223fe066bf3" name="Heavy Trucks" speed-unit="meters-per-second" acceleration-unit="meters-per-second-squared" >
+      <dp velocity="0" mean="0.65" standard-deviation="0.12" />
+      <dp velocity="7" mean="0.26" standard-deviation="0.11" />
+      <dp velocity="16" mean="0.07" standard-deviation="0.025" />
+      <dp velocity="38" mean="-0.015" standard-deviation="0.005" />
+    </distribution>
   </distribution-set>
 </distributions>
