@@ -228,20 +228,29 @@
             <xs:element name="binned-distribution" type="distribution-binned" />
         </xs:choice>
     </xs:group>
-    <xs:complexType name="distance-distribution">
+    <xs:complexType name="distribution-with-units" abstract="true">
         <xs:sequence>
-            <xs:choice minOccurs="1" maxOccurs="1">
-                <xs:element name="empirical-distribution" type="distribution-empirical" />
-                <xs:element name="normal-distribution" type="distribution-normal" />
-                <xs:element name="raw-empirical-distribution" type="distribution-empirical-raw" />
-                <xs:element name="binned-distribution" type="distribution-binned" />
-            </xs:choice>
+            <xs:group ref="real-number-distribution" minOccurs="1" maxOccurs="1"></xs:group>
             <xs:any processContents="skip" minOccurs="0" />
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="units" type="distance-unit-enum" use="required"/>
-        <xs:anyAttribute processContents="skip"/>
+    </xs:complexType>
+    <xs:complexType name="acceleration-distribution">
+        <xs:complexContent>
+            <xs:extension base="distribution-with-units">
+                <xs:attribute name="units" type="acceleration-unit-enum" use="required"/>
+                <xs:anyAttribute processContents="skip"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="distance-distribution">
+        <xs:complexContent>
+            <xs:extension base="distribution-with-units">
+                <xs:attribute name="units" type="distance-unit-enum" use="required"/>
+                <xs:anyAttribute processContents="skip"/>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <!-- 
