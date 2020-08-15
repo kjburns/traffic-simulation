@@ -477,6 +477,21 @@
                         <xs:attribute name="type" type="xs:string" fixed="acceleration" use="required" />
                     </xs:complexType>
                 </xs:element>
+                <!-- Maximum Deceleration Distributions -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Maximum Deceleration Distributions</xs:documentation>
+                        <xs:documentation>Regardless of values provided by a distribution, the minimum logical value is zero, and the minimum practical value is probably 1 m/s^2.</xs:documentation>
+                        <xs:documentation>There is no way to enforce this limit here, however, without breaking the distributions already defined.</xs:documentation>
+                        <xs:documentation>Therefore, the simulator should issue a warning when illogical values are encountered, perhaps by calculating the probability of an illogical value.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="acceleration-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="max-deceleration" use="required" />
+                    </xs:complexType>
+                </xs:element>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

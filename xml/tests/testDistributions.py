@@ -272,6 +272,22 @@ def create_distance_distribution_node(attach_to, units: str, distr_node: etree.E
 
     return ret
 
+def create_and_add_max_decel_distribution_node(attach_to, distribution, accel_unit, name='a max decel distribution'):
+    node = etree.SubElement(attach_to, MaxDecelerationDistributionConstants.DISTRIBUTION_TAG, {
+        MaxDecelerationDistributionConstants.NAME_ATTR: name,
+        MaxDecelerationDistributionConstants.UUID_ATTR: str(UUID()),
+        MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit
+    })
+
+    node.append(distribution)
+
+    return node
+
+def create_and_add_clean_max_decel_distribution_node(attach_to):
+    distr = createCleanNormalDistributionNode()
+
+    return create_and_add_max_decel_distribution_node(attach_to, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -336,6 +352,11 @@ class CleanDistributionsDocument:
         )
         create_and_add_clean_accel_distribution_node(self.accel_functions_node)
 
+        self.max_decel_distributions_node = etree.SubElement(self.documentRoot, DistributionSetConstants.TAG, {
+            DistributionSetConstants.TYPE_ATTR: MaxDecelerationDistributionConstants.DISTRIBUTION_TYPE,
+        })
+        create_and_add_clean_max_decel_distribution_node(self.max_decel_distributions_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -371,6 +392,9 @@ class CleanDistributionsDocument:
 
     def get_accelerations_node(self):
         return self.accel_functions_node
+
+    def get_max_decelerations_node(self):
+        return self.max_decel_distributions_node
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
@@ -1415,6 +1439,130 @@ class TestsForAccelerationDistributions(unittest.TestCase):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
         dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
         dp.attrib['another-attribute'] = '-5'
+        self.assertTrue(self.doc.validate())
+
+class MaxDecelerationDistributionConstants:
+    DISTRIBUTION_TAG = 'distribution'
+    DISTRIBUTION_TYPE = 'max-deceleration'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    ACCELERATION_UNIT_ATTR = 'units'
+
+class TestsForMaxDecelerations(unittest.TestCase):
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_max_decelerations_node()
+    
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        node.attrib.pop(MaxDecelerationDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_name_can_be_blank(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        node.attrib[MaxDecelerationDistributionConstants.NAME_ATTR] = ''
+        self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        node.attrib.pop(MaxDecelerationDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_uuid_is_being_verified(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        node.attrib[MaxDecelerationDistributionConstants.UUID_ATTR] = ''
+        self.assertFalse(self.doc.validate())
+        node.attrib[MaxDecelerationDistributionConstants.UUID_ATTR] = 'not a valid uuid'
+        self.assertFalse(self.doc.validate())
+        node.attrib[MaxDecelerationDistributionConstants.UUID_ATTR] = 'b8ce2cf0-a220-41eb-835c-gd926032d450' # has a g
+        self.assertFalse(self.doc.validate())
+        node.attrib[MaxDecelerationDistributionConstants.UUID_ATTR] = 'b8ce2cf0-a220-41eb-835c-fd926032d450' # proper uuid
+        self.assertTrue(self.doc.validate())
+
+    def test_that_units_is_required(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        node.attrib.pop(MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_units_is_verified(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        values_and_results = [
+            (AccelerationUnits.FEET_PER_SECOND_SQUARED, True),
+            (AccelerationUnits.METERS_PER_SECOND_SQUARED, True),
+            (AccelerationUnits.G, True),
+            ('', False),
+            ('Gs', False),
+        ]
+        for (value, result) in values_and_results:
+            node.attrib[MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = value
+            self.assertEqual(self.doc.validate(), result)
+
+    def test_that_other_attributes_are_allowed(self):
+        node = create_and_add_clean_max_decel_distribution_node(self.target_node)
+        node.attrib['other-attribute'] = 'other value'
+        self.assertTrue(self.doc.validate())
+
+    def test_that_normal_distribution_is_ok(self):
+        distr = createCleanNormalDistributionNode()
+        target = self.doc.get_max_decelerations_node()
+        node = create_and_add_max_decel_distribution_node(target, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_empirical_distribution_is_ok(self):
+        distr = createCleanEmpiricalDistributionNode()
+        target = self.doc.get_max_decelerations_node()
+        node = create_and_add_max_decel_distribution_node(target, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_raw_empirical_distribution_is_ok(self):
+        distr = createRawEmpiricalDistributionNode([5, 6, 3, 6, 3, 7], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
+        target = self.doc.get_max_decelerations_node()
+        node = create_and_add_max_decel_distribution_node(target, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_binned_distribution_is_ok(self):
+        distr = createCleanBinnedDistributionNode()
+        target = self.doc.get_max_decelerations_node()
+        node = create_and_add_max_decel_distribution_node(target, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_distribution_is_required(self):
+        distr = etree.Element('not-a-distribution')
+        target = self.doc.get_max_decelerations_node()
+        node = create_and_add_max_decel_distribution_node(target, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_other_subelements_are_ok(self):
+        distr = createCleanBinnedDistributionNode()
+        target = self.doc.get_max_decelerations_node()
+        node = create_and_add_max_decel_distribution_node(target, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
+        etree.SubElement(node, 'another-element')
+        self.assertTrue(self.doc.validate())
+
+    def test_that_distribution_set_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == MaxDecelerationDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_set_must_be_unique(self):
+        node = etree.SubElement(self.doc.getDocumentRoot(), DistributionSetConstants.TAG, {
+            DistributionSetConstants.TYPE_ATTR: MaxDecelerationDistributionConstants.DISTRIBUTION_TYPE,
+        })
+        create_and_add_clean_max_decel_distribution_node(node)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_not_be_zero(self):
+        self.doc.get_max_decelerations_node()[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        target_parent = self.doc.get_max_decelerations_node()
+        for _ in range(1, 1000):
+            create_and_add_clean_max_decel_distribution_node(target_parent)
         self.assertTrue(self.doc.validate())
 
 if (__name__ == '__main__'):

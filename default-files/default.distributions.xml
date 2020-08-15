@@ -71,4 +71,18 @@
       <dp velocity="38" mean="-0.015" standard-deviation="0.005" />
     </distribution>
   </distribution-set>
+  <distribution-set type="max-deceleration">
+    <distribution uuid="4572b89f-2414-4b5c-860c-1dc1dab3c64c" name="Passenger Cars" units="meters-per-second-squared">
+      <empirical-distribution>
+        <dp prob="0" val="6.9" />
+        <dp prob="1.0" val="8.5" />
+      </empirical-distribution>
+    </distribution>
+    <distribution uuid="1c01e0e7-e3e1-4ee9-a142-94c61006b2b6" name="Trucks" units="feet-per-second-squared">
+      <empirical-distribution>
+        <dp prob="0" val="20" />
+        <dp prob="1.0" val="22.5" />
+      </empirical-distribution>
+    </distribution>
+  </distribution-set>
 </distributions>
