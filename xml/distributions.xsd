@@ -91,6 +91,12 @@
             <xs:enumeration value="g" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="zero-to-one">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+            <xs:maxInclusive value="1" />
+        </xs:restriction>
+    </xs:simpleType>
     <!-- 
     Distribution types
     -->
@@ -252,6 +258,42 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="fractional-normal-distribution">
+        <xs:annotation>
+            <xs:documentation>For a normal distribution that is guaranteed to have bounds [0, 1]</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:restriction base="distribution-normal">
+                <xs:attribute name="min-value" type="xs:decimal" fixed="0" />
+                <xs:attribute name="max-value" type="xs:decimal" fixed="1" />
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="fractional-empirical-distribution-point">
+        <xs:complexContent>
+            <xs:restriction base="distribution-empirical-observation">
+                <xs:attribute name="val" type="zero-to-one" use="required" />
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="fractional-empirical-distribution">
+        <xs:annotation>
+            <xs:documentation>For an empirical distribution that is guaranteed to have data points in the range [0, 1]</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:restriction base="distribution-empirical">
+                <xs:sequence>
+                    <xs:element name="dp" type="fractional-empirical-distribution-point" minOccurs="1" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:group name="fractional-distribution">
+        <xs:choice>
+            <xs:element name="normal-distribution" type="fractional-normal-distribution"/>
+            <xs:element name="empirical-distribution" type="fractional-empirical-distribution"/>
+        </xs:choice>
+    </xs:group>
 
     <!-- 
     Connector Link Selection Behaviors
