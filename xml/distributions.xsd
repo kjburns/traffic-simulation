@@ -412,6 +412,7 @@
                 <xs:element name="distribution-set">
                     <xs:annotation>
                         <xs:documentation>Connector Link Selection Behaviors</xs:documentation>
+                        <xs:documentation>The value of this distribution is determined by the vehicle's random parameter.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
@@ -427,6 +428,7 @@
                     <xs:annotation>
                         <xs:documentation>Connector Maximum Positioning Distances</xs:documentation>
                         <xs:documentation>Background: Because vehicles generally have infinite knowledge of the network topology, they can make their lane changes as early as possible. In some instances, however, you may wish to limit the upstream lane change behavior for a particular connector. This distribution provides the maximum upstream positioning distance where applied to a connector.</xs:documentation>
+                        <xs:documentation>The value of this distribution is determined by the vehicle's aggression parameter (negative correlation).</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
@@ -469,6 +471,7 @@
                 <xs:element name="distribution-set">
                     <xs:annotation>
                         <xs:documentation>Acceleration Functions</xs:documentation>
+                        <xs:documentation>Acceleration is a characteristic of the vehicle determined by its random parameter.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
@@ -484,6 +487,7 @@
                         <xs:documentation>Regardless of values provided by a distribution, the minimum logical value is zero, and the minimum practical value is probably 1 m/s^2.</xs:documentation>
                         <xs:documentation>There is no way to enforce this limit here, however, without breaking the distributions already defined.</xs:documentation>
                         <xs:documentation>Therefore, the simulator should issue a warning when illogical values are encountered, perhaps by calculating the probability of an illogical value.</xs:documentation>
+                        <xs:documentation>Maximum deceleration is a characteristic of the vehicle determined by its random parameter.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
