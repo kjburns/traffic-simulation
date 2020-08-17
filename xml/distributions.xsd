@@ -288,12 +288,20 @@
             </xs:restriction>
         </xs:complexContent>
     </xs:complexType>
-    <xs:group name="fractional-distribution">
+    <xs:group name="fractional-distribution-group">
         <xs:choice>
             <xs:element name="normal-distribution" type="fractional-normal-distribution"/>
             <xs:element name="empirical-distribution" type="fractional-empirical-distribution"/>
         </xs:choice>
     </xs:group>
+    <xs:complexType name="fractional-distribution">
+        <xs:sequence>
+            <xs:group ref="fractional-distribution-group" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="optional" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
 
     <!-- 
     Connector Link Selection Behaviors
@@ -536,6 +544,16 @@
                             <xs:element name="distribution" type="acceleration-distribution" minOccurs="1" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="max-deceleration" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!-- Desired Acceleration Fractions -->
+                <xs:element name="distribution-set">
+                    <!-- TODO documentation -->
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="fractional-distribution" minOccurs="1" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="desired-acceleration-fractions" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>

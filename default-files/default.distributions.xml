@@ -85,4 +85,18 @@
       </empirical-distribution>
     </distribution>
   </distribution-set>
+  <distribution-set type="desired-acceleration-fractions">
+    <distribution uuid="7cc61b57-84b8-4c0c-a8ea-975c41cfb9da" name="Passenger Cars &amp; Medium Trucks">
+      <empirical-distribution>
+        <dp prob="0" val="0.6" />
+        <dp prob="1" val="1.0" />
+      </empirical-distribution>
+    </distribution>
+    <distribution uuid="0b0facf1-574c-458f-99ee-a06c4a82c348" name="Heavy Trucks">
+      <empirical-distribution>
+        <dp prob="0" val="0.9" />
+        <dp prob="1" val="1.0" />
+      </empirical-distribution>
+    </distribution>
+  </distribution-set>
 </distributions>
