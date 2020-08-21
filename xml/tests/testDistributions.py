@@ -288,6 +288,51 @@ def create_and_add_clean_max_decel_distribution_node(attach_to):
 
     return create_and_add_max_decel_distribution_node(attach_to, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
 
+class NormalFractionalDistributionConstants(NormalDistributionConstants):
+    TAG = 'normal-distribution'
+
+def create_normal_fractional_distribution_node(mean: float, standard_deviation: float):
+    ret = etree.Element(NormalFractionalDistributionConstants.TAG, {
+        NormalFractionalDistributionConstants.MEAN_ATTR: str(mean),
+        NormalFractionalDistributionConstants.SD_ATTR: str(standard_deviation),
+        NormalFractionalDistributionConstants.MIN_VALUE_ATTR: '0',
+        NormalFractionalDistributionConstants.MAX_VALUE_ATTR: '1',
+    })
+
+    return ret
+
+class EmpiricalFractionDistributionConstants(EmpiricalDistributionConstants):
+    TAG = 'empirical-distribution'
+
+def create_empirical_fractional_distribution_node(dp_tuples_as_prob_val):
+    ret = etree.Element(EmpiricalFractionDistributionConstants.TAG)
+
+    for dp in dp_tuples_as_prob_val:
+        addEmpiricalDataPoint(ret, dp[0], dp[1])
+
+    return ret
+
+class DesiredAccelerationFractionDistributionConstants:
+    DISTRIBUTION_TYPE = 'desired-acceleration-fractions'
+    TAG = 'distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+
+def create_and_add_desired_accel_fraction_node(attach_to, distribution, name='a desired accel fraction distribution'):
+    ret = etree.SubElement(attach_to, DesiredAccelerationFractionDistributionConstants.TAG, {
+        DesiredAccelerationFractionDistributionConstants.NAME_ATTR: name,
+        DesiredAccelerationFractionDistributionConstants.UUID_ATTR: str(UUID()),
+    })
+    ret.append(distribution)
+
+    return ret
+
+def create_and_add_clean_desired_accel_fraction_node(attach_to):
+    distr = create_normal_fractional_distribution_node(0.5, 0.15)
+    ret = create_and_add_desired_accel_fraction_node(attach_to, distr)
+
+    return ret
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -357,6 +402,14 @@ class CleanDistributionsDocument:
         })
         create_and_add_clean_max_decel_distribution_node(self.max_decel_distributions_node)
 
+        self.desired_accel_fractions_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: DesiredAccelerationFractionDistributionConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_desired_accel_fraction_node(self.desired_accel_fractions_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -395,6 +448,9 @@ class CleanDistributionsDocument:
 
     def get_max_decelerations_node(self):
         return self.max_decel_distributions_node
+
+    def get_desired_accel_fractions_node(self):
+        return self.desired_accel_fractions_node
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
@@ -1564,6 +1620,11 @@ class TestsForMaxDecelerations(unittest.TestCase):
         for _ in range(1, 1000):
             create_and_add_clean_max_decel_distribution_node(target_parent)
         self.assertTrue(self.doc.validate())
+
+class TestsForDesiredAccelerationFractions(unittest.TestCase): 
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_desired_accel_fractions_node()
 
 if (__name__ == '__main__'):
     unittest.main()
