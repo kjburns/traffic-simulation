@@ -333,6 +333,27 @@ def create_and_add_clean_desired_accel_fraction_node(attach_to):
 
     return ret
 
+class DesiredDecelerationFractionDistributionConstants:
+    DISTRIBUTION_TYPE = 'desired-deceleration-fractions'
+    TAG = 'distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+
+def create_and_add_desired_decel_fraction_node(attach_to, distribution, name="a desired decel fraction distribution"):
+    ret = etree.SubElement(attach_to, DesiredDecelerationFractionDistributionConstants.TAG, {
+        DesiredDecelerationFractionDistributionConstants.NAME_ATTR: name,
+        DesiredDecelerationFractionDistributionConstants.UUID_ATTR: str(UUID())
+    })
+    ret.append(distribution)
+
+    return ret
+
+def create_and_add_clean_desired_decel_fraction_node(attach_to):
+    distr = create_normal_fractional_distribution_node(0.5, 0.15)
+    ret = create_and_add_desired_decel_fraction_node(attach_to, distr)
+
+    return ret
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -410,6 +431,14 @@ class CleanDistributionsDocument:
         )
         create_and_add_clean_desired_accel_fraction_node(self.desired_accel_fractions_node)
 
+        self.desired_decel_fractions_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: DesiredDecelerationFractionDistributionConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_desired_decel_fraction_node(self.desired_decel_fractions_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -451,6 +480,9 @@ class CleanDistributionsDocument:
 
     def get_desired_accel_fractions_node(self):
         return self.desired_accel_fractions_node
+
+    def get_desired_decel_fractions_node(self):
+        return self.desired_decel_fractions_node
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
