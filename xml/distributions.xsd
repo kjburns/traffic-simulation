@@ -264,8 +264,8 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:restriction base="distribution-normal">
-                <xs:attribute name="min-value" type="xs:decimal" fixed="0" />
-                <xs:attribute name="max-value" type="xs:decimal" fixed="1" />
+                <xs:attribute name="min-value" type="xs:decimal" fixed="0" use="required"/>
+                <xs:attribute name="max-value" type="xs:decimal" fixed="1" use="required"/>
             </xs:restriction>
         </xs:complexContent>
     </xs:complexType>
@@ -552,6 +552,7 @@
                         <xs:documentation>Desired Acceleration Fractions</xs:documentation>
                         <xs:documentation>This fractional distribution specifies what fraction of maximum acceleration the car will use.</xs:documentation>
                         <xs:documentation>The vehicle's desired acceleration fraction is determined by its aggression parameter.</xs:documentation>
+                        <xs:documentation>Distributions that are not monotonic-increasing should issue a simulator warning.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
