@@ -1752,10 +1752,88 @@ class TestsForDesiredAccelerationFractions(unittest.TestCase):
             distr.attrib[NormalFractionalDistributionConstants.MAX_VALUE_ATTR] = value
             self.assertEqual(expected_result, self.doc.validate())
 
-    def test_that_reverse_is_ok(self):
-        # Desired acceleration fraction ignores 'reverse'
-        # TODO Finish This
-        pass
+    def test_that_normal_distribution_reverse_is_ok(self):
+        # Because acceleration fraction distributions that are not monotonic-increasing will generate simulator warnings,
+        # the use of reverse on normal distributions is not expected. Nonetheless, it is ok. It may be useful in other
+        # places where fractional distributions are used.
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        if (NormalFractionalDistributionConstants.REVERSE_ATTR in distr.attrib):
+            distr.attrib.pop(NormalFractionalDistributionConstants.REVERSE_ATTR)
+        self.assertTrue(self.doc.validate())
+
+        distr.attrib[NormalFractionalDistributionConstants.REVERSE_ATTR] = 'true'
+        self.assertTrue(self.doc.validate())
+
+    def test_normal_distribution_reverse_values(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+
+        value_tuples = [
+            ('true', True),
+            ('false', True),
+            ('', False),
+            ('non-boolean', False),
+            ('1', True),
+            ('0', True),
+            ('2', False),
+        ]
+        for (value, expected_result) in value_tuples:
+            distr.attrib[NormalFractionalDistributionConstants.REVERSE_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_empirical_distribution_datapoint_probabilities(self):
+        dp_tuples_start = [(0.0, 0.3), (1.0, 0.9)]
+        dp_tuple_ends = [
+            ((0.5, 0.8), True),
+            ((-0.4, 0.8), False),
+            ((1.4, 0.8), False),
+            (('not a number', 0.8), False),
+            ((0.0, 0.8), True), # does not check for duplicate probabilities
+        ]
+        for (dp_tuple, expected_result) in dp_tuple_ends:
+            tuples = dp_tuples_start.copy()
+            tuples.append(dp_tuple)
+            distr = create_empirical_fractional_distribution_node(tuples)
+            self.target_node[:] = []
+            create_and_add_desired_accel_fraction_node(self.target_node, distr)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_empirical_distribution_datapoint_values(self):
+        dp_tuples_start = [(0.0, 0.3), (1.0, 0.9)]
+        dp_tuple_ends = [
+            ((0.5, 0.8), True),
+            ((0.5, -0.3), False),
+            ((0.5, 1.8), False),
+            ((0.5, 'not a number'), False),
+            ((0.5, 'NaN'), False)
+        ]
+        for (dp_tuple, expected_result) in dp_tuple_ends:
+            tuples = dp_tuples_start.copy()
+            tuples.append(dp_tuple)
+            distr = create_empirical_fractional_distribution_node(tuples)
+            self.target_node[:] = []
+            create_and_add_desired_accel_fraction_node(self.target_node, distr)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_distribution_set_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == DesiredAccelerationFractionDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_not_be_zero(self):
+        self.target_node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        for _ in range(1, 1000):
+            node = create_and_add_clean_desired_accel_fraction_node(self.target_node)
+        
+        self.assertTrue(self.doc.validate())
 
 if (__name__ == '__main__'):
     unittest.main()
