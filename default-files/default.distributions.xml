@@ -99,4 +99,12 @@
       </empirical-distribution>
     </distribution>
   </distribution-set>
+  <distribution-set type="desired-deceleration-fractions">
+    <distribution uuid="ae211612-6186-43c6-b2b9-82df2d89cd5a" name="All Vehicles">
+      <empirical-distribution>
+        <dp prob="0" val="0.5" />
+        <dp prob="1" val="0.8" />
+      </empirical-distribution>
+    </distribution>
+  </distribution-set>
 </distributions>

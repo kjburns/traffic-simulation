@@ -550,7 +550,7 @@
                 <xs:element name="distribution-set">
                     <xs:annotation>
                         <xs:documentation>Desired Acceleration Fractions</xs:documentation>
-                        <xs:documentation>This fractional distribution specifies what fraction of maximum acceleration the car will use.</xs:documentation>
+                        <xs:documentation>This fractional distribution specifies what fraction of maximum acceleration the vehicle will use.</xs:documentation>
                         <xs:documentation>The vehicle's desired acceleration fraction is determined by its aggression parameter.</xs:documentation>
                         <xs:documentation>Distributions that are not monotonic-increasing should issue a simulator warning.</xs:documentation>
                     </xs:annotation>
@@ -559,6 +559,21 @@
                             <xs:element name="distribution" type="fractional-distribution" minOccurs="1" maxOccurs="unbounded"/>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="desired-acceleration-fractions" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!-- Desired Deceleration Fractions -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Desired Deceleration Fractions</xs:documentation>
+                        <xs:documentation>This fractional distribution specifies what fraction of maximum deceleration the vehicle will use.</xs:documentation>
+                        <xs:documentation>The vehicle's desired deceleration fraction is determined by its aggression parameter.</xs:documentation>
+                        <xs:documentation>Distributions that are not monotonic-increasing should issue a simulator warning.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="fractional-distribution" minOccurs="1" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="desired-deceleration-fractions" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
