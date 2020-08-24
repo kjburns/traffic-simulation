@@ -288,6 +288,72 @@ def create_and_add_clean_max_decel_distribution_node(attach_to):
 
     return create_and_add_max_decel_distribution_node(attach_to, distr, AccelerationUnits.METERS_PER_SECOND_SQUARED)
 
+class NormalFractionalDistributionConstants(NormalDistributionConstants):
+    TAG = 'normal-distribution'
+
+def create_normal_fractional_distribution_node(mean: float, standard_deviation: float):
+    ret = etree.Element(NormalFractionalDistributionConstants.TAG, {
+        NormalFractionalDistributionConstants.MEAN_ATTR: str(mean),
+        NormalFractionalDistributionConstants.SD_ATTR: str(standard_deviation),
+        NormalFractionalDistributionConstants.MIN_VALUE_ATTR: '0',
+        NormalFractionalDistributionConstants.MAX_VALUE_ATTR: '1',
+    })
+
+    return ret
+
+class EmpiricalFractionDistributionConstants(EmpiricalDistributionConstants):
+    TAG = 'empirical-distribution'
+
+def create_empirical_fractional_distribution_node(dp_tuples_as_prob_val):
+    ret = etree.Element(EmpiricalFractionDistributionConstants.TAG)
+
+    for dp in dp_tuples_as_prob_val:
+        addEmpiricalDataPoint(ret, dp[0], dp[1])
+
+    return ret
+
+class DesiredAccelerationFractionDistributionConstants:
+    DISTRIBUTION_TYPE = 'desired-acceleration-fractions'
+    TAG = 'distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+
+def create_and_add_desired_accel_fraction_node(attach_to, distribution, name='a desired accel fraction distribution'):
+    ret = etree.SubElement(attach_to, DesiredAccelerationFractionDistributionConstants.TAG, {
+        DesiredAccelerationFractionDistributionConstants.NAME_ATTR: name,
+        DesiredAccelerationFractionDistributionConstants.UUID_ATTR: str(UUID()),
+    })
+    ret.append(distribution)
+
+    return ret
+
+def create_and_add_clean_desired_accel_fraction_node(attach_to):
+    distr = create_normal_fractional_distribution_node(0.5, 0.15)
+    ret = create_and_add_desired_accel_fraction_node(attach_to, distr)
+
+    return ret
+
+class DesiredDecelerationFractionDistributionConstants:
+    DISTRIBUTION_TYPE = 'desired-deceleration-fractions'
+    TAG = 'distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+
+def create_and_add_desired_decel_fraction_node(attach_to, distribution, name="a desired decel fraction distribution"):
+    ret = etree.SubElement(attach_to, DesiredDecelerationFractionDistributionConstants.TAG, {
+        DesiredDecelerationFractionDistributionConstants.NAME_ATTR: name,
+        DesiredDecelerationFractionDistributionConstants.UUID_ATTR: str(UUID())
+    })
+    ret.append(distribution)
+
+    return ret
+
+def create_and_add_clean_desired_decel_fraction_node(attach_to):
+    distr = create_normal_fractional_distribution_node(0.5, 0.15)
+    ret = create_and_add_desired_decel_fraction_node(attach_to, distr)
+
+    return ret
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -357,6 +423,22 @@ class CleanDistributionsDocument:
         })
         create_and_add_clean_max_decel_distribution_node(self.max_decel_distributions_node)
 
+        self.desired_accel_fractions_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: DesiredAccelerationFractionDistributionConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_desired_accel_fraction_node(self.desired_accel_fractions_node)
+
+        self.desired_decel_fractions_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: DesiredDecelerationFractionDistributionConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_desired_decel_fraction_node(self.desired_decel_fractions_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -395,6 +477,12 @@ class CleanDistributionsDocument:
 
     def get_max_decelerations_node(self):
         return self.max_decel_distributions_node
+
+    def get_desired_accel_fractions_node(self):
+        return self.desired_accel_fractions_node
+
+    def get_desired_decel_fractions_node(self):
+        return self.desired_decel_fractions_node
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
@@ -1564,6 +1652,294 @@ class TestsForMaxDecelerations(unittest.TestCase):
         for _ in range(1, 1000):
             create_and_add_clean_max_decel_distribution_node(target_parent)
         self.assertTrue(self.doc.validate())
+
+class TestsForDesiredAccelerationFractions(unittest.TestCase): 
+    # this class will also have tests for fractional normal 
+    # distributions and fractional empirical distributions
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_desired_accel_fractions_node()
+
+    def test_for_valid_distribution_types(self):
+        distr_tuple_list = [
+            (create_normal_fractional_distribution_node(0.5, 0.15), True),
+            (create_empirical_fractional_distribution_node( [(0.0, 0.5), (1.0, 0.8)]), True),
+            (createNormalDistributionNode(0.5, 0.15), False),
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 0.8)]), True), # the fractional empirical distr is just a special case
+                                                                               # where values are in the range [0, 1]
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 1.2)]), False), # because there is a value outside the range [0, 1]
+            (createBinnedDistributionNode([(0, 1, 5)], BinnedDistributionConstants.AGGRESSION_VALUE_POSITIVE), False),
+            (createRawEmpiricalDistributionNode([0.4, 0.4, 0.6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE), False),
+        ]
+
+        for (distribution, expected_result) in distr_tuple_list:
+            self.target_node[:] = []
+            node = create_and_add_desired_accel_fraction_node(self.target_node, distribution)
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_desired_accel_fraction_node(self.target_node)
+        node.attrib.pop(DesiredAccelerationFractionDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_name_can_be_blank(self):
+        node = create_and_add_clean_desired_accel_fraction_node(self.target_node)
+        node.attrib[DesiredAccelerationFractionDistributionConstants.NAME_ATTR] = ''
+        self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_desired_accel_fraction_node(self.target_node)
+        node.attrib.pop(DesiredAccelerationFractionDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_uuid_is_validated(self):
+        node = create_and_add_clean_desired_accel_fraction_node(self.target_node)
+        uuid_tuple_list = [
+            ('', False),
+            ('not a valid uuid', False),
+            ('030def39-9082-42e8-b57f-f2186d1b8aba', True),
+            ('030deg39-9082-42e8-b57f-f2186d1b8aba', False),
+        ]
+        for (uuid_value, expected_result) in uuid_tuple_list:
+            node.attrib[DesiredAccelerationFractionDistributionConstants.UUID_ATTR] = uuid_value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_normal_distribution_mean_is_required(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        distr.attrib.pop(NormalFractionalDistributionConstants.MEAN_ATTR)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+    def test_normal_distribution_mean_values(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        mean_tuple_list = [
+            ('', False),
+            ('0.4', True),
+            ('not a number', False),
+        ]
+        for (value, expected_result) in mean_tuple_list:
+            distr.attrib[NormalFractionalDistributionConstants.MEAN_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_normal_distribution_stdev_is_required(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        distr.attrib.pop(NormalFractionalDistributionConstants.SD_ATTR)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+    def test_normal_distribution_stdev_values(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        stdev_tuple_list = [
+            ('', False),
+            ('0.4', True),
+            ('0', True), # no variance
+            ('-0.3', False),
+            ('not a number', False),
+        ]
+        for (value, expected_result) in stdev_tuple_list:
+            distr.attrib[NormalFractionalDistributionConstants.SD_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_normal_distribution_minimum_is_required(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        distr.attrib.pop(NormalFractionalDistributionConstants.MIN_VALUE_ATTR)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+    def test_normal_distribution_minimum_values(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        min_value_tuple_list = [
+            ('', False),
+            ('0.4', False),
+            ('0', True),
+            ('1', False),
+            ('-0.3', False),
+            ('not a number', False),
+        ]
+        for (value, expected_result) in min_value_tuple_list:
+            distr.attrib[NormalFractionalDistributionConstants.MIN_VALUE_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_normal_distribution_maximum_is_required(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        distr.attrib.pop(NormalFractionalDistributionConstants.MAX_VALUE_ATTR)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+    def test_normal_distribution_maximum_values(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        max_value_tuple_list = [
+            ('', False),
+            ('0.4', False),
+            ('0', False),
+            ('1', True),
+            ('-0.3', False),
+            ('not a number', False),
+        ]
+        for (value, expected_result) in max_value_tuple_list:
+            distr.attrib[NormalFractionalDistributionConstants.MAX_VALUE_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_normal_distribution_reverse_is_ok(self):
+        # Because acceleration fraction distributions that are not monotonic-increasing will generate simulator warnings,
+        # the use of reverse on normal distributions is not expected. Nonetheless, it is ok. It may be useful in other
+        # places where fractional distributions are used.
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+        if (NormalFractionalDistributionConstants.REVERSE_ATTR in distr.attrib):
+            distr.attrib.pop(NormalFractionalDistributionConstants.REVERSE_ATTR)
+        self.assertTrue(self.doc.validate())
+
+        distr.attrib[NormalFractionalDistributionConstants.REVERSE_ATTR] = 'true'
+        self.assertTrue(self.doc.validate())
+
+    def test_normal_distribution_reverse_values(self):
+        distr = create_normal_fractional_distribution_node(0.5, 0.15)
+        create_and_add_desired_accel_fraction_node(self.target_node, distr)
+
+        value_tuples = [
+            ('true', True),
+            ('false', True),
+            ('', False),
+            ('non-boolean', False),
+            ('1', True),
+            ('0', True),
+            ('2', False),
+        ]
+        for (value, expected_result) in value_tuples:
+            distr.attrib[NormalFractionalDistributionConstants.REVERSE_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_empirical_distribution_datapoint_probabilities(self):
+        dp_tuples_start = [(0.0, 0.3), (1.0, 0.9)]
+        dp_tuple_ends = [
+            ((0.5, 0.8), True),
+            ((-0.4, 0.8), False),
+            ((1.4, 0.8), False),
+            (('not a number', 0.8), False),
+            ((0.0, 0.8), True), # does not check for duplicate probabilities
+        ]
+        for (dp_tuple, expected_result) in dp_tuple_ends:
+            tuples = dp_tuples_start.copy()
+            tuples.append(dp_tuple)
+            distr = create_empirical_fractional_distribution_node(tuples)
+            self.target_node[:] = []
+            create_and_add_desired_accel_fraction_node(self.target_node, distr)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_empirical_distribution_datapoint_values(self):
+        dp_tuples_start = [(0.0, 0.3), (1.0, 0.9)]
+        dp_tuple_ends = [
+            ((0.5, 0.8), True),
+            ((0.5, -0.3), False),
+            ((0.5, 1.8), False),
+            ((0.5, 'not a number'), False),
+            ((0.5, 'NaN'), False)
+        ]
+        for (dp_tuple, expected_result) in dp_tuple_ends:
+            tuples = dp_tuples_start.copy()
+            tuples.append(dp_tuple)
+            distr = create_empirical_fractional_distribution_node(tuples)
+            self.target_node[:] = []
+            create_and_add_desired_accel_fraction_node(self.target_node, distr)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_distribution_set_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == DesiredAccelerationFractionDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_not_be_zero(self):
+        self.target_node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        for _ in range(1, 1000):
+            node = create_and_add_clean_desired_accel_fraction_node(self.target_node)
+        
+        self.assertTrue(self.doc.validate())
+
+class TestsForDesiredDecelFractionDistributions(unittest.TestCase):
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_desired_decel_fractions_node()
+
+    def test_that_distribution_set_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == DesiredDecelerationFractionDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_not_be_zero(self):
+        self.target_node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        for _ in range(1, 1000):
+            node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        
+        self.assertTrue(self.doc.validate())
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        if (DesiredDecelerationFractionDistributionConstants.NAME_ATTR in node.attrib):
+            node.attrib.pop(DesiredDecelerationFractionDistributionConstants.NAME_ATTR)
+
+        self.assertTrue(self.doc.validate())
+
+    def test_name_values(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        names_to_test = ['', 'decel fraction distribution', '229']
+        for name in names_to_test:
+            node.attrib[DesiredDecelerationFractionDistributionConstants.NAME_ATTR] = name
+            self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        if (DesiredDecelerationFractionDistributionConstants.UUID_ATTR in node.attrib):
+            node.attrib.pop(DesiredDecelerationFractionDistributionConstants.UUID_ATTR)
+
+        self.assertFalse(self.doc.validate())
+
+    def test_for_valid_distribution_types(self):
+        distr_tuple_list = [
+            (create_normal_fractional_distribution_node(0.5, 0.15), True),
+            (create_empirical_fractional_distribution_node( [(0.0, 0.5), (1.0, 0.8)]), True),
+            (createNormalDistributionNode(0.5, 0.15), False),
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 0.8)]), True), # the fractional empirical distr is just a special case
+                                                                               # where values are in the range [0, 1]
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 1.2)]), False), # because there is a value outside the range [0, 1]
+            (createBinnedDistributionNode([(0, 1, 5)], BinnedDistributionConstants.AGGRESSION_VALUE_POSITIVE), False),
+            (createRawEmpiricalDistributionNode([0.4, 0.4, 0.6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE), False),
+        ]
+
+        for (distribution, expected_result) in distr_tuple_list:
+            self.target_node[:] = []
+            node = create_and_add_desired_decel_fraction_node(self.target_node, distribution)
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_uuid_is_validated(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        uuid_tuple_list = [
+            ('', False),
+            ('not a valid uuid', False),
+            ('030def39-9082-42e8-b57f-f2186d1b8aba', True),
+            ('030deg39-9082-42e8-b57f-f2186d1b8aba', False),
+        ]
+        for (uuid_value, expected_result) in uuid_tuple_list:
+            node.attrib[DesiredDecelerationFractionDistributionConstants.UUID_ATTR] = uuid_value
+            self.assertEqual(expected_result, self.doc.validate())
 
 if (__name__ == '__main__'):
     unittest.main()
