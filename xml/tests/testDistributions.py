@@ -1867,5 +1867,79 @@ class TestsForDesiredAccelerationFractions(unittest.TestCase):
         
         self.assertTrue(self.doc.validate())
 
+class TestsForDesiredDecelFractionDistributions(unittest.TestCase):
+    def setUp(self):
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_desired_decel_fractions_node()
+
+    def test_that_distribution_set_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == DesiredDecelerationFractionDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_not_be_zero(self):
+        self.target_node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        for _ in range(1, 1000):
+            node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        
+        self.assertTrue(self.doc.validate())
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        if (DesiredDecelerationFractionDistributionConstants.NAME_ATTR in node.attrib):
+            node.attrib.pop(DesiredDecelerationFractionDistributionConstants.NAME_ATTR)
+
+        self.assertTrue(self.doc.validate())
+
+    def test_name_values(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        names_to_test = ['', 'decel fraction distribution', '229']
+        for name in names_to_test:
+            node.attrib[DesiredDecelerationFractionDistributionConstants.NAME_ATTR] = name
+            self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        if (DesiredDecelerationFractionDistributionConstants.UUID_ATTR in node.attrib):
+            node.attrib.pop(DesiredDecelerationFractionDistributionConstants.UUID_ATTR)
+
+        self.assertFalse(self.doc.validate())
+
+    def test_for_valid_distribution_types(self):
+        distr_tuple_list = [
+            (create_normal_fractional_distribution_node(0.5, 0.15), True),
+            (create_empirical_fractional_distribution_node( [(0.0, 0.5), (1.0, 0.8)]), True),
+            (createNormalDistributionNode(0.5, 0.15), False),
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 0.8)]), True), # the fractional empirical distr is just a special case
+                                                                               # where values are in the range [0, 1]
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 1.2)]), False), # because there is a value outside the range [0, 1]
+            (createBinnedDistributionNode([(0, 1, 5)], BinnedDistributionConstants.AGGRESSION_VALUE_POSITIVE), False),
+            (createRawEmpiricalDistributionNode([0.4, 0.4, 0.6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE), False),
+        ]
+
+        for (distribution, expected_result) in distr_tuple_list:
+            self.target_node[:] = []
+            node = create_and_add_desired_decel_fraction_node(self.target_node, distribution)
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_uuid_is_validated(self):
+        node = create_and_add_clean_desired_decel_fraction_node(self.target_node)
+        uuid_tuple_list = [
+            ('', False),
+            ('not a valid uuid', False),
+            ('030def39-9082-42e8-b57f-f2186d1b8aba', True),
+            ('030deg39-9082-42e8-b57f-f2186d1b8aba', False),
+        ]
+        for (uuid_value, expected_result) in uuid_tuple_list:
+            node.attrib[DesiredDecelerationFractionDistributionConstants.UUID_ATTR] = uuid_value
+            self.assertEqual(expected_result, self.doc.validate())
+
 if (__name__ == '__main__'):
     unittest.main()
