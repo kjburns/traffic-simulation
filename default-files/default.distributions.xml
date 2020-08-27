@@ -107,4 +107,5 @@
       </empirical-distribution>
     </distribution>
   </distribution-set>
+  <distribution-set type="speed-distributions" />
 </distributions>
