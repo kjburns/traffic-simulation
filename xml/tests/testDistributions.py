@@ -263,6 +263,20 @@ def create_and_add_clean_accel_distribution_node(attach_to):
         attach_to, tuples, SpeedUnits.MILES_PER_HOUR, AccelerationUnits.FEET_PER_SECOND_SQUARED) 
 
 def create_distance_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'distribution name'):
+    # TODO needs to be renamed create_and_add...
+    # TODO name and uuid should be attributes of DistanceDistributionConstants < DistributionWithUnitsConstants
+    ret = etree.SubElement(attach_to, 'distribution', {
+        'units': units,
+        'name': name,
+        'uuid': str(UUID())
+    })
+    ret.append(distr_node)
+
+    return ret
+
+def create_and_add_speed_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'Unnamed Speed Distribution'):
+    # TODO refactor this so that name and uuid are 
+    # attributes of SpeedDistributionConstants < DistributionWithUnitsConstants (does not yet exist)
     ret = etree.SubElement(attach_to, 'distribution', {
         'units': units,
         'name': name,
@@ -354,6 +368,20 @@ def create_and_add_clean_desired_decel_fraction_node(attach_to):
 
     return ret
 
+class SpeedDistributionConstants:
+    # TODO much of this will be provided by deriving from future DistributionsWithUnitsConstants class.
+    DISTRIBUTION_TYPE = 'speed-distributions'
+    TAG = 'distribution'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    UNITS_ATTR = 'units'
+
+def create_and_add_clean_speed_distribution_node(attach_to):
+    distr = createEmpiricalDistributionNode([(0, 30), (0.5, 50), (1.0, 60)])
+    ret = create_and_add_speed_distribution_node(attach_to, SpeedUnits.KILOMETERS_PER_HOUR, distr)
+
+    return ret
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -439,6 +467,14 @@ class CleanDistributionsDocument:
         )
         create_and_add_clean_desired_decel_fraction_node(self.desired_decel_fractions_node)
 
+        self.target_speeds_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: SpeedDistributionConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_speed_distribution_node(self.target_speeds_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -483,6 +519,9 @@ class CleanDistributionsDocument:
 
     def get_desired_decel_fractions_node(self):
         return self.desired_decel_fractions_node
+
+    def get_target_speeds_node(self):
+        return self.target_speeds_node
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
@@ -928,18 +967,21 @@ class TestsForDistanceDistributions(unittest.TestCase):
     def test_that_name_is_optional(self):
         distr = createCleanNormalDistributionNode()
         node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        # TODO instead reference DistanceDistributionConstants
         node.attrib.pop('name')
         self.assertTrue(self.doc.validate())
 
     def test_that_uuid_is_required(self):
         distr = createCleanNormalDistributionNode()
         node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        # TODO instead reference DistanceDistributionConstants
         node.attrib.pop('uuid')
         self.assertFalse(self.doc.validate())
 
     def test_that_uuid_is_validated(self):
         distr = createCleanNormalDistributionNode()
         node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        # TODO instead reference DistanceDistributionConstants
         node.attrib['uuid'] = 'an invalid uuid'
         self.assertFalse(self.doc.validate())
 
@@ -1349,6 +1391,7 @@ class AccelerationUnits:
     G = 'g'
 
 class AccelerationDistributionConstants:
+    # TODO rename as MaxAccelerationDistributionConstants, then derive from AccelerationDistributionConstants
     DISTRIBUTION_TAG = 'distribution'
     DISTRIBUTION_TYPE = 'acceleration'
     NAME_ATTR = 'name'
@@ -1530,6 +1573,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
         self.assertTrue(self.doc.validate())
 
 class MaxDecelerationDistributionConstants:
+    # TODO needs to derive from AccelerationDistributionConstants, which in turn derives from DistributionWithUnitsConstants
     DISTRIBUTION_TAG = 'distribution'
     DISTRIBUTION_TYPE = 'max-deceleration'
     NAME_ATTR = 'name'
