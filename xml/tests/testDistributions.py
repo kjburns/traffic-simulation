@@ -310,11 +310,8 @@ def create_empirical_fractional_distribution_node(dp_tuples_as_prob_val):
 
     return ret
 
-class DesiredAccelerationFractionDistributionConstants:
+class DesiredAccelerationFractionDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'desired-acceleration-fractions'
-    TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
 
 def create_and_add_desired_accel_fraction_node(attach_to, distribution, name='a desired accel fraction distribution'):
     ret = etree.SubElement(attach_to, DesiredAccelerationFractionDistributionConstants.TAG, {
@@ -331,11 +328,8 @@ def create_and_add_clean_desired_accel_fraction_node(attach_to):
 
     return ret
 
-class DesiredDecelerationFractionDistributionConstants:
+class DesiredDecelerationFractionDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'desired-deceleration-fractions'
-    TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
 
 def create_and_add_desired_decel_fraction_node(attach_to, distribution, name="a desired decel fraction distribution"):
     ret = etree.SubElement(attach_to, DesiredDecelerationFractionDistributionConstants.TAG, {
