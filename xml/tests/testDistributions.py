@@ -239,7 +239,7 @@ def create_and_add_acceleration_distribution_node(attach_to, dp_tuples_as_v_m_sd
         MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR: speed_unit,
         MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit,
     }
-    ret = etree.SubElement(attach_to, MaxAccelerationDistributionConstants.DISTRIBUTION_TAG, attrib=main_attributes)
+    ret = etree.SubElement(attach_to, MaxAccelerationDistributionConstants.TAG, attrib=main_attributes)
     for dp in dp_tuples_as_v_m_sd:
         create_and_add_acceleration_distribution_point(ret, dp[0], dp[1], dp[2])
     
@@ -271,10 +271,10 @@ def create_and_add_speed_distribution_node(attach_to, units: str, distr_node: et
     return ret
 
 def create_and_add_max_decel_distribution_node(attach_to, distribution, accel_unit, name='a max decel distribution'):
-    node = etree.SubElement(attach_to, MaxDecelerationDistributionConstants.DISTRIBUTION_TAG, {
+    node = etree.SubElement(attach_to, MaxDecelerationDistributionConstants.TAG, {
         MaxDecelerationDistributionConstants.NAME_ATTR: name,
         MaxDecelerationDistributionConstants.UUID_ATTR: str(UUID()),
-        MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit
+        MaxDecelerationDistributionConstants.UNITS_ATTR: accel_unit
     })
 
     node.append(distribution)
@@ -1369,12 +1369,8 @@ class AccelerationUnits:
     FEET_PER_SECOND_SQUARED = 'feet-per-second-squared'
     G = 'g'
 
-class MaxAccelerationDistributionConstants:
-    # TODO derive from AccelerationDistributionConstants
-    DISTRIBUTION_TAG = 'distribution'
+class MaxAccelerationDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'acceleration'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     SPEED_UNIT_ATTR = 'speed-unit'
     ACCELERATION_UNIT_ATTR = 'acceleration-unit'
     DATAPOINT_TAG = 'dp'
@@ -1551,13 +1547,11 @@ class TestsForAccelerationDistributions(unittest.TestCase):
         dp.attrib['another-attribute'] = '-5'
         self.assertTrue(self.doc.validate())
 
-class MaxDecelerationDistributionConstants:
-    # TODO needs to derive from AccelerationDistributionConstants, which in turn derives from DistributionWithUnitsConstants
-    DISTRIBUTION_TAG = 'distribution'
+class AccelerationDistributionConstants(DistributionWithUnitsConstants):
+    pass
+
+class MaxDecelerationDistributionConstants(AccelerationDistributionConstants):
     DISTRIBUTION_TYPE = 'max-deceleration'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
-    ACCELERATION_UNIT_ATTR = 'units'
 
 class TestsForMaxDecelerations(unittest.TestCase):
     def setUp(self):
@@ -1592,7 +1586,7 @@ class TestsForMaxDecelerations(unittest.TestCase):
 
     def test_that_units_is_required(self):
         node = create_and_add_clean_max_decel_distribution_node(self.target_node)
-        node.attrib.pop(MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
+        node.attrib.pop(MaxDecelerationDistributionConstants.UNITS_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_units_is_verified(self):
@@ -1605,7 +1599,7 @@ class TestsForMaxDecelerations(unittest.TestCase):
             ('Gs', False),
         ]
         for (value, result) in values_and_results:
-            node.attrib[MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = value
+            node.attrib[MaxDecelerationDistributionConstants.UNITS_ATTR] = value
             self.assertEqual(self.doc.validate(), result)
 
     def test_that_other_attributes_are_allowed(self):
