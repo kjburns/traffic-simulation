@@ -65,6 +65,9 @@ class BinnedDistributionConstants:
 class DistributionWithUnitsConstants(GenericDistributionConstants):
     UNITS_ATTR = 'units'
 
+class DistanceDistributionConstants(DistributionWithUnitsConstants):
+    pass
+
 def addBinnedDistributionBin(distr, minValue, maxValue, count):
     binElement = etree.SubElement(distr, BinnedDistributionConstants.BIN_TAG)
     binElement.attrib[BinnedDistributionConstants.BIN_MIN_VALUE_ATTR] = str(minValue)
@@ -248,23 +251,20 @@ def create_and_add_clean_accel_distribution_node(attach_to):
         attach_to, tuples, SpeedUnits.MILES_PER_HOUR, AccelerationUnits.FEET_PER_SECOND_SQUARED) 
 
 def create_and_add_distance_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'distribution name'):
-    # TODO name and uuid should be attributes of DistanceDistributionConstants < DistributionWithUnitsConstants
     ret = etree.SubElement(attach_to, 'distribution', {
-        'units': units,
-        'name': name,
-        'uuid': str(UUID())
+        DistanceDistributionConstants.UNITS_ATTR: units,
+        DistanceDistributionConstants.NAME_ATTR: name,
+        DistanceDistributionConstants.UUID_ATTR: str(UUID())
     })
     ret.append(distr_node)
 
     return ret
 
 def create_and_add_speed_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'Unnamed Speed Distribution'):
-    # TODO refactor this so that name and uuid are 
-    # attributes of SpeedDistributionConstants < DistributionWithUnitsConstants (does not yet exist)
     ret = etree.SubElement(attach_to, 'distribution', {
-        'units': units,
-        'name': name,
-        'uuid': str(UUID())
+        SpeedDistributionConstants.UNITS_ATTR: units,
+        SpeedDistributionConstants.NAME_ATTR: name,
+        SpeedDistributionConstants.UUID_ATTR: str(UUID())
     })
     ret.append(distr_node)
 
@@ -949,22 +949,19 @@ class TestsForDistanceDistributions(unittest.TestCase):
     def test_that_name_is_optional(self):
         distr = createCleanNormalDistributionNode()
         node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
-        # TODO instead reference DistanceDistributionConstants
-        node.attrib.pop('name')
+        node.attrib.pop(DistanceDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def test_that_uuid_is_required(self):
         distr = createCleanNormalDistributionNode()
         node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
-        # TODO instead reference DistanceDistributionConstants
-        node.attrib.pop('uuid')
+        node.attrib.pop(DistanceDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_uuid_is_validated(self):
         distr = createCleanNormalDistributionNode()
         node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
-        # TODO instead reference DistanceDistributionConstants
-        node.attrib['uuid'] = 'an invalid uuid'
+        node.attrib[DistanceDistributionConstants.UUID_ATTR] = 'an invalid uuid'
         self.assertFalse(self.doc.validate())
 
     def test_that_normal_distribution_is_ok(self):
