@@ -195,11 +195,9 @@ def createVehicleModelsDistributionNode(attachTo, shareTuplesAsOccurence_Value, 
 
     return ret
 
-class ColorDistributionConstants:
+class ColorDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'colors'
     DISTRIBUTION_TAG = 'distribution'
-    DISTRIBUTION_NAME_ATTR = 'name'
-    DISTRIBUTION_UUID_ATTR = 'uuid'
     SHARE_TAG = 'share'
     SHARE_OCCURENCE_ATTR = 'occurence'
     SHARE_VALUE_ATTR = 'value'
@@ -214,8 +212,8 @@ def createAndAddColorShare(distr, occurence, color):
 
 def createAndAddColorDistributionNode(attachTo, shareTuplesAsOccurence_Value, name = 'a color distribution'):
     ret = etree.SubElement(attachTo, ColorDistributionConstants.DISTRIBUTION_TAG, {
-        ColorDistributionConstants.DISTRIBUTION_NAME_ATTR: name,
-        ColorDistributionConstants.DISTRIBUTION_UUID_ATTR: str(UUID()),
+        ColorDistributionConstants.NAME_ATTR: name,
+        ColorDistributionConstants.UUID_ATTR: str(UUID()),
     })
 
     for shareTuple in shareTuplesAsOccurence_Value:
@@ -1273,17 +1271,17 @@ class TestsForColorDistributions(unittest.TestCase):
 
     def testThatNameIsOptional(self):
         node = createAndAddCleanColorDistributionNode(self.targetNode)
-        node.attrib.pop(ColorDistributionConstants.DISTRIBUTION_NAME_ATTR)
+        node.attrib.pop(ColorDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def testThatUuidIsRequired(self):
         node = createAndAddCleanColorDistributionNode(self.targetNode)
-        node.attrib.pop(ColorDistributionConstants.DISTRIBUTION_UUID_ATTR)
+        node.attrib.pop(ColorDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValidated(self):
         node = createAndAddCleanColorDistributionNode(self.targetNode)
-        node.attrib[ColorDistributionConstants.DISTRIBUTION_UUID_ATTR] = 'an invalid uuid'
+        node.attrib[ColorDistributionConstants.UUID_ATTR] = 'an invalid uuid'
         self.assertFalse(self.doc.validate())
 
     def testThatOtherSubelementsAreBanned(self):
