@@ -62,6 +62,9 @@ class BinnedDistributionConstants:
     BIN_MAX_VALUE_ATTR = 'max-value'
     BIN_COUNT_ATTR = 'count'
 
+class DistributionWithUnitsConstants(GenericDistributionConstants):
+    UNITS_ATTR = 'units'
+
 def addBinnedDistributionBin(distr, minValue, maxValue, count):
     binElement = etree.SubElement(distr, BinnedDistributionConstants.BIN_TAG)
     binElement.attrib[BinnedDistributionConstants.BIN_MIN_VALUE_ATTR] = str(minValue)
@@ -349,13 +352,11 @@ def create_and_add_clean_desired_decel_fraction_node(attach_to):
 
     return ret
 
-class SpeedDistributionConstants:
-    # TODO much of this will be provided by deriving from future DistributionsWithUnitsConstants class.
+class SpeedDistributionConstants(DistributionWithUnitsConstants):
+    pass
+
+class TargetSpeedDistributionConstants(SpeedDistributionConstants):
     DISTRIBUTION_TYPE = 'speed-distributions'
-    TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
-    UNITS_ATTR = 'units'
 
 def create_and_add_clean_speed_distribution_node(attach_to):
     distr = createEmpiricalDistributionNode([(0, 30), (0.5, 50), (1.0, 60)])
@@ -451,7 +452,7 @@ class CleanDistributionsDocument:
         self.target_speeds_node = etree.SubElement(
             self.documentRoot,
             DistributionSetConstants.TAG, {
-                DistributionSetConstants.TYPE_ATTR: SpeedDistributionConstants.DISTRIBUTION_TYPE
+                DistributionSetConstants.TYPE_ATTR: TargetSpeedDistributionConstants.DISTRIBUTION_TYPE
             }
         )
         create_and_add_clean_speed_distribution_node(self.target_speeds_node)
