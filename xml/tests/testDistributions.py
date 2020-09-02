@@ -237,21 +237,21 @@ def createAndAddCleanColorDistributionNode(attachTo):
 
 def create_and_add_acceleration_distribution_point(accel_distr_node, speed, mean, stdev):
     dp_attributes = {
-        AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR: str(speed),
-        AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR: str(mean),
-        AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR: str(stdev),
+        MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR: str(speed),
+        MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR: str(mean),
+        MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR: str(stdev),
     }
-    dp = etree.SubElement(accel_distr_node, AccelerationDistributionConstants.DATAPOINT_TAG, dp_attributes)
+    dp = etree.SubElement(accel_distr_node, MaxAccelerationDistributionConstants.DATAPOINT_TAG, dp_attributes)
     return dp
 
 def create_and_add_acceleration_distribution_node(attach_to, dp_tuples_as_v_m_sd, speed_unit, accel_unit, name = 'an accel distribution'):
     main_attributes = {
-        AccelerationDistributionConstants.NAME_ATTR: name,
-        AccelerationDistributionConstants.UUID_ATTR: str(UUID()),
-        AccelerationDistributionConstants.SPEED_UNIT_ATTR: speed_unit,
-        AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit,
+        MaxAccelerationDistributionConstants.NAME_ATTR: name,
+        MaxAccelerationDistributionConstants.UUID_ATTR: str(UUID()),
+        MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR: speed_unit,
+        MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit,
     }
-    ret = etree.SubElement(attach_to, AccelerationDistributionConstants.DISTRIBUTION_TAG, attrib=main_attributes)
+    ret = etree.SubElement(attach_to, MaxAccelerationDistributionConstants.DISTRIBUTION_TAG, attrib=main_attributes)
     for dp in dp_tuples_as_v_m_sd:
         create_and_add_acceleration_distribution_point(ret, dp[0], dp[1], dp[2])
     
@@ -440,7 +440,7 @@ class CleanDistributionsDocument:
         self.accel_functions_node = etree.SubElement(
             self.documentRoot,
             DistributionSetConstants.TAG, {
-                DistributionSetConstants.TYPE_ATTR: AccelerationDistributionConstants.DISTRIBUTION_TYPE,
+                DistributionSetConstants.TYPE_ATTR: MaxAccelerationDistributionConstants.DISTRIBUTION_TYPE,
             }
         )
         create_and_add_clean_accel_distribution_node(self.accel_functions_node)
@@ -1389,8 +1389,8 @@ class AccelerationUnits:
     FEET_PER_SECOND_SQUARED = 'feet-per-second-squared'
     G = 'g'
 
-class AccelerationDistributionConstants:
-    # TODO rename as MaxAccelerationDistributionConstants, then derive from AccelerationDistributionConstants
+class MaxAccelerationDistributionConstants:
+    # TODO derive from AccelerationDistributionConstants
     DISTRIBUTION_TAG = 'distribution'
     DISTRIBUTION_TYPE = 'acceleration'
     NAME_ATTR = 'name'
@@ -1409,24 +1409,24 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_name_is_optional(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.NAME_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def test_that_uuid_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.UUID_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_uuid_must_be_a_uuid(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib[AccelerationDistributionConstants.UUID_ATTR] = 'not a uuid'
+        node.attrib[MaxAccelerationDistributionConstants.UUID_ATTR] = 'not a uuid'
         self.assertFalse(self.doc.validate())
-        node.attrib[AccelerationDistributionConstants.UUID_ATTR] = 'c3937207-d6db-481g-998e-e3abec44abb2' # there's a g in it
+        node.attrib[MaxAccelerationDistributionConstants.UUID_ATTR] = 'c3937207-d6db-481g-998e-e3abec44abb2' # there's a g in it
         self.assertFalse(self.doc.validate())
 
     def test_that_speed_unit_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.SPEED_UNIT_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_speed_unit_values_work(self):
@@ -1436,19 +1436,19 @@ class TestsForAccelerationDistributions(unittest.TestCase):
             SpeedUnits.METERS_PER_SECOND, SpeedUnits.MILES_PER_HOUR
         ]
         for unit in choices:
-            node.attrib[AccelerationDistributionConstants.SPEED_UNIT_ATTR] = unit
+            node.attrib[MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR] = unit
             self.assertTrue(self.doc.validate())
 
     def test_that_speed_unit_is_restricted(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib[AccelerationDistributionConstants.SPEED_UNIT_ATTR] = SpeedUnits.FEET_PER_SECOND + 's'
+        node.attrib[MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR] = SpeedUnits.FEET_PER_SECOND + 's'
         self.assertFalse(self.doc.validate())
-        node.attrib[AccelerationDistributionConstants.SPEED_UNIT_ATTR] = ''
+        node.attrib[MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR] = ''
         self.assertFalse(self.doc.validate())
 
     def test_that_accel_unit_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_accel_unit_values_work(self):
@@ -1459,14 +1459,14 @@ class TestsForAccelerationDistributions(unittest.TestCase):
             AccelerationUnits.METERS_PER_SECOND_SQUARED
         ]
         for unit in choices:
-            node.attrib[AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = unit
+            node.attrib[MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = unit
             self.assertTrue(self.doc.validate())
 
     def test_that_accel_unit_is_restricted(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib[AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = AccelerationUnits.G + 's'
+        node.attrib[MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = AccelerationUnits.G + 's'
         self.assertFalse(self.doc.validate())
-        node.attrib[AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = ''
+        node.attrib[MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = ''
         self.assertFalse(self.doc.validate())
 
     def test_that_other_attributes_are_ok(self):
@@ -1476,7 +1476,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_zero_datapoints_fails(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        to_delete = node.findall(AccelerationDistributionConstants.DATAPOINT_TAG)
+        to_delete = node.findall(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         for dp in to_delete:
             node.remove(dp)
 
@@ -1484,7 +1484,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_one_datapoint_fails(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        to_delete = node.findall(AccelerationDistributionConstants.DATAPOINT_TAG)
+        to_delete = node.findall(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         for dp in to_delete[1:]:
             node.remove(dp)
 
@@ -1492,7 +1492,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_two_datapoints_is_ok(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        to_delete = node.findall(AccelerationDistributionConstants.DATAPOINT_TAG)
+        to_delete = node.findall(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         for dp in to_delete[2:]:
             node.remove(dp)
 
@@ -1507,67 +1507,67 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_dp_velocity_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib.pop(AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib.pop(MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_velocity_must_be_nonnegative(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '-5'
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '-5'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = ''
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = ''
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = 'not a number'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = 'not a number'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '0'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '0'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '5'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '5'
         self.assertTrue(self.doc.validate())
 
     def test_that_dp_mean_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib.pop(AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib.pop(MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_mean_must_be_numeric(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '-5'
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '-5'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '0'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '0'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '5'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '5'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = ''
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = ''
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = 'not a number'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = 'not a number'
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_stdev_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib.pop(AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib.pop(MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_stdev_must_be_nonnegative(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '-5'
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '-5'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = ''
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = ''
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = 'not a number'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = 'not a number'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '0'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '0'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '5'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '5'
         self.assertTrue(self.doc.validate())
 
     def test_that_dp_other_attributes_are_ok(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         dp.attrib['another-attribute'] = '-5'
         self.assertTrue(self.doc.validate())
 
