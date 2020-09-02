@@ -8,9 +8,9 @@ class DistributionSetConstants:
     TYPE_ATTR = 'type' 
 
 class DistributionShareConstants:
-    TAG = 'share'
-    OCCURENCE_ATTR = 'occurence'
-    VALUE_ATTR = 'value'
+    SHARE_TAG = 'share'
+    SHARE_OCCURENCE_ATTR = 'occurence'
+    SHARE_VALUE_ATTR = 'value'
 
 class EnumDistributionShareConstants(DistributionShareConstants):
     pass
@@ -20,7 +20,7 @@ class GenericDistributionConstants:
     UUID_ATTR = 'uuid'
     TAG = 'distribution'
 
-class VehicleModelDistributionConstants(GenericDistributionConstants):
+class VehicleModelDistributionConstants(GenericDistributionConstants, DistributionShareConstants):
     pass
 
 class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionConstants):
@@ -79,9 +79,9 @@ def addBinnedDistributionBin(distr, minValue, maxValue, count):
     return binElement
 
 def addEnumDistributionShare(distr, occur, value):
-    shareElement = etree.SubElement(distr, EnumDistributionShareConstants.TAG)
-    shareElement.attrib[EnumDistributionShareConstants.OCCURENCE_ATTR] = str(occur)
-    shareElement.attrib[EnumDistributionShareConstants.VALUE_ATTR] = value 
+    shareElement = etree.SubElement(distr, EnumDistributionShareConstants.SHARE_TAG)
+    shareElement.attrib[EnumDistributionShareConstants.SHARE_OCCURENCE_ATTR] = str(occur)
+    shareElement.attrib[EnumDistributionShareConstants.SHARE_VALUE_ATTR] = value 
     shareElement.attrib['alias'] = value.lower()
 
     return shareElement
@@ -170,10 +170,10 @@ def addRawEmpiricalDistributionObservation(node, value = None):
 def addVehicleModelShare(distributionNode, occurence, value):
     ret = etree.SubElement(
         distributionNode, 
-        DistributionShareConstants.TAG, 
+        VehicleModelDistributionConstants.SHARE_TAG, 
         {
-            EnumDistributionShareConstants.OCCURENCE_ATTR: str(occurence),
-            EnumDistributionShareConstants.VALUE_ATTR: str(value)
+            VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR: str(occurence),
+            VehicleModelDistributionConstants.SHARE_VALUE_ATTR: str(value)
         }
     )        
 
@@ -193,11 +193,8 @@ def createVehicleModelsDistributionNode(attachTo, shareTuplesAsOccurence_Value, 
 
     return ret
 
-class ColorDistributionConstants(GenericDistributionConstants):
+class ColorDistributionConstants(GenericDistributionConstants, DistributionShareConstants):
     DISTRIBUTION_TYPE = 'colors'
-    SHARE_TAG = 'share'
-    SHARE_OCCURENCE_ATTR = 'occurence'
-    SHARE_VALUE_ATTR = 'value'
 
 def createAndAddColorShare(distr, occurence, color):
     ret = etree.SubElement(distr, ColorDistributionConstants.SHARE_TAG, {
@@ -1212,43 +1209,43 @@ class TestsForVehicleModelDistributions(unittest.TestCase):
     
     def testThatOccurenceIsRequired(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib.pop(DistributionShareConstants.OCCURENCE_ATTR)
+        firstNode.attrib.pop(VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR)
 
         self.assertFalse(self.doc.validate())
     
     def testThatOccurenceMayNotBeEmpty(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.OCCURENCE_ATTR] = ''
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR] = ''
 
         self.assertFalse(self.doc.validate())
     
     def testThatOccurenceMayNotBeString(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.OCCURENCE_ATTR] = 'not a number'
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR] = 'not a number'
 
         self.assertFalse(self.doc.validate())
 
     def testThatValueIsRequired(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib.pop(DistributionShareConstants.VALUE_ATTR)
+        firstNode.attrib.pop(VehicleModelDistributionConstants.SHARE_VALUE_ATTR)
 
         self.assertFalse(self.doc.validate())
 
     def testThatValueMayNotBeEmpty(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = ''
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_VALUE_ATTR] = ''
 
         self.assertFalse(self.doc.validate())
     
     def testThatValueMayNotBeArbitraryString(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = 'not a uuid'
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_VALUE_ATTR] = 'not a uuid'
 
         self.assertFalse(self.doc.validate())
     
     def testThatValueMayNotBeArbitraryNumber(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = '12345'
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_VALUE_ATTR] = '12345'
 
         self.assertFalse(self.doc.validate())
     
