@@ -15,15 +15,13 @@ class DistributionShareConstants:
 class EnumDistributionShareConstants(DistributionShareConstants):
     pass
 
-class EnumDistributionSetConstants:
-    CHILD_TAG = 'distribution'
-
 class GenericDistributionConstants:
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
+    TAG = 'distribution'
 
 class VehicleModelDistributionConstants(GenericDistributionConstants):
-    TAG = 'distribution'
+    pass
 
 class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionConstants):
     NEAREST = 'NEAREST'
@@ -99,7 +97,7 @@ def addEmpiricalDataPoint(distributionNode, probability = None, value = None):
     return ret
 
 def createCleanConnLinkSelBehavior():
-    e = etree.Element(EnumDistributionSetConstants.CHILD_TAG)
+    e = etree.Element(ConnectorLinkSelectionBehaviorDistributionConstants.TAG)
     e.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.NAME_ATTR] = 'Default'
     e.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = str(UUID())
     e.attrib['isdefault'] = 'true'
@@ -197,7 +195,6 @@ def createVehicleModelsDistributionNode(attachTo, shareTuplesAsOccurence_Value, 
 
 class ColorDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'colors'
-    DISTRIBUTION_TAG = 'distribution'
     SHARE_TAG = 'share'
     SHARE_OCCURENCE_ATTR = 'occurence'
     SHARE_VALUE_ATTR = 'value'
@@ -211,7 +208,7 @@ def createAndAddColorShare(distr, occurence, color):
     return ret
 
 def createAndAddColorDistributionNode(attachTo, shareTuplesAsOccurence_Value, name = 'a color distribution'):
-    ret = etree.SubElement(attachTo, ColorDistributionConstants.DISTRIBUTION_TAG, {
+    ret = etree.SubElement(attachTo, ColorDistributionConstants.TAG, {
         ColorDistributionConstants.NAME_ATTR: name,
         ColorDistributionConstants.UUID_ATTR: str(UUID()),
     })
