@@ -18,7 +18,7 @@ class EnumDistributionShareConstants(DistributionShareConstants):
 class EnumDistributionSetConstants:
     CHILD_TAG = 'distribution'
 
-class EnumDistributionConstants:
+class GenericDistributionConstants:
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
 
@@ -27,7 +27,7 @@ class VehicleModelDistributionConstants:
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
 
-class ConnectorLinkSelectionBehaviorDistributionConstants:
+class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionConstants):
     NEAREST = 'NEAREST'
     FARTHEST = 'FARTHEST'
     BEST = 'BEST'
@@ -102,8 +102,8 @@ def addEmpiricalDataPoint(distributionNode, probability = None, value = None):
 
 def createCleanConnLinkSelBehavior():
     e = etree.Element(EnumDistributionSetConstants.CHILD_TAG)
-    e.attrib[EnumDistributionConstants.NAME_ATTR] = 'Default'
-    e.attrib[EnumDistributionConstants.UUID_ATTR] = str(UUID())
+    e.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.NAME_ATTR] = 'Default'
+    e.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = str(UUID())
     e.attrib['isdefault'] = 'true'
 
     addEnumDistributionShare(e, 0.15, ConnectorLinkSelectionBehaviorDistributionConstants.NEAREST)
@@ -1038,17 +1038,17 @@ class TestsForConnectorLinkSelectionBehaviorDistributions(unittest.TestCase):
         self.assertFalse(self.doc.validate())
 
     def testThatNameIsOptional(self):
-        self.cleanDistr.attrib.pop(EnumDistributionConstants.NAME_ATTR)
+        self.cleanDistr.attrib.pop(ConnectorLinkSelectionBehaviorDistributionConstants.NAME_ATTR)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertTrue(self.doc.validate())
     
     def testThatUuidIsRequired(self):
-        self.cleanDistr.attrib.pop(EnumDistributionConstants.UUID_ATTR)
+        self.cleanDistr.attrib.pop(ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValid(self):
-        self.cleanDistr.attrib[EnumDistributionConstants.UUID_ATTR] = 'not a uuid!'
+        self.cleanDistr.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = 'not a uuid!'
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
