@@ -22,10 +22,8 @@ class GenericDistributionConstants:
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
 
-class VehicleModelDistributionConstants:
+class VehicleModelDistributionConstants(GenericDistributionConstants):
     TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
 
 class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionConstants):
     NEAREST = 'NEAREST'
