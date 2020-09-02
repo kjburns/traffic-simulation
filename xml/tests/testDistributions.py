@@ -31,8 +31,6 @@ class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionCon
 
 class NormalDistributionConstants:
     TAG = 'normal-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     MEAN_ATTR = 'mean'
     SD_ATTR = 'standard-deviation'
     MIN_VALUE_ATTR = 'min-value'
@@ -41,16 +39,12 @@ class NormalDistributionConstants:
 
 class EmpiricalDistributionConstants:
     TAG = 'empirical-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     DATA_POINT_TAG = 'dp'
     DATA_POINT_PROBABILITY_ATTR = 'prob'
     DATA_POINT_VALUE_ATTR = 'val'
 
 class RawEmpiricalDistributionConstants:
     TAG = 'raw-empirical-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     AGGRESSION_ATTR = 'aggression'
     AGGRESSION_VALUE_POSITIVE = 'positive'
     AGGRESSION_VALUE_NEGATIVE = 'negative'
@@ -59,8 +53,6 @@ class RawEmpiricalDistributionConstants:
 
 class BinnedDistributionConstants:
     TAG = 'binned-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     AGGRESSION_ATTR = 'aggression'
     AGGRESSION_VALUE_POSITIVE = 'positive'
     AGGRESSION_VALUE_NEGATIVE = 'negative'
@@ -539,7 +531,7 @@ class TestsForSimpleDataTypes(unittest.TestCase):
     def testThatUuidsAreBeingValidated(self):
         distr = createCleanNormalDistributionNode()
         node = create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', distr)
-        node.attrib[NormalDistributionConstants.UUID_ATTR] = 'invalid-uuid'
+        node.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = 'invalid-uuid'
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationsAreBeingValidated(self):
