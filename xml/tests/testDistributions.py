@@ -8,26 +8,22 @@ class DistributionSetConstants:
     TYPE_ATTR = 'type' 
 
 class DistributionShareConstants:
-    TAG = 'share'
-    OCCURENCE_ATTR = 'occurence'
-    VALUE_ATTR = 'value'
+    SHARE_TAG = 'share'
+    SHARE_OCCURENCE_ATTR = 'occurence'
+    SHARE_VALUE_ATTR = 'value'
 
 class EnumDistributionShareConstants(DistributionShareConstants):
     pass
 
-class EnumDistributionSetConstants:
-    CHILD_TAG = 'distribution'
-
-class EnumDistributionConstants:
+class GenericDistributionConstants:
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
-
-class VehicleModelDistributionConstants:
     TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
 
-class ConnectorLinkSelectionBehaviorDistributionConstants:
+class VehicleModelDistributionConstants(GenericDistributionConstants, DistributionShareConstants):
+    pass
+
+class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionConstants):
     NEAREST = 'NEAREST'
     FARTHEST = 'FARTHEST'
     BEST = 'BEST'
@@ -35,8 +31,6 @@ class ConnectorLinkSelectionBehaviorDistributionConstants:
 
 class NormalDistributionConstants:
     TAG = 'normal-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     MEAN_ATTR = 'mean'
     SD_ATTR = 'standard-deviation'
     MIN_VALUE_ATTR = 'min-value'
@@ -45,16 +39,12 @@ class NormalDistributionConstants:
 
 class EmpiricalDistributionConstants:
     TAG = 'empirical-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     DATA_POINT_TAG = 'dp'
     DATA_POINT_PROBABILITY_ATTR = 'prob'
     DATA_POINT_VALUE_ATTR = 'val'
 
 class RawEmpiricalDistributionConstants:
     TAG = 'raw-empirical-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     AGGRESSION_ATTR = 'aggression'
     AGGRESSION_VALUE_POSITIVE = 'positive'
     AGGRESSION_VALUE_NEGATIVE = 'negative'
@@ -63,8 +53,6 @@ class RawEmpiricalDistributionConstants:
 
 class BinnedDistributionConstants:
     TAG = 'binned-distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     AGGRESSION_ATTR = 'aggression'
     AGGRESSION_VALUE_POSITIVE = 'positive'
     AGGRESSION_VALUE_NEGATIVE = 'negative'
@@ -73,6 +61,12 @@ class BinnedDistributionConstants:
     BIN_MIN_VALUE_ATTR = 'min-value'
     BIN_MAX_VALUE_ATTR = 'max-value'
     BIN_COUNT_ATTR = 'count'
+
+class DistributionWithUnitsConstants(GenericDistributionConstants):
+    UNITS_ATTR = 'units'
+
+class DistanceDistributionConstants(DistributionWithUnitsConstants):
+    pass
 
 def addBinnedDistributionBin(distr, minValue, maxValue, count):
     binElement = etree.SubElement(distr, BinnedDistributionConstants.BIN_TAG)
@@ -83,9 +77,9 @@ def addBinnedDistributionBin(distr, minValue, maxValue, count):
     return binElement
 
 def addEnumDistributionShare(distr, occur, value):
-    shareElement = etree.SubElement(distr, EnumDistributionShareConstants.TAG)
-    shareElement.attrib[EnumDistributionShareConstants.OCCURENCE_ATTR] = str(occur)
-    shareElement.attrib[EnumDistributionShareConstants.VALUE_ATTR] = value 
+    shareElement = etree.SubElement(distr, EnumDistributionShareConstants.SHARE_TAG)
+    shareElement.attrib[EnumDistributionShareConstants.SHARE_OCCURENCE_ATTR] = str(occur)
+    shareElement.attrib[EnumDistributionShareConstants.SHARE_VALUE_ATTR] = value 
     shareElement.attrib['alias'] = value.lower()
 
     return shareElement
@@ -101,9 +95,9 @@ def addEmpiricalDataPoint(distributionNode, probability = None, value = None):
     return ret
 
 def createCleanConnLinkSelBehavior():
-    e = etree.Element(EnumDistributionSetConstants.CHILD_TAG)
-    e.attrib[EnumDistributionConstants.NAME_ATTR] = 'Default'
-    e.attrib[EnumDistributionConstants.UUID_ATTR] = str(UUID())
+    e = etree.Element(ConnectorLinkSelectionBehaviorDistributionConstants.TAG)
+    e.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.NAME_ATTR] = 'Default'
+    e.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = str(UUID())
     e.attrib['isdefault'] = 'true'
 
     addEnumDistributionShare(e, 0.15, ConnectorLinkSelectionBehaviorDistributionConstants.NEAREST)
@@ -174,10 +168,10 @@ def addRawEmpiricalDistributionObservation(node, value = None):
 def addVehicleModelShare(distributionNode, occurence, value):
     ret = etree.SubElement(
         distributionNode, 
-        DistributionShareConstants.TAG, 
+        VehicleModelDistributionConstants.SHARE_TAG, 
         {
-            EnumDistributionShareConstants.OCCURENCE_ATTR: str(occurence),
-            EnumDistributionShareConstants.VALUE_ATTR: str(value)
+            VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR: str(occurence),
+            VehicleModelDistributionConstants.SHARE_VALUE_ATTR: str(value)
         }
     )        
 
@@ -197,14 +191,8 @@ def createVehicleModelsDistributionNode(attachTo, shareTuplesAsOccurence_Value, 
 
     return ret
 
-class ColorDistributionConstants:
+class ColorDistributionConstants(GenericDistributionConstants, DistributionShareConstants):
     DISTRIBUTION_TYPE = 'colors'
-    DISTRIBUTION_TAG = 'distribution'
-    DISTRIBUTION_NAME_ATTR = 'name'
-    DISTRIBUTION_UUID_ATTR = 'uuid'
-    SHARE_TAG = 'share'
-    SHARE_OCCURENCE_ATTR = 'occurence'
-    SHARE_VALUE_ATTR = 'value'
 
 def createAndAddColorShare(distr, occurence, color):
     ret = etree.SubElement(distr, ColorDistributionConstants.SHARE_TAG, {
@@ -215,9 +203,9 @@ def createAndAddColorShare(distr, occurence, color):
     return ret
 
 def createAndAddColorDistributionNode(attachTo, shareTuplesAsOccurence_Value, name = 'a color distribution'):
-    ret = etree.SubElement(attachTo, ColorDistributionConstants.DISTRIBUTION_TAG, {
-        ColorDistributionConstants.DISTRIBUTION_NAME_ATTR: name,
-        ColorDistributionConstants.DISTRIBUTION_UUID_ATTR: str(UUID()),
+    ret = etree.SubElement(attachTo, ColorDistributionConstants.TAG, {
+        ColorDistributionConstants.NAME_ATTR: name,
+        ColorDistributionConstants.UUID_ATTR: str(UUID()),
     })
 
     for shareTuple in shareTuplesAsOccurence_Value:
@@ -237,21 +225,21 @@ def createAndAddCleanColorDistributionNode(attachTo):
 
 def create_and_add_acceleration_distribution_point(accel_distr_node, speed, mean, stdev):
     dp_attributes = {
-        AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR: str(speed),
-        AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR: str(mean),
-        AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR: str(stdev),
+        MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR: str(speed),
+        MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR: str(mean),
+        MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR: str(stdev),
     }
-    dp = etree.SubElement(accel_distr_node, AccelerationDistributionConstants.DATAPOINT_TAG, dp_attributes)
+    dp = etree.SubElement(accel_distr_node, MaxAccelerationDistributionConstants.DATAPOINT_TAG, dp_attributes)
     return dp
 
 def create_and_add_acceleration_distribution_node(attach_to, dp_tuples_as_v_m_sd, speed_unit, accel_unit, name = 'an accel distribution'):
     main_attributes = {
-        AccelerationDistributionConstants.NAME_ATTR: name,
-        AccelerationDistributionConstants.UUID_ATTR: str(UUID()),
-        AccelerationDistributionConstants.SPEED_UNIT_ATTR: speed_unit,
-        AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit,
+        MaxAccelerationDistributionConstants.NAME_ATTR: name,
+        MaxAccelerationDistributionConstants.UUID_ATTR: str(UUID()),
+        MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR: speed_unit,
+        MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit,
     }
-    ret = etree.SubElement(attach_to, AccelerationDistributionConstants.DISTRIBUTION_TAG, attrib=main_attributes)
+    ret = etree.SubElement(attach_to, MaxAccelerationDistributionConstants.TAG, attrib=main_attributes)
     for dp in dp_tuples_as_v_m_sd:
         create_and_add_acceleration_distribution_point(ret, dp[0], dp[1], dp[2])
     
@@ -262,21 +250,31 @@ def create_and_add_clean_accel_distribution_node(attach_to):
     return create_and_add_acceleration_distribution_node(
         attach_to, tuples, SpeedUnits.MILES_PER_HOUR, AccelerationUnits.FEET_PER_SECOND_SQUARED) 
 
-def create_distance_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'distribution name'):
+def create_and_add_distance_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'distribution name'):
     ret = etree.SubElement(attach_to, 'distribution', {
-        'units': units,
-        'name': name,
-        'uuid': str(UUID())
+        DistanceDistributionConstants.UNITS_ATTR: units,
+        DistanceDistributionConstants.NAME_ATTR: name,
+        DistanceDistributionConstants.UUID_ATTR: str(UUID())
+    })
+    ret.append(distr_node)
+
+    return ret
+
+def create_and_add_speed_distribution_node(attach_to, units: str, distr_node: etree.Element, name: str = 'Unnamed Speed Distribution'):
+    ret = etree.SubElement(attach_to, 'distribution', {
+        SpeedDistributionConstants.UNITS_ATTR: units,
+        SpeedDistributionConstants.NAME_ATTR: name,
+        SpeedDistributionConstants.UUID_ATTR: str(UUID())
     })
     ret.append(distr_node)
 
     return ret
 
 def create_and_add_max_decel_distribution_node(attach_to, distribution, accel_unit, name='a max decel distribution'):
-    node = etree.SubElement(attach_to, MaxDecelerationDistributionConstants.DISTRIBUTION_TAG, {
+    node = etree.SubElement(attach_to, MaxDecelerationDistributionConstants.TAG, {
         MaxDecelerationDistributionConstants.NAME_ATTR: name,
         MaxDecelerationDistributionConstants.UUID_ATTR: str(UUID()),
-        MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR: accel_unit
+        MaxDecelerationDistributionConstants.UNITS_ATTR: accel_unit
     })
 
     node.append(distribution)
@@ -312,11 +310,8 @@ def create_empirical_fractional_distribution_node(dp_tuples_as_prob_val):
 
     return ret
 
-class DesiredAccelerationFractionDistributionConstants:
+class DesiredAccelerationFractionDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'desired-acceleration-fractions'
-    TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
 
 def create_and_add_desired_accel_fraction_node(attach_to, distribution, name='a desired accel fraction distribution'):
     ret = etree.SubElement(attach_to, DesiredAccelerationFractionDistributionConstants.TAG, {
@@ -333,11 +328,8 @@ def create_and_add_clean_desired_accel_fraction_node(attach_to):
 
     return ret
 
-class DesiredDecelerationFractionDistributionConstants:
+class DesiredDecelerationFractionDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'desired-deceleration-fractions'
-    TAG = 'distribution'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
 
 def create_and_add_desired_decel_fraction_node(attach_to, distribution, name="a desired decel fraction distribution"):
     ret = etree.SubElement(attach_to, DesiredDecelerationFractionDistributionConstants.TAG, {
@@ -351,6 +343,18 @@ def create_and_add_desired_decel_fraction_node(attach_to, distribution, name="a 
 def create_and_add_clean_desired_decel_fraction_node(attach_to):
     distr = create_normal_fractional_distribution_node(0.5, 0.15)
     ret = create_and_add_desired_decel_fraction_node(attach_to, distr)
+
+    return ret
+
+class SpeedDistributionConstants(DistributionWithUnitsConstants):
+    pass
+
+class TargetSpeedDistributionConstants(SpeedDistributionConstants):
+    DISTRIBUTION_TYPE = 'speed-distributions'
+
+def create_and_add_clean_speed_distribution_node(attach_to):
+    distr = createEmpiricalDistributionNode([(0, 30), (0.5, 50), (1.0, 60)])
+    ret = create_and_add_speed_distribution_node(attach_to, SpeedUnits.KILOMETERS_PER_HOUR, distr)
 
     return ret
 
@@ -369,21 +373,21 @@ class CleanDistributionsDocument:
         self.connectorMaxPositioningDistancesNode.attrib[DistributionSetConstants.TYPE_ATTR] = 'connector-max-positioning-distance'
         firstNormalDist = createNormalDistributionNode(1609, 402, minValue=400)
         firstNormalDist.attrib['median'] = '1600'
-        create_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', firstNormalDist)
-        create_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', firstNormalDist)
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
                 createNormalDistributionNode(804.5, 201, minValue=300, maxValue=1000))
-        create_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet',
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet',
                 createEmpiricalDistributionNode([(0, 2000), (0.15, 1500), (0.85, 800), (1, 400)]), 'observed by advanced technology')
         values = [1525.1118, 2202.5331, 1257.0525, 1577.4787,  831.2836,
                   1304.6679, 1109.5408, 1702.9872, 1945.2201, 2457.4059,
                   1692.9078, 1556.1454, 1397.7309, 1578.0382, 2232.6108,
                   2037.6286, 1629.7739,  897.0939,  910.1857, 1023.5309, 
                   1756.4594]
-        create_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
                 createRawEmpiricalDistributionNode(values, 
                         RawEmpiricalDistributionConstants.AGGRESSION_VALUE_NEGATIVE), 'observed lc distances')
         bins = [ (0, 10, 2), (10, 20, 5), (20, 30, 10), (30, 40, 6), (40, 50, 3) ]
-        create_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
                 createBinnedDistributionNode(bins, BinnedDistributionConstants.AGGRESSION_VALUE_NEGATIVE))
 
         self.vehicleModelsNode = etree.SubElement(
@@ -413,7 +417,7 @@ class CleanDistributionsDocument:
         self.accel_functions_node = etree.SubElement(
             self.documentRoot,
             DistributionSetConstants.TAG, {
-                DistributionSetConstants.TYPE_ATTR: AccelerationDistributionConstants.DISTRIBUTION_TYPE,
+                DistributionSetConstants.TYPE_ATTR: MaxAccelerationDistributionConstants.DISTRIBUTION_TYPE,
             }
         )
         create_and_add_clean_accel_distribution_node(self.accel_functions_node)
@@ -438,6 +442,14 @@ class CleanDistributionsDocument:
             }
         )
         create_and_add_clean_desired_decel_fraction_node(self.desired_decel_fractions_node)
+
+        self.target_speeds_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: TargetSpeedDistributionConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_speed_distribution_node(self.target_speeds_node)
 
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
@@ -484,6 +496,9 @@ class CleanDistributionsDocument:
     def get_desired_decel_fractions_node(self):
         return self.desired_decel_fractions_node
 
+    def get_target_speeds_node(self):
+        return self.target_speeds_node
+
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
         self.doc = CleanDistributionsDocument()
@@ -510,19 +525,19 @@ class TestsForSimpleDataTypes(unittest.TestCase):
     
     def testThatUuidsAreBeingValidated(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', distr)
-        node.attrib[NormalDistributionConstants.UUID_ATTR] = 'invalid-uuid'
+        node = create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', distr)
+        node.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = 'invalid-uuid'
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationsAreBeingValidated(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatAggressionDirectionsAreBeingValidated(self):
         node = createRawEmpiricalDistributionNode([0, 3, 4], 'invalid-direction')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     # Color simple-type is tested with color distributions below
@@ -538,98 +553,98 @@ class TestsForNormalDistributions(unittest.TestCase):
     def testThatMeanIsRequired(self):
         node = createCleanNormalDistributionNode()
         node.attrib.pop(NormalDistributionConstants.MEAN_ATTR)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatMeanMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MEAN_ATTR] = 'not numeric!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationIsRequired(self):
         node = createCleanNormalDistributionNode()
         node.attrib.pop(NormalDistributionConstants.SD_ATTR)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatStandardDeviationMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = 'not numeric!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationMustBeNonnegative(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatStandardDeviationZeroIsOkay(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = '0'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatReverseIsBoolean(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'truuuue'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatReverseIsBoolean2(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'true'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
     def testThatReverseIsBoolean3(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'false'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatBothLimitsAreAllowed(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = '-2'
         node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = '2'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
     def testThatLowerLimitOnlyIsAllowed(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = '-2'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
     def testThatUpperLimitOnlyIsAllowed(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = '2'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
     def testThatLowerLimitMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = 'non-numeric'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatUpperLimitMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = 'non-numeric'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatElementCannotHaveSubelements(self):
         node = createCleanNormalDistributionNode()
         etree.SubElement(node, 'subelement')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherAttributesAreOkay(self):
         node = createCleanNormalDistributionNode()
         node.attrib['a-new-attribute'] = 'okay!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
 class TestsForEmpiricalDistributions(unittest.TestCase):
@@ -638,79 +653,79 @@ class TestsForEmpiricalDistributions(unittest.TestCase):
 
     def testThatDataCountCannotBeZero(self):
         node = createEmpiricalDistributionNode([])
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityMustNotBeNegative(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, -1, 4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     def testThatProbabilityMustNotBeGreaterThanOne(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 2, 4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityOfZeroIsOkay(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 0, 4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityOfOneIsOkay(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 1, 4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityOfOneHalfIsOkay(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 0.5, 4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityIsRequired(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, value=4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityMustBeNumeric(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 'probability', 4)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueIsRequired(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, probability = 0.5)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueMustBeNumeric(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 0.5, 'value')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatOneThousandPointsAreOkay(self):
         points = [(i * 0.001, i) for i in range(1000)]
         node = createEmpiricalDistributionNode(points)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatOtherSubelementsAreBanned(self):
         node = createCleanEmpiricalDistributionNode()
         etree.SubElement(node, 'another-subelement')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherAttributesAreOkay(self):
         node = createCleanEmpiricalDistributionNode()
         node.attrib['a-new-attribute'] = 'okay!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
     def testThatObservationSubElementsAreBanned(self):
@@ -718,14 +733,14 @@ class TestsForEmpiricalDistributions(unittest.TestCase):
         observation = addEmpiricalDataPoint(node, 0.6, 5)
         etree.SubElement(observation, 'subelement')
         node.append(observation)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherObservationAttributesAreOkay(self):
         node = createCleanEmpiricalDistributionNode()
         observation = addEmpiricalDataPoint(node, 0.6, 5)
         observation.attrib['other-attribute'] = 'okay!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
 class TestsForBinnedDistributions(unittest.TestCase):
@@ -733,7 +748,7 @@ class TestsForBinnedDistributions(unittest.TestCase):
         self.doc = CleanDistributionsDocument()
     
     def append(self, node):
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
 
     def testThatAggressionDirectionIsRequired(self):
         node = createCleanBinnedDistributionNode()
@@ -862,62 +877,62 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
     def testThatAggressionDirectionIsRequired(self):
         node = self.createCleanDistributionNode()
         node.attrib.pop(RawEmpiricalDistributionConstants.AGGRESSION_ATTR)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherSubelementsAreBanned(self):
         node = self.createCleanDistributionNode()
         etree.SubElement(node, 'another-subelement')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherAttributesAreOkay(self):
         node = self.createCleanDistributionNode()
         node.attrib['another-attribute'] = 'okay!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatObservationSubElementsAreBanned(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node, 1234)
         etree.SubElement(dpNode, 'another-subelement')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherObservationAttributesAreOkay(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node, 1234)
         dpNode.attrib['another-attr'] = 'okay!'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatValueIsRequired(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node)
         dpNode.attrib['other-attr'] = 'blah'
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueMustBeNumeric(self):
         node = self.createCleanDistributionNode()
         addRawEmpiricalDistributionObservation(node, 'not numeric!')
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCannotBeZero(self):
         node = createRawEmpiricalDistributionNode([], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCanBeOne(self):
         node = createRawEmpiricalDistributionNode([5], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
     
     def testThatOneThousandsPointsAreOkay(self):
         points = [i * 0.25 for i in range(1000)]
         node = createRawEmpiricalDistributionNode(points, RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
         self.assertTrue(self.doc.validate())
 
 class TestsForDistanceDistributions(unittest.TestCase):
@@ -927,51 +942,51 @@ class TestsForDistanceDistributions(unittest.TestCase):
 
     def test_that_name_is_optional(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
-        node.attrib.pop('name')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node.attrib.pop(DistanceDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def test_that_uuid_is_required(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
-        node.attrib.pop('uuid')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node.attrib.pop(DistanceDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_uuid_is_validated(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
-        node.attrib['uuid'] = 'an invalid uuid'
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node.attrib[DistanceDistributionConstants.UUID_ATTR] = 'an invalid uuid'
         self.assertFalse(self.doc.validate())
 
     def test_that_normal_distribution_is_ok(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_empirical_distribution_is_ok(self):
         distr = createCleanEmpiricalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'empirical distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'empirical distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_raw_empirical_distribution_is_ok(self):
         distr = createRawEmpiricalDistributionNode([1, 2, 3, 4], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'raw empirical distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'raw empirical distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_binned_distribution_is_ok(self):
         distr = createCleanBinnedDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_other_subelements_are_banned(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
         etree.SubElement(node, 'other-attribute')
         self.assertTrue(self.doc.validate())
 
     def test_that_other_attributes_are_ok(self):
         distr = createCleanNormalDistributionNode()
-        node = create_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
         node.attrib['other-attr'] = 'value'
         self.assertTrue(self.doc.validate())
 
@@ -997,17 +1012,17 @@ class TestsForConnectorLinkSelectionBehaviorDistributions(unittest.TestCase):
         self.assertFalse(self.doc.validate())
 
     def testThatNameIsOptional(self):
-        self.cleanDistr.attrib.pop(EnumDistributionConstants.NAME_ATTR)
+        self.cleanDistr.attrib.pop(ConnectorLinkSelectionBehaviorDistributionConstants.NAME_ATTR)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertTrue(self.doc.validate())
     
     def testThatUuidIsRequired(self):
-        self.cleanDistr.attrib.pop(EnumDistributionConstants.UUID_ATTR)
+        self.cleanDistr.attrib.pop(ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR)
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValid(self):
-        self.cleanDistr.attrib[EnumDistributionConstants.UUID_ATTR] = 'not a uuid!'
+        self.cleanDistr.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = 'not a uuid!'
         self.doc.getConnectorLinkSelectionBehaviorsNode().append(self.cleanDistr)
         self.assertFalse(self.doc.validate())
     
@@ -1054,19 +1069,19 @@ class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
     def testThatNormalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         distr = createNormalDistributionNode(1, 2)
-        create_distance_distribution_node(node, 'feet', distr)
+        create_and_add_distance_distribution_node(node, 'feet', distr)
         self.assertTrue(self.doc.validate())
 
     def testThatEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         distr = createEmpiricalDistributionNode([(0, 3), (0.15, 4), (0.85, 5), (1.0, 6)])
-        create_distance_distribution_node(node, 'feet', distr)
+        create_and_add_distance_distribution_node(node, 'feet', distr)
         self.assertTrue(self.doc.validate())
     
     def testThatRawEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         distr = createRawEmpiricalDistributionNode([3, 4, 5, 6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_distance_distribution_node(node, 'feet', distr)
+        create_and_add_distance_distribution_node(node, 'feet', distr)
         self.assertTrue(self.doc.validate())
 
     def testThatOtherSubelementsAreBanned(self):
@@ -1178,43 +1193,43 @@ class TestsForVehicleModelDistributions(unittest.TestCase):
     
     def testThatOccurenceIsRequired(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib.pop(DistributionShareConstants.OCCURENCE_ATTR)
+        firstNode.attrib.pop(VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR)
 
         self.assertFalse(self.doc.validate())
     
     def testThatOccurenceMayNotBeEmpty(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.OCCURENCE_ATTR] = ''
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR] = ''
 
         self.assertFalse(self.doc.validate())
     
     def testThatOccurenceMayNotBeString(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.OCCURENCE_ATTR] = 'not a number'
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR] = 'not a number'
 
         self.assertFalse(self.doc.validate())
 
     def testThatValueIsRequired(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib.pop(DistributionShareConstants.VALUE_ATTR)
+        firstNode.attrib.pop(VehicleModelDistributionConstants.SHARE_VALUE_ATTR)
 
         self.assertFalse(self.doc.validate())
 
     def testThatValueMayNotBeEmpty(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = ''
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_VALUE_ATTR] = ''
 
         self.assertFalse(self.doc.validate())
     
     def testThatValueMayNotBeArbitraryString(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = 'not a uuid'
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_VALUE_ATTR] = 'not a uuid'
 
         self.assertFalse(self.doc.validate())
     
     def testThatValueMayNotBeArbitraryNumber(self):
         firstNode = self.cleanDistr[0]
-        firstNode.attrib[DistributionShareConstants.VALUE_ATTR] = '12345'
+        firstNode.attrib[VehicleModelDistributionConstants.SHARE_VALUE_ATTR] = '12345'
 
         self.assertFalse(self.doc.validate())
     
@@ -1234,17 +1249,17 @@ class TestsForColorDistributions(unittest.TestCase):
 
     def testThatNameIsOptional(self):
         node = createAndAddCleanColorDistributionNode(self.targetNode)
-        node.attrib.pop(ColorDistributionConstants.DISTRIBUTION_NAME_ATTR)
+        node.attrib.pop(ColorDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def testThatUuidIsRequired(self):
         node = createAndAddCleanColorDistributionNode(self.targetNode)
-        node.attrib.pop(ColorDistributionConstants.DISTRIBUTION_UUID_ATTR)
+        node.attrib.pop(ColorDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
     
     def testThatUuidIsValidated(self):
         node = createAndAddCleanColorDistributionNode(self.targetNode)
-        node.attrib[ColorDistributionConstants.DISTRIBUTION_UUID_ATTR] = 'an invalid uuid'
+        node.attrib[ColorDistributionConstants.UUID_ATTR] = 'an invalid uuid'
         self.assertFalse(self.doc.validate())
 
     def testThatOtherSubelementsAreBanned(self):
@@ -1348,11 +1363,8 @@ class AccelerationUnits:
     FEET_PER_SECOND_SQUARED = 'feet-per-second-squared'
     G = 'g'
 
-class AccelerationDistributionConstants:
-    DISTRIBUTION_TAG = 'distribution'
+class MaxAccelerationDistributionConstants(GenericDistributionConstants):
     DISTRIBUTION_TYPE = 'acceleration'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
     SPEED_UNIT_ATTR = 'speed-unit'
     ACCELERATION_UNIT_ATTR = 'acceleration-unit'
     DATAPOINT_TAG = 'dp'
@@ -1367,24 +1379,24 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_name_is_optional(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.NAME_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def test_that_uuid_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.UUID_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_uuid_must_be_a_uuid(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib[AccelerationDistributionConstants.UUID_ATTR] = 'not a uuid'
+        node.attrib[MaxAccelerationDistributionConstants.UUID_ATTR] = 'not a uuid'
         self.assertFalse(self.doc.validate())
-        node.attrib[AccelerationDistributionConstants.UUID_ATTR] = 'c3937207-d6db-481g-998e-e3abec44abb2' # there's a g in it
+        node.attrib[MaxAccelerationDistributionConstants.UUID_ATTR] = 'c3937207-d6db-481g-998e-e3abec44abb2' # there's a g in it
         self.assertFalse(self.doc.validate())
 
     def test_that_speed_unit_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.SPEED_UNIT_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_speed_unit_values_work(self):
@@ -1394,19 +1406,19 @@ class TestsForAccelerationDistributions(unittest.TestCase):
             SpeedUnits.METERS_PER_SECOND, SpeedUnits.MILES_PER_HOUR
         ]
         for unit in choices:
-            node.attrib[AccelerationDistributionConstants.SPEED_UNIT_ATTR] = unit
+            node.attrib[MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR] = unit
             self.assertTrue(self.doc.validate())
 
     def test_that_speed_unit_is_restricted(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib[AccelerationDistributionConstants.SPEED_UNIT_ATTR] = SpeedUnits.FEET_PER_SECOND + 's'
+        node.attrib[MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR] = SpeedUnits.FEET_PER_SECOND + 's'
         self.assertFalse(self.doc.validate())
-        node.attrib[AccelerationDistributionConstants.SPEED_UNIT_ATTR] = ''
+        node.attrib[MaxAccelerationDistributionConstants.SPEED_UNIT_ATTR] = ''
         self.assertFalse(self.doc.validate())
 
     def test_that_accel_unit_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib.pop(AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
+        node.attrib.pop(MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_accel_unit_values_work(self):
@@ -1417,14 +1429,14 @@ class TestsForAccelerationDistributions(unittest.TestCase):
             AccelerationUnits.METERS_PER_SECOND_SQUARED
         ]
         for unit in choices:
-            node.attrib[AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = unit
+            node.attrib[MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = unit
             self.assertTrue(self.doc.validate())
 
     def test_that_accel_unit_is_restricted(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        node.attrib[AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = AccelerationUnits.G + 's'
+        node.attrib[MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = AccelerationUnits.G + 's'
         self.assertFalse(self.doc.validate())
-        node.attrib[AccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = ''
+        node.attrib[MaxAccelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = ''
         self.assertFalse(self.doc.validate())
 
     def test_that_other_attributes_are_ok(self):
@@ -1434,7 +1446,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_zero_datapoints_fails(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        to_delete = node.findall(AccelerationDistributionConstants.DATAPOINT_TAG)
+        to_delete = node.findall(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         for dp in to_delete:
             node.remove(dp)
 
@@ -1442,7 +1454,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_one_datapoint_fails(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        to_delete = node.findall(AccelerationDistributionConstants.DATAPOINT_TAG)
+        to_delete = node.findall(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         for dp in to_delete[1:]:
             node.remove(dp)
 
@@ -1450,7 +1462,7 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_two_datapoints_is_ok(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        to_delete = node.findall(AccelerationDistributionConstants.DATAPOINT_TAG)
+        to_delete = node.findall(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         for dp in to_delete[2:]:
             node.remove(dp)
 
@@ -1465,76 +1477,75 @@ class TestsForAccelerationDistributions(unittest.TestCase):
 
     def test_that_dp_velocity_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib.pop(AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib.pop(MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_velocity_must_be_nonnegative(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '-5'
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '-5'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = ''
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = ''
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = 'not a number'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = 'not a number'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '0'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '0'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '5'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_VELOCITY_ATTR] = '5'
         self.assertTrue(self.doc.validate())
 
     def test_that_dp_mean_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib.pop(AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib.pop(MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_mean_must_be_numeric(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '-5'
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '-5'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '0'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '0'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '5'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = '5'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = ''
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = ''
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = 'not a number'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_MEAN_ATTR] = 'not a number'
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_stdev_is_required(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib.pop(AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib.pop(MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_dp_stdev_must_be_nonnegative(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '-5'
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '-5'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = ''
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = ''
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = 'not a number'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = 'not a number'
         self.assertFalse(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '0'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '0'
         self.assertTrue(self.doc.validate())
-        dp.attrib[AccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '5'
+        dp.attrib[MaxAccelerationDistributionConstants.DATAPOINT_STDEV_ATTR] = '5'
         self.assertTrue(self.doc.validate())
 
     def test_that_dp_other_attributes_are_ok(self):
         node: etree.Element = create_and_add_clean_accel_distribution_node(self.target_node)
-        dp: etree.Element = node.find(AccelerationDistributionConstants.DATAPOINT_TAG)
+        dp: etree.Element = node.find(MaxAccelerationDistributionConstants.DATAPOINT_TAG)
         dp.attrib['another-attribute'] = '-5'
         self.assertTrue(self.doc.validate())
 
-class MaxDecelerationDistributionConstants:
-    DISTRIBUTION_TAG = 'distribution'
+class AccelerationDistributionConstants(DistributionWithUnitsConstants):
+    pass
+
+class MaxDecelerationDistributionConstants(AccelerationDistributionConstants):
     DISTRIBUTION_TYPE = 'max-deceleration'
-    NAME_ATTR = 'name'
-    UUID_ATTR = 'uuid'
-    ACCELERATION_UNIT_ATTR = 'units'
 
 class TestsForMaxDecelerations(unittest.TestCase):
     def setUp(self):
@@ -1569,7 +1580,7 @@ class TestsForMaxDecelerations(unittest.TestCase):
 
     def test_that_units_is_required(self):
         node = create_and_add_clean_max_decel_distribution_node(self.target_node)
-        node.attrib.pop(MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR)
+        node.attrib.pop(MaxDecelerationDistributionConstants.UNITS_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_units_is_verified(self):
@@ -1582,7 +1593,7 @@ class TestsForMaxDecelerations(unittest.TestCase):
             ('Gs', False),
         ]
         for (value, result) in values_and_results:
-            node.attrib[MaxDecelerationDistributionConstants.ACCELERATION_UNIT_ATTR] = value
+            node.attrib[MaxDecelerationDistributionConstants.UNITS_ATTR] = value
             self.assertEqual(self.doc.validate(), result)
 
     def test_that_other_attributes_are_allowed(self):
@@ -1939,6 +1950,98 @@ class TestsForDesiredDecelFractionDistributions(unittest.TestCase):
         ]
         for (uuid_value, expected_result) in uuid_tuple_list:
             node.attrib[DesiredDecelerationFractionDistributionConstants.UUID_ATTR] = uuid_value
+            self.assertEqual(expected_result, self.doc.validate())
+
+class TestsForTargetSpeedDistributions(unittest.TestCase):
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_target_speeds_node()
+
+    def test_that_target_speeds_node_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == TargetSpeedDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_zero(self):
+        self.target_node[:] = []
+        self.assertTrue(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        for _ in range(1, 1000):
+            create_and_add_clean_speed_distribution_node(self.target_node)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_type_attr_is_checked(self):
+        self.target_node.attrib[DistributionSetConstants.TYPE_ATTR] = 'incorrect type'
+        self.assertFalse(self.doc.validate())
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        node.attrib.pop(TargetSpeedDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_name_values(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        names = ['', 'distribution name', '22011']
+        for name in names:
+            node.attrib[TargetSpeedDistributionConstants.NAME_ATTR] = name
+            self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        node.attrib.pop(TargetSpeedDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_uuid_is_being_verified(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        test_tuples = [
+            ('', False),
+            ('not a uuid', False),
+            ('bcb65ca8-4771-4aca-a07f-711a35810855', True),
+            ('bcb65ca8-4771-4aca-a07g-711a35810855', False),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[TargetSpeedDistributionConstants.UUID_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_units_is_required(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        node.attrib.pop(TargetSpeedDistributionConstants.UNITS_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_units_is_verified(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        test_tuples = [
+            ('', False),
+            (SpeedUnits.METERS_PER_SECOND, True),
+            (SpeedUnits.KILOMETERS_PER_HOUR, True),
+            (SpeedUnits.FEET_PER_SECOND, True),
+            (SpeedUnits.MILES_PER_HOUR, True),
+            ('invalid speed unit', False),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[TargetSpeedDistributionConstants.UNITS_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_for_valid_distribution_types(self):
+        distr_tuple_list = [
+            (create_normal_fractional_distribution_node(0.5, 0.15), True),
+            (create_empirical_fractional_distribution_node( [(0.0, 0.5), (1.0, 0.8)]), True),
+            (createNormalDistributionNode(0.5, 0.15), True),
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 0.8)]), True), # the fractional empirical distr is just a special case
+                                                                               # where values are in the range [0, 1]
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 1.2)]), True), # because there is a value outside the range [0, 1]
+            (createBinnedDistributionNode([(0, 1, 5)], BinnedDistributionConstants.AGGRESSION_VALUE_POSITIVE), True),
+            (createRawEmpiricalDistributionNode([0.4, 0.4, 0.6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE), True),
+        ]
+
+        for (distribution, expected_result) in distr_tuple_list:
+            self.target_node[:] = []
+            node = create_and_add_speed_distribution_node(self.target_node, SpeedUnits.MILES_PER_HOUR, distribution)
             self.assertEqual(expected_result, self.doc.validate())
 
 if (__name__ == '__main__'):

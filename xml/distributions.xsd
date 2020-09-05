@@ -250,6 +250,14 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="speed-distribution">
+        <xs:complexContent>
+            <xs:extension base="distribution-with-units">
+                <xs:attribute name="units" type="speed-unit-enum" use="required" />
+                <xs:anyAttribute processContents="skip" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <xs:complexType name="distance-distribution">
         <xs:complexContent>
             <xs:extension base="distribution-with-units">
@@ -574,6 +582,21 @@
                             <xs:element name="distribution" type="fractional-distribution" minOccurs="1" maxOccurs="unbounded"/>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="desired-deceleration-fractions" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <!-- Speed distributions -->
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Target Speed Distributions</xs:documentation>
+                        <xs:documentation>This distribution specifies target speeds that can be variously applied in the network.</xs:documentation>
+                        <xs:documentation>The vehicle's target speed is determined by its aggression parameter.</xs:documentation>
+                        <xs:documentation>Distributions that are not monotonic-increasing should issue a simulator warning.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="speed-distribution" minOccurs="0" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" fixed="speed-distributions" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
