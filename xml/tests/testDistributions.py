@@ -29,6 +29,12 @@ class ConnectorLinkSelectionBehaviorDistributionConstants(GenericDistributionCon
     BEST = 'BEST'
     RANDOM = 'RANDOM'
 
+class DistanceUnits:
+    FEET = 'feet'
+    METERS = 'meters'
+    MILES = 'miles'
+    KILOMETERS = 'kilometers'
+
 class NormalDistributionConstants:
     TAG = 'normal-distribution'
     MEAN_ATTR = 'mean'
@@ -373,21 +379,21 @@ class CleanDistributionsDocument:
         self.connectorMaxPositioningDistancesNode.attrib[DistributionSetConstants.TYPE_ATTR] = 'connector-max-positioning-distance'
         firstNormalDist = createNormalDistributionNode(1609, 402, minValue=400)
         firstNormalDist.attrib['median'] = '1600'
-        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', firstNormalDist)
-        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, firstNormalDist)
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, 
                 createNormalDistributionNode(804.5, 201, minValue=300, maxValue=1000))
-        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet',
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET,
                 createEmpiricalDistributionNode([(0, 2000), (0.15, 1500), (0.85, 800), (1, 400)]), 'observed by advanced technology')
         values = [1525.1118, 2202.5331, 1257.0525, 1577.4787,  831.2836,
                   1304.6679, 1109.5408, 1702.9872, 1945.2201, 2457.4059,
                   1692.9078, 1556.1454, 1397.7309, 1578.0382, 2232.6108,
                   2037.6286, 1629.7739,  897.0939,  910.1857, 1023.5309, 
                   1756.4594]
-        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, 
                 createRawEmpiricalDistributionNode(values, 
                         RawEmpiricalDistributionConstants.AGGRESSION_VALUE_NEGATIVE), 'observed lc distances')
         bins = [ (0, 10, 2), (10, 20, 5), (20, 30, 10), (30, 40, 6), (40, 50, 3) ]
-        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), 'feet', 
+        create_and_add_distance_distribution_node(self.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, 
                 createBinnedDistributionNode(bins, BinnedDistributionConstants.AGGRESSION_VALUE_NEGATIVE))
 
         self.vehicleModelsNode = etree.SubElement(
@@ -525,19 +531,19 @@ class TestsForSimpleDataTypes(unittest.TestCase):
     
     def testThatUuidsAreBeingValidated(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', distr)
+        node = create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, distr)
         node.attrib[ConnectorLinkSelectionBehaviorDistributionConstants.UUID_ATTR] = 'invalid-uuid'
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationsAreBeingValidated(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatAggressionDirectionsAreBeingValidated(self):
         node = createRawEmpiricalDistributionNode([0, 3, 4], 'invalid-direction')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     # Color simple-type is tested with color distributions below
@@ -553,98 +559,98 @@ class TestsForNormalDistributions(unittest.TestCase):
     def testThatMeanIsRequired(self):
         node = createCleanNormalDistributionNode()
         node.attrib.pop(NormalDistributionConstants.MEAN_ATTR)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatMeanMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MEAN_ATTR] = 'not numeric!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationIsRequired(self):
         node = createCleanNormalDistributionNode()
         node.attrib.pop(NormalDistributionConstants.SD_ATTR)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatStandardDeviationMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = 'not numeric!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     def testThatStandardDeviationMustBeNonnegative(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = '-1'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatStandardDeviationZeroIsOkay(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.SD_ATTR] = '0'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatReverseIsBoolean(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'truuuue'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatReverseIsBoolean2(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'true'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
     def testThatReverseIsBoolean3(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.REVERSE_ATTR] = 'false'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatBothLimitsAreAllowed(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = '-2'
         node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = '2'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
     def testThatLowerLimitOnlyIsAllowed(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = '-2'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
     def testThatUpperLimitOnlyIsAllowed(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = '2'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
     def testThatLowerLimitMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MIN_VALUE_ATTR] = 'non-numeric'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatUpperLimitMustBeNumeric(self):
         node = createCleanNormalDistributionNode()
         node.attrib[NormalDistributionConstants.MAX_VALUE_ATTR] = 'non-numeric'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatElementCannotHaveSubelements(self):
         node = createCleanNormalDistributionNode()
         etree.SubElement(node, 'subelement')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherAttributesAreOkay(self):
         node = createCleanNormalDistributionNode()
         node.attrib['a-new-attribute'] = 'okay!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
 class TestsForEmpiricalDistributions(unittest.TestCase):
@@ -653,79 +659,79 @@ class TestsForEmpiricalDistributions(unittest.TestCase):
 
     def testThatDataCountCannotBeZero(self):
         node = createEmpiricalDistributionNode([])
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityMustNotBeNegative(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, -1, 4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     def testThatProbabilityMustNotBeGreaterThanOne(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 2, 4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityOfZeroIsOkay(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 0, 4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityOfOneIsOkay(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 1, 4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityOfOneHalfIsOkay(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 0.5, 4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatProbabilityIsRequired(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, value=4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatProbabilityMustBeNumeric(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 'probability', 4)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueIsRequired(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, probability = 0.5)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueMustBeNumeric(self):
         node = createCleanEmpiricalDistributionNode()
         addEmpiricalDataPoint(node, 0.5, 'value')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatOneThousandPointsAreOkay(self):
         points = [(i * 0.001, i) for i in range(1000)]
         node = createEmpiricalDistributionNode(points)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatOtherSubelementsAreBanned(self):
         node = createCleanEmpiricalDistributionNode()
         etree.SubElement(node, 'another-subelement')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherAttributesAreOkay(self):
         node = createCleanEmpiricalDistributionNode()
         node.attrib['a-new-attribute'] = 'okay!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
     def testThatObservationSubElementsAreBanned(self):
@@ -733,14 +739,14 @@ class TestsForEmpiricalDistributions(unittest.TestCase):
         observation = addEmpiricalDataPoint(node, 0.6, 5)
         etree.SubElement(observation, 'subelement')
         node.append(observation)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
 
     def testThatOtherObservationAttributesAreOkay(self):
         node = createCleanEmpiricalDistributionNode()
         observation = addEmpiricalDataPoint(node, 0.6, 5)
         observation.attrib['other-attribute'] = 'okay!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
 class TestsForBinnedDistributions(unittest.TestCase):
@@ -748,7 +754,7 @@ class TestsForBinnedDistributions(unittest.TestCase):
         self.doc = CleanDistributionsDocument()
     
     def append(self, node):
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
 
     def testThatAggressionDirectionIsRequired(self):
         node = createCleanBinnedDistributionNode()
@@ -877,62 +883,62 @@ class TestsForRawEmpiricalDistributions(unittest.TestCase):
     def testThatAggressionDirectionIsRequired(self):
         node = self.createCleanDistributionNode()
         node.attrib.pop(RawEmpiricalDistributionConstants.AGGRESSION_ATTR)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherSubelementsAreBanned(self):
         node = self.createCleanDistributionNode()
         etree.SubElement(node, 'another-subelement')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherAttributesAreOkay(self):
         node = self.createCleanDistributionNode()
         node.attrib['another-attribute'] = 'okay!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatObservationSubElementsAreBanned(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node, 1234)
         etree.SubElement(dpNode, 'another-subelement')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatOtherObservationAttributesAreOkay(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node, 1234)
         dpNode.attrib['another-attr'] = 'okay!'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatValueIsRequired(self):
         node = self.createCleanDistributionNode()
         dpNode = addRawEmpiricalDistributionObservation(node)
         dpNode.attrib['other-attr'] = 'blah'
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatValueMustBeNumeric(self):
         node = self.createCleanDistributionNode()
         addRawEmpiricalDistributionObservation(node, 'not numeric!')
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCannotBeZero(self):
         node = createRawEmpiricalDistributionNode([], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertFalse(self.doc.validate())
     
     def testThatDataCountCanBeOne(self):
         node = createRawEmpiricalDistributionNode([5], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
     
     def testThatOneThousandsPointsAreOkay(self):
         points = [i * 0.25 for i in range(1000)]
         node = createRawEmpiricalDistributionNode(points, RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), 'feet', node)
+        create_and_add_distance_distribution_node(self.doc.getConnectorMaxPositioningDistancesNode(), DistanceUnits.FEET, node)
         self.assertTrue(self.doc.validate())
 
 class TestsForDistanceDistributions(unittest.TestCase):
@@ -942,53 +948,74 @@ class TestsForDistanceDistributions(unittest.TestCase):
 
     def test_that_name_is_optional(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'normal distribution')
         node.attrib.pop(DistanceDistributionConstants.NAME_ATTR)
         self.assertTrue(self.doc.validate())
 
     def test_that_uuid_is_required(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'normal distribution')
         node.attrib.pop(DistanceDistributionConstants.UUID_ATTR)
         self.assertFalse(self.doc.validate())
 
     def test_that_uuid_is_validated(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'normal distribution')
         node.attrib[DistanceDistributionConstants.UUID_ATTR] = 'an invalid uuid'
         self.assertFalse(self.doc.validate())
 
     def test_that_normal_distribution_is_ok(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'normal distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'normal distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_empirical_distribution_is_ok(self):
         distr = createCleanEmpiricalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'empirical distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'empirical distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_raw_empirical_distribution_is_ok(self):
         distr = createRawEmpiricalDistributionNode([1, 2, 3, 4], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'raw empirical distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'raw empirical distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_binned_distribution_is_ok(self):
         distr = createCleanBinnedDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'binned distribution')
         self.assertTrue(self.doc.validate())
 
     def test_that_other_subelements_are_banned(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'binned distribution')
         etree.SubElement(node, 'other-attribute')
         self.assertTrue(self.doc.validate())
 
     def test_that_other_attributes_are_ok(self):
         distr = createCleanNormalDistributionNode()
-        node = create_and_add_distance_distribution_node(self.test_root, 'feet', distr, 'binned distribution')
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'binned distribution')
         node.attrib['other-attr'] = 'value'
         self.assertTrue(self.doc.validate())
+
+    def test_that_units_is_required(self):
+        distr = createCleanNormalDistributionNode()
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'binned distribution')
+        node.attrib.pop(DistanceDistributionConstants.UNITS_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_units_is_verified(self):
+        distr = createCleanNormalDistributionNode()
+        node = create_and_add_distance_distribution_node(self.test_root, DistanceUnits.FEET, distr, 'binned distribution')
+        units_tuples = [
+            (DistanceUnits.FEET, True),
+            (DistanceUnits.METERS, True),
+            (DistanceUnits.MILES, True),
+            (DistanceUnits.KILOMETERS, True),
+            ('', False),
+            ('kilometres', False)
+        ]
+        for (unit, expected_result) in units_tuples:
+            node.attrib[DistanceDistributionConstants.UNITS_ATTR] = unit
+            self.assertEqual(self.doc.validate(), expected_result)
 
 class TestsForConnectorLinkSelectionBehaviorDistributions(unittest.TestCase):
     def setUp(self):
@@ -1069,19 +1096,19 @@ class TestsForConnectorMaxPositioningDistance(unittest.TestCase):
     def testThatNormalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         distr = createNormalDistributionNode(1, 2)
-        create_and_add_distance_distribution_node(node, 'feet', distr)
+        create_and_add_distance_distribution_node(node, DistanceUnits.FEET, distr)
         self.assertTrue(self.doc.validate())
 
     def testThatEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         distr = createEmpiricalDistributionNode([(0, 3), (0.15, 4), (0.85, 5), (1.0, 6)])
-        create_and_add_distance_distribution_node(node, 'feet', distr)
+        create_and_add_distance_distribution_node(node, DistanceUnits.FEET, distr)
         self.assertTrue(self.doc.validate())
     
     def testThatRawEmpiricalDistributionCanBeAdded(self):
         node = self.doc.getConnectorMaxPositioningDistancesNode()
         distr = createRawEmpiricalDistributionNode([3, 4, 5, 6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE)
-        create_and_add_distance_distribution_node(node, 'feet', distr)
+        create_and_add_distance_distribution_node(node, DistanceUnits.FEET, distr)
         self.assertTrue(self.doc.validate())
 
     def testThatOtherSubelementsAreBanned(self):
