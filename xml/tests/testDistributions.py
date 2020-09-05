@@ -1952,5 +1952,97 @@ class TestsForDesiredDecelFractionDistributions(unittest.TestCase):
             node.attrib[DesiredDecelerationFractionDistributionConstants.UUID_ATTR] = uuid_value
             self.assertEqual(expected_result, self.doc.validate())
 
+class TestsForTargetSpeedDistributions(unittest.TestCase):
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_target_speeds_node()
+
+    def test_that_target_speeds_node_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: item.attrib[DistributionSetConstants.TYPE_ATTR] == TargetSpeedDistributionConstants.DISTRIBUTION_TYPE, 
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_distribution_count_may_be_zero(self):
+        self.target_node[:] = []
+        self.assertTrue(self.doc.validate())
+
+    def test_that_distribution_count_may_be_one_thousand(self):
+        for _ in range(1, 1000):
+            create_and_add_clean_speed_distribution_node(self.target_node)
+        self.assertTrue(self.doc.validate())
+
+    def test_that_type_attr_is_checked(self):
+        self.target_node.attrib[DistributionSetConstants.TYPE_ATTR] = 'incorrect type'
+        self.assertFalse(self.doc.validate())
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        node.attrib.pop(TargetSpeedDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_name_values(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        names = ['', 'distribution name', '22011']
+        for name in names:
+            node.attrib[TargetSpeedDistributionConstants.NAME_ATTR] = name
+            self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        node.attrib.pop(TargetSpeedDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_uuid_is_being_verified(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        test_tuples = [
+            ('', False),
+            ('not a uuid', False),
+            ('bcb65ca8-4771-4aca-a07f-711a35810855', True),
+            ('bcb65ca8-4771-4aca-a07g-711a35810855', False),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[TargetSpeedDistributionConstants.UUID_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_units_is_required(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        node.attrib.pop(TargetSpeedDistributionConstants.UNITS_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_units_is_verified(self):
+        node = create_and_add_clean_speed_distribution_node(self.target_node)
+        test_tuples = [
+            ('', False),
+            (SpeedUnits.METERS_PER_SECOND, True),
+            (SpeedUnits.KILOMETERS_PER_HOUR, True),
+            (SpeedUnits.FEET_PER_SECOND, True),
+            (SpeedUnits.MILES_PER_HOUR, True),
+            ('invalid speed unit', False),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[TargetSpeedDistributionConstants.UNITS_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_for_valid_distribution_types(self):
+        distr_tuple_list = [
+            (create_normal_fractional_distribution_node(0.5, 0.15), True),
+            (create_empirical_fractional_distribution_node( [(0.0, 0.5), (1.0, 0.8)]), True),
+            (createNormalDistributionNode(0.5, 0.15), True),
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 0.8)]), True), # the fractional empirical distr is just a special case
+                                                                               # where values are in the range [0, 1]
+            (createEmpiricalDistributionNode([(0.0, 0.5), (1.0, 1.2)]), True), # because there is a value outside the range [0, 1]
+            (createBinnedDistributionNode([(0, 1, 5)], BinnedDistributionConstants.AGGRESSION_VALUE_POSITIVE), True),
+            (createRawEmpiricalDistributionNode([0.4, 0.4, 0.6], RawEmpiricalDistributionConstants.AGGRESSION_VALUE_POSITIVE), True),
+        ]
+
+        for (distribution, expected_result) in distr_tuple_list:
+            self.target_node[:] = []
+            node = create_and_add_speed_distribution_node(self.target_node, SpeedUnits.MILES_PER_HOUR, distribution)
+            self.assertEqual(expected_result, self.doc.validate())
+
 if (__name__ == '__main__'):
     unittest.main()
