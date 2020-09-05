@@ -599,6 +599,20 @@
                         <xs:attribute name="type" type="xs:string" fixed="speed-distributions" use="required" />
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Posted speed deviation distributions</xs:documentation>
+                        <xs:documentation>This distribution specifies observed deviation from posted speed.</xs:documentation>
+                        <xs:documentation>The vehicle's target deviation from posted speed is determined by its aggression paramteter.</xs:documentation>
+                        <xs:documentation>Distributions that are not monotonic-increasing should issue a simulator warning.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="speed-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence> 
+                        <xs:attribute name="type" type="xs:string" fixed="posted-speed-deviations" use="required" />
+                    </xs:complexType>
+                </xs:element>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

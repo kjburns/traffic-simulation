@@ -108,4 +108,13 @@
     </distribution>
   </distribution-set>
   <distribution-set type="speed-distributions" />
+  <distribution-set type="posted-speed-deviations">
+    <distribution uuid="4ff645b1-6436-4968-9ad1-ac014a185198" name="-5 to 5 mph, zero at 85th percentile" units="miles-per-hour">
+      <empirical-distribution>
+        <dp prob="0" val="-5" />
+        <dp prob="0.85" val="0" />
+        <dp prob="1" val="5" />
+      </empirical-distribution>
+    </distribution>
+  </distribution-set>
 </distributions>
