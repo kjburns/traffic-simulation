@@ -364,6 +364,23 @@ def create_and_add_clean_speed_distribution_node(attach_to):
 
     return ret
 
+class PostedSpeedDeviationConstants(SpeedDistributionConstants):
+    DISTRIBUTION_TYPE = 'posted-speed-deviations'
+
+def create_and_add_posted_speed_deviation_distribution_node(attach_to, speed_units, distr, name = 'posted speed deviation distribution'):
+    ret = etree.SubElement(attach_to, PostedSpeedDeviationConstants.TAG, {
+        PostedSpeedDeviationConstants.NAME_ATTR: name,
+        PostedSpeedDeviationConstants.UUID_ATTR: str(UUID()),
+        PostedSpeedDeviationConstants.UNITS_ATTR: speed_units,
+    })
+    ret.append(distr)
+
+    return ret
+
+def create_and_add_clean_posted_speed_deviation_distribution_node(attach_to):
+    distr = createEmpiricalDistributionNode([(0, -5.0), (0.85, 0.0), (1.0, 5.0)])
+    return create_and_add_posted_speed_deviation_distribution_node(attach_to, SpeedUnits.MILES_PER_HOUR, distr)
+
 class CleanDistributionsDocument:
     def __init__(self):
         NSMAP = {"xsi" : 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -457,6 +474,14 @@ class CleanDistributionsDocument:
         )
         create_and_add_clean_speed_distribution_node(self.target_speeds_node)
 
+        self._posted_speed_deviations_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: PostedSpeedDeviationConstants.DISTRIBUTION_TYPE
+            }
+        )
+        create_and_add_clean_posted_speed_deviation_distribution_node(self._posted_speed_deviations_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot, 
                 xml_declaration=False, pretty_print=True, encoding='unicode')) 
@@ -504,6 +529,9 @@ class CleanDistributionsDocument:
 
     def get_target_speeds_node(self):
         return self.target_speeds_node
+
+    def get_posted_speed_deviations_node(self):
+        return self._posted_speed_deviations_node
 
 class TestsForCleanDocument(unittest.TestCase):
     def setUp(self):
@@ -2070,6 +2098,11 @@ class TestsForTargetSpeedDistributions(unittest.TestCase):
             self.target_node[:] = []
             node = create_and_add_speed_distribution_node(self.target_node, SpeedUnits.MILES_PER_HOUR, distribution)
             self.assertEqual(expected_result, self.doc.validate())
+
+class TestsForPostedSpeedVariation(unittest.TestCase):
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        # TODO self.target_node
 
 if (__name__ == '__main__'):
     unittest.main()
