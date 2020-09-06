@@ -2,53 +2,53 @@
 <distributions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../xml/distributions.xsd">
   <distribution-set type="connector-link-selection-behaviors">
     <distribution uuid="9424849e-dbac-4f34-b989-33f2fe83d6ae" name="Default">
-      <share occurence="15.0" value="NEAREST"/>
-      <share occurence="35.0" value="FARTHEST"/>
-      <share occurence="35.0" value="BEST"/>
-      <share occurence="15.0" value="RANDOM"/>
+      <share occurrence="15.0" value="NEAREST"/>
+      <share occurrence="35.0" value="FARTHEST"/>
+      <share occurrence="35.0" value="BEST"/>
+      <share occurrence="15.0" value="RANDOM"/>
     </distribution>
   </distribution-set>
   <distribution-set type="connector-max-positioning-distance" />
   <distribution-set type="vehicle-models">
     <distribution uuid="4e0612c9-5863-48bd-a172-886ddc6afe3a" name="Default (Passenger Cars)">
-      <share occurence="4" value="0158ff26-ff92-40d1-b9a0-19fd89eabc1a" desc="City Car"/>
-      <share occurence="6" value="06fe051f-679a-4082-b652-c043b31800d8" desc="Subcompact Car"/>
-      <share occurence="10" value="22e9001a-2d43-4499-9a94-4b564c7c6e95" desc="Compact Car"/>
-      <share occurence="8" value="289dbb52-7706-481d-ab35-d9073d6a8a0a" desc="Midsize Car"/>
-      <share occurence="6" value="71890471-b781-4952-a358-e842d1fd6003" desc="Fullsize Car"/>
-      <share occurence="4" value="71a9e07f-a610-437d-8acb-28f15796dbb5" desc="Compact Truck"/>
-      <share occurence="4" value="3009d384-3f09-4bcb-acc8-76177dc5c932" desc="Midsize Truck"/>
-      <share occurence="18" value="4231f2af-8c61-48bf-babe-e75072b17aaa" desc="Fullsize Truck"/>
-      <share occurence="4" value="54c046ae-dcb0-46ad-b15a-10710e62eec5" desc="Heavy Duty Truck"/>
-      <share occurence="6" value="178efb3e-f197-48bd-85a0-0dac35d98bd3" desc="Subcompact SUV"/>
-      <share occurence="7" value="409558c1-1830-485d-bc39-1d57419a6594" desc="Compact SUV"/>
-      <share occurence="8" value="b1a6a649-0113-4a14-bc08-abd747f5e084" desc="Midsize SUV"/>
-      <share occurence="6" value="e9487aec-fe38-4025-90d3-436db0e4baba" desc="Fullsize SUV"/>
-      <share occurence="3" value="61fa1251-12d3-41e5-bf80-cefbc0a2e45b" desc="Executive SUV"/>
-      <share occurence="6" value="db6f2897-b858-462b-98bf-7bb2bcd931d3" desc="Minivan"/>
+      <share occurrence="4" value="0158ff26-ff92-40d1-b9a0-19fd89eabc1a" desc="City Car"/>
+      <share occurrence="6" value="06fe051f-679a-4082-b652-c043b31800d8" desc="Subcompact Car"/>
+      <share occurrence="10" value="22e9001a-2d43-4499-9a94-4b564c7c6e95" desc="Compact Car"/>
+      <share occurrence="8" value="289dbb52-7706-481d-ab35-d9073d6a8a0a" desc="Midsize Car"/>
+      <share occurrence="6" value="71890471-b781-4952-a358-e842d1fd6003" desc="Fullsize Car"/>
+      <share occurrence="4" value="71a9e07f-a610-437d-8acb-28f15796dbb5" desc="Compact Truck"/>
+      <share occurrence="4" value="3009d384-3f09-4bcb-acc8-76177dc5c932" desc="Midsize Truck"/>
+      <share occurrence="18" value="4231f2af-8c61-48bf-babe-e75072b17aaa" desc="Fullsize Truck"/>
+      <share occurrence="4" value="54c046ae-dcb0-46ad-b15a-10710e62eec5" desc="Heavy Duty Truck"/>
+      <share occurrence="6" value="178efb3e-f197-48bd-85a0-0dac35d98bd3" desc="Subcompact SUV"/>
+      <share occurrence="7" value="409558c1-1830-485d-bc39-1d57419a6594" desc="Compact SUV"/>
+      <share occurrence="8" value="b1a6a649-0113-4a14-bc08-abd747f5e084" desc="Midsize SUV"/>
+      <share occurrence="6" value="e9487aec-fe38-4025-90d3-436db0e4baba" desc="Fullsize SUV"/>
+      <share occurrence="3" value="61fa1251-12d3-41e5-bf80-cefbc0a2e45b" desc="Executive SUV"/>
+      <share occurrence="6" value="db6f2897-b858-462b-98bf-7bb2bcd931d3" desc="Minivan"/>
     </distribution>
     <distribution uuid="83bcc985-eac5-4532-bd22-5f42a3768cac" name="Default (Box Trucks)">
-      <share occurence="25" value="db4c11de-d707-4286-9ce6-c5fee97cc00e"/>
-      <share occurence="25" value="e7e1dea0-05e3-4939-be01-5f58eb64e010"/>
-      <share occurence="25" value="d0a99208-5a31-4744-a08d-ca47af7eabaa"/>
-      <share occurence="25" value="7c9f0966-ac84-4f34-8583-bb88aea0fa03"/>
+      <share occurrence="25" value="db4c11de-d707-4286-9ce6-c5fee97cc00e"/>
+      <share occurrence="25" value="e7e1dea0-05e3-4939-be01-5f58eb64e010"/>
+      <share occurrence="25" value="d0a99208-5a31-4744-a08d-ca47af7eabaa"/>
+      <share occurrence="25" value="7c9f0966-ac84-4f34-8583-bb88aea0fa03"/>
     </distribution>
     <distribution uuid="fb388d5f-63cd-4960-a719-60b1ea10ea30" name="Default (Semi Trucks)">
-      <share occurence="50" value="57fa86d0-beec-4341-a564-2fdac619791e" desc="Semi with 40 ft trailer"/>
-      <share occurence="50" value="76450f0b-6b9f-413c-a7f1-adfc467e7c3f" desc="Semi with 53 ft trailer"/>
+      <share occurrence="50" value="57fa86d0-beec-4341-a564-2fdac619791e" desc="Semi with 40 ft trailer"/>
+      <share occurrence="50" value="76450f0b-6b9f-413c-a7f1-adfc467e7c3f" desc="Semi with 53 ft trailer"/>
     </distribution>
   </distribution-set>
   <distribution-set type="colors">
     <distribution uuid="52436322-756d-4080-904f-bcb66cdf467c" name="Default">
-      <share occurence="20" value="#ffffff"/>
-      <share occurence="20" value="#000000"/>
-      <share occurence="20" value="#ff0000"/>
-      <share occurence="20" value="#808080"/>
-      <share occurence="5" value="#0000ff"/>
-      <share occurence="5" value="#008000"/>
-      <share occurence="4" value="#d0b080"/>
-      <share occurence="3" value="#ffff00"/>
-      <share occurence="3" value="#ff8000"/>
+      <share occurrence="20" value="#ffffff"/>
+      <share occurrence="20" value="#000000"/>
+      <share occurrence="20" value="#ff0000"/>
+      <share occurrence="20" value="#808080"/>
+      <share occurrence="5" value="#0000ff"/>
+      <share occurrence="5" value="#008000"/>
+      <share occurrence="4" value="#d0b080"/>
+      <share occurrence="3" value="#ffff00"/>
+      <share occurrence="3" value="#ff8000"/>
     </distribution>
   </distribution-set>
   <distribution-set type="acceleration">

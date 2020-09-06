@@ -11,7 +11,7 @@ class DistributionSetConstants:
 
 class DistributionShareConstants:
     SHARE_TAG = 'share'
-    SHARE_OCCURENCE_ATTR = 'occurence'
+    SHARE_OCCURRENCE_ATTR = 'occurrence'
     SHARE_VALUE_ATTR = 'value'
 
 
@@ -99,7 +99,7 @@ def addBinnedDistributionBin(distr, min_value, max_value, count):
 
 def addEnumDistributionShare(distr, occur, value):
     share_element = etree.SubElement(distr, EnumDistributionShareConstants.SHARE_TAG)
-    share_element.attrib[EnumDistributionShareConstants.SHARE_OCCURENCE_ATTR] = str(occur)
+    share_element.attrib[EnumDistributionShareConstants.SHARE_OCCURRENCE_ATTR] = str(occur)
     share_element.attrib[EnumDistributionShareConstants.SHARE_VALUE_ATTR] = value
     share_element.attrib['alias'] = value.lower()
 
@@ -202,7 +202,7 @@ def addVehicleModelShare(distribution_node, occurence, value):
         distribution_node,
         VehicleModelDistributionConstants.SHARE_TAG,
         {
-            VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR: str(occurence),
+            VehicleModelDistributionConstants.SHARE_OCCURRENCE_ATTR: str(occurence),
             VehicleModelDistributionConstants.SHARE_VALUE_ATTR: str(value)
         }
     )
@@ -231,7 +231,7 @@ class ColorDistributionConstants(GenericDistributionConstants, DistributionShare
 
 def createAndAddColorShare(distr, occurence, color):
     ret = etree.SubElement(distr, ColorDistributionConstants.SHARE_TAG, {
-        ColorDistributionConstants.SHARE_OCCURENCE_ATTR: str(occurence),
+        ColorDistributionConstants.SHARE_OCCURRENCE_ATTR: str(occurence),
         ColorDistributionConstants.SHARE_VALUE_ATTR: color,
     })
 
@@ -1378,19 +1378,19 @@ class TestsForVehicleModelDistributions(unittest.TestCase):
 
     def testThatOccurenceIsRequired(self):
         first_node = self.cleanDistr[0]
-        first_node.attrib.pop(VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR)
+        first_node.attrib.pop(VehicleModelDistributionConstants.SHARE_OCCURRENCE_ATTR)
 
         self.assertFalse(self.doc.validate())
 
     def testThatOccurenceMayNotBeEmpty(self):
         first_node = self.cleanDistr[0]
-        first_node.attrib[VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR] = ''
+        first_node.attrib[VehicleModelDistributionConstants.SHARE_OCCURRENCE_ATTR] = ''
 
         self.assertFalse(self.doc.validate())
 
     def testThatOccurenceMayNotBeString(self):
         first_node = self.cleanDistr[0]
-        first_node.attrib[VehicleModelDistributionConstants.SHARE_OCCURENCE_ATTR] = 'not a number'
+        first_node.attrib[VehicleModelDistributionConstants.SHARE_OCCURRENCE_ATTR] = 'not a number'
 
         self.assertFalse(self.doc.validate())
 
@@ -1525,7 +1525,7 @@ class TestsForColorDistributions(unittest.TestCase):
     def testThatShareOccurenceIsRequired(self):
         shares = [[5, '#ffffff']]
         node = createAndAddColorDistributionNode(self.targetNode, shares)
-        node[0].attrib.pop(ColorDistributionConstants.SHARE_OCCURENCE_ATTR)
+        node[0].attrib.pop(ColorDistributionConstants.SHARE_OCCURRENCE_ATTR)
         self.assertFalse(self.doc.validate())
 
     def testThatShareValueIsRequired(self):
