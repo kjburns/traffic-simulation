@@ -31,7 +31,7 @@
             <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="enum-share-occurence">
+    <xs:simpleType name="enum-share-occurrence">
         <xs:annotation>
             <xs:documentation>Relative share to be used in an enumerable distribution. This value must be non-negative.</xs:documentation>
         </xs:annotation>
@@ -332,9 +332,9 @@
     </xs:simpleType>
     <xs:complexType name="connector-link-selection-behavior-share">
         <xs:annotation>
-            <xs:documentation>A relation of relative occurence of a link selection behavior. </xs:documentation>
+            <xs:documentation>A relation of relative occurrence of a link selection behavior. </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="occurence" type="enum-share-occurence" use="required">
+        <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
             <xs:annotation>
                 <xs:documentation>Relative number of vehicles selecting this behavior.</xs:documentation>
             </xs:annotation>
@@ -352,7 +352,7 @@
         </xs:annotation>
         <xs:sequence>
             <xs:annotation>
-                <xs:documentation>If an enumeration value is used, it should only appear once. If it appears multiple times, one of the supplied occurences will be used, but which one is undefined.</xs:documentation>
+                <xs:documentation>If an enumeration value is used, it should only appear once. If it appears multiple times, one of the supplied occurrences will be used, but which one is undefined.</xs:documentation>
             </xs:annotation>
             <xs:element name="share" type="connector-link-selection-behavior-share" minOccurs="1" maxOccurs="unbounded" />
         </xs:sequence>
@@ -366,11 +366,11 @@
     -->
     <xs:complexType name="vehicle-model-share">
         <xs:annotation>
-            <xs:documentation>A relation of relative occurence of a vehicle model. </xs:documentation>
+            <xs:documentation>A relation of relative occurrence of a vehicle model. </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="occurence" type="enum-share-occurence" use="required">
+        <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
             <xs:annotation>
-                <xs:documentation>Relative number occurences of this vehicle model.</xs:documentation>
+                <xs:documentation>Relative number occurrences of this vehicle model.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="value" type="uuid" use="required">
@@ -400,11 +400,11 @@
     -->
     <xs:complexType name="color-share">
         <xs:annotation>
-            <xs:documentation>A relation of relative occurence of a color. </xs:documentation>
+            <xs:documentation>A relation of relative occurrence of a color. </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="occurence" type="enum-share-occurence" use="required">
+        <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
             <xs:annotation>
-                <xs:documentation>Relative number occurences of this color.</xs:documentation>
+                <xs:documentation>Relative number occurrences of this color.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="value" type="color" use="required">
@@ -597,6 +597,20 @@
                             <xs:element name="distribution" type="speed-distribution" minOccurs="0" maxOccurs="unbounded" />
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="speed-distributions" use="required" />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="distribution-set">
+                    <xs:annotation>
+                        <xs:documentation>Posted speed deviation distributions</xs:documentation>
+                        <xs:documentation>This distribution specifies observed deviation from posted speed.</xs:documentation>
+                        <xs:documentation>The vehicle's target deviation from posted speed is determined by its aggression parameter.</xs:documentation>
+                        <xs:documentation>Distributions that are not monotonic-increasing should issue a simulator warning.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="distribution" type="speed-distribution" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence> 
+                        <xs:attribute name="type" type="xs:string" fixed="posted-speed-deviations" use="required" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
