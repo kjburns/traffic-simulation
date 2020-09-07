@@ -97,6 +97,11 @@
             <xs:maxInclusive value="1" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="positive-real-number">
+        <xs:restriction base="xs:decimal" >
+            <xs:minExclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
     <!-- 
     Distribution types
     -->
@@ -236,7 +241,7 @@
     </xs:group>
     <xs:complexType name="distribution-with-units" abstract="true">
         <xs:sequence>
-            <xs:group ref="real-number-distribution" minOccurs="1" maxOccurs="1"></xs:group>
+            <xs:group ref="real-number-distribution" minOccurs="1" maxOccurs="1"/>
             <xs:any processContents="skip" minOccurs="0" />
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
@@ -311,7 +316,30 @@
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
 
-    <!-- 
+    <xs:complexType name="poisson-distribution">
+        <xs:annotation>
+            <xs:documentation>A distribution that describes the number of events per time interval.</xs:documentation>
+            <xs:documentation>Used here, we will generalize this to be a distribution of non-negative integers.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:any processContents="skip" />
+        </xs:sequence>
+        <xs:attribute name="lambda" type="positive-real-number" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="zero-truncated-poisson-distribution">
+        <xs:annotation>
+            <xs:documentation>A distribution that describes the number of events per time interval, but never returns zero.</xs:documentation>
+            <xs:documentation>Used here, we will generalize this to be a distribution of positive integers.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:any processContents="skip" />
+        </xs:sequence>
+        <xs:attribute name="lambda" type="positive-real-number" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+
+    <!--
     Connector Link Selection Behaviors
     -->
     <xs:simpleType name="connector-link-selection-behavior-type">
