@@ -440,6 +440,70 @@ def create_and_add_clean_posted_speed_deviation_distribution_node(attach_to):
     return create_and_add_posted_speed_deviation_distribution_node(attach_to, SpeedUnits.MILES_PER_HOUR, distr)
 
 
+class PoissonDistributionConstants:
+    TAG = 'poisson-distribution'
+    LAMBDA_ATTR = 'lambda'
+
+
+def create_poisson_distribution_node(lamb: float) -> etree.ElementBase:
+    ret: etree.ElementBase = etree.Element(PoissonDistributionConstants.TAG, {
+        PoissonDistributionConstants.LAMBDA_ATTR: str(lamb),
+    })
+
+    return ret
+
+
+class ZeroTruncatedPoissonDistributionConstants:
+    TAG = 'positive-poisson-distribution'
+    LAMBDA_ATTR = 'lambda'
+
+
+def create_zero_truncated_poisson_distribution_node(lamb: float) -> etree.ElementBase:
+    ret: etree.ElementBase = etree.Element(ZeroTruncatedPoissonDistributionConstants.TAG, {
+        ZeroTruncatedPoissonDistributionConstants.LAMBDA_ATTR: str(lamb),
+    })
+
+    return ret
+
+
+class VehicleOccupancyDistributionConstants(GenericDistributionConstants):
+    DISTRIBUTION_TYPE = 'non-transit-occupancy'
+
+
+def create_and_add_vehicle_occupancy_distribution(attach_to, value_distribution, name='Vehicle Occupancy Distribution'):
+    ret = etree.SubElement(attach_to, VehicleOccupancyDistributionConstants.TAG, {
+        VehicleOccupancyDistributionConstants.NAME_ATTR: name,
+        VehicleOccupancyDistributionConstants.UUID_ATTR: str(UUID()),
+    })
+    ret.append(value_distribution)
+
+    return ret
+
+
+def create_and_add_clean_vehicle_occupancy_distribution(attach_to):
+    distribution_value = create_zero_truncated_poisson_distribution_node(1.5)
+    return create_and_add_vehicle_occupancy_distribution(attach_to, distribution_value)
+
+
+class TransitPassengerCountDistributionConstants(GenericDistributionConstants):
+    DISTRIBUTION_TYPE = 'transit-passengers'
+
+
+def create_and_add_transit_passenger_count_distribution(attach_to, distribution_value, name='Transit Distribution'):
+    ret: etree.ElementBase = etree.SubElement(attach_to, TransitPassengerCountDistributionConstants.TAG, {
+        TransitPassengerCountDistributionConstants.NAME_ATTR: name,
+        TransitPassengerCountDistributionConstants.UUID_ATTR: str(UUID())
+    })
+    ret.append(distribution_value)
+
+    return ret
+
+
+def create_and_add_clean_transit_passenger_count_distribution(attach_to):
+    distribution_value = create_poisson_distribution_node(1.5)
+    return create_and_add_transit_passenger_count_distribution(attach_to, distribution_value)
+
+
 class CleanDistributionsDocument:
     def __init__(self):
         ns_map = {"xsi": 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -546,6 +610,22 @@ class CleanDistributionsDocument:
         )
         create_and_add_clean_posted_speed_deviation_distribution_node(self._posted_speed_deviations_node)
 
+        self._vehicle_occupancy_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: VehicleOccupancyDistributionConstants.DISTRIBUTION_TYPE,
+            }
+        )
+        create_and_add_clean_vehicle_occupancy_distribution(self._vehicle_occupancy_node)
+
+        self._transit_occupancy_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: TransitPassengerCountDistributionConstants.DISTRIBUTION_TYPE,
+            }
+        )
+        create_and_add_clean_transit_passenger_count_distribution(self._transit_occupancy_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot,
                              xml_declaration=False, pretty_print=True, encoding='unicode'))
@@ -596,6 +676,12 @@ class CleanDistributionsDocument:
 
     def get_posted_speed_deviations_node(self):
         return self._posted_speed_deviations_node
+
+    def get_vehicle_occupancy_node(self):
+        return self._vehicle_occupancy_node
+
+    def get_transit_occupancy_node(self):
+        return self._transit_occupancy_node
 
 
 class TestsForCleanDocument(unittest.TestCase):

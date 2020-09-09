@@ -321,9 +321,7 @@
             <xs:documentation>A distribution that describes the number of events per time interval.</xs:documentation>
             <xs:documentation>Used here, we will generalize this to be a distribution of non-negative integers.</xs:documentation>
         </xs:annotation>
-        <xs:sequence>
-            <xs:any processContents="skip" />
-        </xs:sequence>
+        <xs:sequence />
         <xs:attribute name="lambda" type="positive-real-number" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
@@ -332,9 +330,7 @@
             <xs:documentation>A distribution that describes the number of events per time interval, but never returns zero.</xs:documentation>
             <xs:documentation>Used here, we will generalize this to be a distribution of positive integers.</xs:documentation>
         </xs:annotation>
-        <xs:sequence>
-            <xs:any processContents="skip" />
-        </xs:sequence>
+        <xs:sequence />
         <xs:attribute name="lambda" type="positive-real-number" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
@@ -500,8 +496,7 @@
             <xs:documentation>This is for non-transit vehicles.</xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:group ref="positive-integer-distribution-group" minOccurs="1" maxOccurs="1" />
-            <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded" />
+            <xs:group ref="positive-integer-distribution-group" />
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
@@ -513,7 +508,6 @@
         </xs:annotation>
         <xs:sequence>
             <xs:group ref="non-negative-integer-distribution-group" />
-            <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
