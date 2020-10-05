@@ -2435,5 +2435,89 @@ class TestsForPostedSpeedVariation(unittest.TestCase):
         self.assertTrue(self.doc.validate())
 
 
+class TestsForVehicleOccupancyDistribution(unittest.TestCase):
+    """
+    This class also contains tests for zero-truncated Poisson distributions
+    """
+
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_vehicle_occupancy_node()
+
+    def test_that_collection_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: (item.attrib[DistributionSetConstants.TYPE_ATTR] ==
+                          VehicleOccupancyDistributionConstants.DISTRIBUTION_TYPE),
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node.attrib.pop(VehicleOccupancyDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_name_values(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        name_values = ['', 'a distribution name', '2201']
+        for name in name_values:
+            node.attrib[VehicleOccupancyDistributionConstants.NAME_ATTR] = name
+            self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node.attrib.pop(VehicleOccupancyDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_uuid_is_validated(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        test_tuples = [
+            ('', False),
+            ('not a uuid', False),
+            ('bcb65ca8-4771-4aca-a07f-711a35810855', True),
+            ('bcb65ca8-4771-4aca-a07g-711a35810855', False),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[VehicleOccupancyDistributionConstants.UUID_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_ZTLD_lambda_is_required(self):
+        distr = create_zero_truncated_poisson_distribution_node(0.5)
+        distr.attrib.pop(ZeroTruncatedPoissonDistributionConstants.LAMBDA_ATTR)
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+    def test_ZTLD_lambda_values(self):
+        distr = create_zero_truncated_poisson_distribution_node(1.0)
+        test_tuples = [
+            ('1', True),
+            ('0.001', True),
+            ('45', True),
+            ('0', False),
+            ('-0.1', False),
+            ('-112', False),
+            ('not a number', False),
+            ('NaN', False),
+        ]
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        for (value, expected_result) in test_tuples:
+            distr.attrib[ZeroTruncatedPoissonDistributionConstants.LAMBDA_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_ZTLD_other_attributes_are_okay(self):
+        distr = create_zero_truncated_poisson_distribution_node(0.4)
+        distr.attrib['other-attribute'] = 'other value'
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        self.assertTrue(self.doc.validate())
+
+    def test_ZTLD_subelements_are_banned(self):
+        distr = create_zero_truncated_poisson_distribution_node(0.4)
+        etree.SubElement(distr, 'other-element')
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+
 if __name__ == '__main__':
     unittest.main()
