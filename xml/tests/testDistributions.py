@@ -2454,6 +2454,20 @@ class TestsForVehicleOccupancyDistribution(unittest.TestCase):
             self.doc.getDocumentRoot().remove(element)
         self.assertFalse(self.doc.validate())
 
+    def test_distribution_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (4, True),
+            (1000, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self.target_node[:] = []
+            for _ in range(count):
+                distr = create_zero_truncated_poisson_distribution_node(0.5)
+                create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+            self.assertEqual(self.doc.validate(), expected_result)
+
     def test_that_name_is_optional(self):
         node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
         node.attrib.pop(VehicleOccupancyDistributionConstants.NAME_ATTR)
@@ -2482,6 +2496,20 @@ class TestsForVehicleOccupancyDistribution(unittest.TestCase):
         for (value, expected_result) in test_tuples:
             node.attrib[VehicleOccupancyDistributionConstants.UUID_ATTR] = value
             self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_distribution_is_required(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_zero_terminated_lambda_distribution_is_ok(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node[:] = []
+        test_distribution = create_zero_truncated_poisson_distribution_node(0.4)
+        node.append(test_distribution)
+        self.assertTrue(self.doc.validate())
+
+    # TODO write tests for other whole number distributions
 
     def test_that_ZTLD_lambda_is_required(self):
         distr = create_zero_truncated_poisson_distribution_node(0.5)
