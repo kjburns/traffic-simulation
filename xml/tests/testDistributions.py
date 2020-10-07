@@ -2547,5 +2547,137 @@ class TestsForVehicleOccupancyDistribution(unittest.TestCase):
         self.assertFalse(self.doc.validate())
 
 
+class TestsForTransitOccupancyDistributions(unittest.TestCase):
+    # This class will also contain tests for:
+    # - Poisson distributions
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_transit_occupancy_node()
+
+    def test_that_distributions_node_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: (item.attrib[DistributionSetConstants.TYPE_ATTR] ==
+                          TransitPassengerCountDistributionConstants.DISTRIBUTION_TYPE),
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_distribution_counts(self):
+        test_tuples = [
+            (0, True),
+            (1, True),
+            (4, True),
+            (1000, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self.target_node[:] = []
+            for _ in range(count):
+                create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        node.attrib.pop(TransitPassengerCountDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_values_for_name(self):
+        test_tuples = [
+            ('', True),
+            ('a name', True),
+            ('2201', True),
+        ]
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[TransitPassengerCountDistributionConstants.NAME_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        node.attrib.pop(TransitPassengerCountDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_values_for_uuid(self):
+        test_tuples = [
+            ('', False),
+            ('b3a1d7a2-ea01-41db-8b44-792f65c47817', True),
+            ('b3a1d7a2-ea01-41db-8b44-792g65c47817', False),
+        ]
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[TransitPassengerCountDistributionConstants.UUID_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_other_attributes_are_ok(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        node.attrib['other-attribute'] = 'other value'
+        self.assertTrue(self.doc.validate())
+
+    def test_distribution_counts(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (2, False),
+            (32, False),
+        ]
+        for (count, expected_result) in test_tuples:
+            node[:] = []
+            for _ in range(count):
+                node.append(create_poisson_distribution_node(0.5))
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_distribution_types(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        test_tuples = [
+            (create_poisson_distribution_node(0.5), True),
+            (create_zero_truncated_poisson_distribution_node(0.5), True),
+            # TODO add other valid distribution types
+            (create_normal_fractional_distribution_node(0.5, 0.15), False),
+        ]
+        for (distribution, expected_result) in test_tuples:
+            node[:] = []
+            node.append(distribution)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_other_sub_elements_are_banned(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        etree.SubElement(node, 'other-element')
+        self.assertFalse(self.doc.validate())
+
+    def test_for_poisson_lambda_is_required(self):
+        distribution = create_poisson_distribution_node(1.4)
+        distribution.attrib.pop(PoissonDistributionConstants.LAMBDA_ATTR)
+        create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+        self.assertFalse(self.doc.validate())
+
+    def test_for_poisson_lambda_values(self):
+        test_tuples = [
+            (0, False),
+            (0.5, True),
+            (1.0, True),
+            (93, True),
+            ('', False),
+        ]
+        for (lambda_, expected_result) in test_tuples:
+            self.target_node[:] = []
+            distribution = create_poisson_distribution_node(lambda_)
+            create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_for_poisson_other_attributes_are_ok(self):
+        distribution = create_poisson_distribution_node(0.5)
+        distribution.attrib['another-attribute'] = 'attribute value'
+        create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+        self.assertTrue(self.doc.validate())
+
+    def test_for_poisson_sub_elements_are_banned(self):
+        distribution = create_poisson_distribution_node(0.5)
+        etree.SubElement(distribution, 'another-element')
+        create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+        self.assertFalse(self.doc.validate())
+
+
 if __name__ == '__main__':
     unittest.main()
