@@ -440,6 +440,70 @@ def create_and_add_clean_posted_speed_deviation_distribution_node(attach_to):
     return create_and_add_posted_speed_deviation_distribution_node(attach_to, SpeedUnits.MILES_PER_HOUR, distr)
 
 
+class PoissonDistributionConstants:
+    TAG = 'poisson-distribution'
+    LAMBDA_ATTR = 'lambda'
+
+
+def create_poisson_distribution_node(lamb: float) -> etree.ElementBase:
+    ret: etree.ElementBase = etree.Element(PoissonDistributionConstants.TAG, {
+        PoissonDistributionConstants.LAMBDA_ATTR: str(lamb),
+    })
+
+    return ret
+
+
+class ZeroTruncatedPoissonDistributionConstants:
+    TAG = 'positive-poisson-distribution'
+    LAMBDA_ATTR = 'lambda'
+
+
+def create_zero_truncated_poisson_distribution_node(lamb: float) -> etree.ElementBase:
+    ret: etree.ElementBase = etree.Element(ZeroTruncatedPoissonDistributionConstants.TAG, {
+        ZeroTruncatedPoissonDistributionConstants.LAMBDA_ATTR: str(lamb),
+    })
+
+    return ret
+
+
+class VehicleOccupancyDistributionConstants(GenericDistributionConstants):
+    DISTRIBUTION_TYPE = 'non-transit-occupancy'
+
+
+def create_and_add_vehicle_occupancy_distribution(attach_to, value_distribution, name='Vehicle Occupancy Distribution'):
+    ret = etree.SubElement(attach_to, VehicleOccupancyDistributionConstants.TAG, {
+        VehicleOccupancyDistributionConstants.NAME_ATTR: name,
+        VehicleOccupancyDistributionConstants.UUID_ATTR: str(UUID()),
+    })
+    ret.append(value_distribution)
+
+    return ret
+
+
+def create_and_add_clean_vehicle_occupancy_distribution(attach_to):
+    distribution_value = create_zero_truncated_poisson_distribution_node(1.5)
+    return create_and_add_vehicle_occupancy_distribution(attach_to, distribution_value)
+
+
+class TransitPassengerCountDistributionConstants(GenericDistributionConstants):
+    DISTRIBUTION_TYPE = 'transit-passengers'
+
+
+def create_and_add_transit_passenger_count_distribution(attach_to, distribution_value, name='Transit Distribution'):
+    ret: etree.ElementBase = etree.SubElement(attach_to, TransitPassengerCountDistributionConstants.TAG, {
+        TransitPassengerCountDistributionConstants.NAME_ATTR: name,
+        TransitPassengerCountDistributionConstants.UUID_ATTR: str(UUID())
+    })
+    ret.append(distribution_value)
+
+    return ret
+
+
+def create_and_add_clean_transit_passenger_count_distribution(attach_to):
+    distribution_value = create_poisson_distribution_node(1.5)
+    return create_and_add_transit_passenger_count_distribution(attach_to, distribution_value)
+
+
 class CleanDistributionsDocument:
     def __init__(self):
         ns_map = {"xsi": 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -546,6 +610,22 @@ class CleanDistributionsDocument:
         )
         create_and_add_clean_posted_speed_deviation_distribution_node(self._posted_speed_deviations_node)
 
+        self._vehicle_occupancy_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: VehicleOccupancyDistributionConstants.DISTRIBUTION_TYPE,
+            }
+        )
+        create_and_add_clean_vehicle_occupancy_distribution(self._vehicle_occupancy_node)
+
+        self._transit_occupancy_node = etree.SubElement(
+            self.documentRoot,
+            DistributionSetConstants.TAG, {
+                DistributionSetConstants.TYPE_ATTR: TransitPassengerCountDistributionConstants.DISTRIBUTION_TYPE,
+            }
+        )
+        create_and_add_clean_transit_passenger_count_distribution(self._transit_occupancy_node)
+
     def printDocumentToConsole(self):
         print(etree.tostring(self.documentRoot,
                              xml_declaration=False, pretty_print=True, encoding='unicode'))
@@ -596,6 +676,12 @@ class CleanDistributionsDocument:
 
     def get_posted_speed_deviations_node(self):
         return self._posted_speed_deviations_node
+
+    def get_vehicle_occupancy_node(self):
+        return self._vehicle_occupancy_node
+
+    def get_transit_occupancy_node(self):
+        return self._transit_occupancy_node
 
 
 class TestsForCleanDocument(unittest.TestCase):
@@ -2347,6 +2433,250 @@ class TestsForPostedSpeedVariation(unittest.TestCase):
         for _ in range(1, 1000):
             create_and_add_clean_posted_speed_deviation_distribution_node(self.target_node)
         self.assertTrue(self.doc.validate())
+
+
+class TestsForVehicleOccupancyDistribution(unittest.TestCase):
+    """
+    This class also contains tests for zero-truncated Poisson distributions
+    """
+
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_vehicle_occupancy_node()
+
+    def test_that_collection_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: (item.attrib[DistributionSetConstants.TYPE_ATTR] ==
+                          VehicleOccupancyDistributionConstants.DISTRIBUTION_TYPE),
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_distribution_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (4, True),
+            (1000, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self.target_node[:] = []
+            for _ in range(count):
+                distr = create_zero_truncated_poisson_distribution_node(0.5)
+                create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node.attrib.pop(VehicleOccupancyDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_name_values(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        name_values = ['', 'a distribution name', '2201']
+        for name in name_values:
+            node.attrib[VehicleOccupancyDistributionConstants.NAME_ATTR] = name
+            self.assertTrue(self.doc.validate())
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node.attrib.pop(VehicleOccupancyDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_that_uuid_is_validated(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        test_tuples = [
+            ('', False),
+            ('not a uuid', False),
+            ('bcb65ca8-4771-4aca-a07f-711a35810855', True),
+            ('bcb65ca8-4771-4aca-a07g-711a35810855', False),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[VehicleOccupancyDistributionConstants.UUID_ATTR] = value
+            self.assertEqual(expected_result, self.doc.validate())
+
+    def test_that_distribution_is_required(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node[:] = []
+        self.assertFalse(self.doc.validate())
+
+    def test_that_zero_terminated_lambda_distribution_is_ok(self):
+        node = create_and_add_clean_vehicle_occupancy_distribution(self.target_node)
+        node[:] = []
+        test_distribution = create_zero_truncated_poisson_distribution_node(0.4)
+        node.append(test_distribution)
+        self.assertTrue(self.doc.validate())
+
+    # TODO write tests for other whole number distributions
+
+    def test_that_ZTLD_lambda_is_required(self):
+        distr = create_zero_truncated_poisson_distribution_node(0.5)
+        distr.attrib.pop(ZeroTruncatedPoissonDistributionConstants.LAMBDA_ATTR)
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+    def test_ZTLD_lambda_values(self):
+        distr = create_zero_truncated_poisson_distribution_node(1.0)
+        test_tuples = [
+            ('1', True),
+            ('0.001', True),
+            ('45', True),
+            ('0', False),
+            ('-0.1', False),
+            ('-112', False),
+            ('not a number', False),
+            ('NaN', False),
+        ]
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        for (value, expected_result) in test_tuples:
+            distr.attrib[ZeroTruncatedPoissonDistributionConstants.LAMBDA_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_ZTLD_other_attributes_are_okay(self):
+        distr = create_zero_truncated_poisson_distribution_node(0.4)
+        distr.attrib['other-attribute'] = 'other value'
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        self.assertTrue(self.doc.validate())
+
+    def test_ZTLD_subelements_are_banned(self):
+        distr = create_zero_truncated_poisson_distribution_node(0.4)
+        etree.SubElement(distr, 'other-element')
+        create_and_add_vehicle_occupancy_distribution(self.target_node, distr)
+        self.assertFalse(self.doc.validate())
+
+
+class TestsForTransitOccupancyDistributions(unittest.TestCase):
+    # This class will also contain tests for:
+    # - Poisson distributions
+    def setUp(self) -> None:
+        self.doc = CleanDistributionsDocument()
+        self.target_node = self.doc.get_transit_occupancy_node()
+
+    def test_that_distributions_node_is_required(self):
+        distribution_sets = self.doc.getDocumentRoot().iter(DistributionSetConstants.TAG)
+        elements_to_remove = filter(
+            lambda item: (item.attrib[DistributionSetConstants.TYPE_ATTR] ==
+                          TransitPassengerCountDistributionConstants.DISTRIBUTION_TYPE),
+            distribution_sets)
+        for element in elements_to_remove:
+            self.doc.getDocumentRoot().remove(element)
+        self.assertFalse(self.doc.validate())
+
+    def test_distribution_counts(self):
+        test_tuples = [
+            (0, True),
+            (1, True),
+            (4, True),
+            (1000, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self.target_node[:] = []
+            for _ in range(count):
+                create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_name_is_optional(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        node.attrib.pop(TransitPassengerCountDistributionConstants.NAME_ATTR)
+        self.assertTrue(self.doc.validate())
+
+    def test_values_for_name(self):
+        test_tuples = [
+            ('', True),
+            ('a name', True),
+            ('2201', True),
+        ]
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[TransitPassengerCountDistributionConstants.NAME_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_uuid_is_required(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        node.attrib.pop(TransitPassengerCountDistributionConstants.UUID_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_values_for_uuid(self):
+        test_tuples = [
+            ('', False),
+            ('b3a1d7a2-ea01-41db-8b44-792f65c47817', True),
+            ('b3a1d7a2-ea01-41db-8b44-792g65c47817', False),
+        ]
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[TransitPassengerCountDistributionConstants.UUID_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_other_attributes_are_ok(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        node.attrib['other-attribute'] = 'other value'
+        self.assertTrue(self.doc.validate())
+
+    def test_distribution_counts(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (2, False),
+            (32, False),
+        ]
+        for (count, expected_result) in test_tuples:
+            node[:] = []
+            for _ in range(count):
+                node.append(create_poisson_distribution_node(0.5))
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_distribution_types(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        test_tuples = [
+            (create_poisson_distribution_node(0.5), True),
+            (create_zero_truncated_poisson_distribution_node(0.5), True),
+            # TODO add other valid distribution types
+            (create_normal_fractional_distribution_node(0.5, 0.15), False),
+        ]
+        for (distribution, expected_result) in test_tuples:
+            node[:] = []
+            node.append(distribution)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_that_other_sub_elements_are_banned(self):
+        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
+        etree.SubElement(node, 'other-element')
+        self.assertFalse(self.doc.validate())
+
+    def test_for_poisson_lambda_is_required(self):
+        distribution = create_poisson_distribution_node(1.4)
+        distribution.attrib.pop(PoissonDistributionConstants.LAMBDA_ATTR)
+        create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+        self.assertFalse(self.doc.validate())
+
+    def test_for_poisson_lambda_values(self):
+        test_tuples = [
+            (0, False),
+            (0.5, True),
+            (1.0, True),
+            (93, True),
+            ('', False),
+        ]
+        for (lambda_, expected_result) in test_tuples:
+            self.target_node[:] = []
+            distribution = create_poisson_distribution_node(lambda_)
+            create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_for_poisson_other_attributes_are_ok(self):
+        distribution = create_poisson_distribution_node(0.5)
+        distribution.attrib['another-attribute'] = 'attribute value'
+        create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+        self.assertTrue(self.doc.validate())
+
+    def test_for_poisson_sub_elements_are_banned(self):
+        distribution = create_poisson_distribution_node(0.5)
+        etree.SubElement(distribution, 'another-element')
+        create_and_add_transit_passenger_count_distribution(self.target_node, distribution)
+        self.assertFalse(self.doc.validate())
 
 
 if __name__ == '__main__':

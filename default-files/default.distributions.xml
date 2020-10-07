@@ -117,4 +117,13 @@
       </empirical-distribution>
     </distribution>
   </distribution-set>
+  <distribution-set type="non-transit-occupancy">
+    <distribution uuid="8f77c2f0-c78e-4fcc-a74f-f5e567d81d55" name="Commuting">
+      <positive-poisson-distribution lambda="0.5" />
+    </distribution>
+    <distribution uuid="4a9b8427-d8e1-49b6-a3d8-b67f67efda6d" name="General">
+      <positive-poisson-distribution lambda="1.6" />
+    </distribution>
+  </distribution-set>
+  <distribution-set type="transit-passengers" />
 </distributions>
