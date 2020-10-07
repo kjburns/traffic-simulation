@@ -50,6 +50,8 @@
             <xs:sequence>
                 <xs:element name="types" type="vehicle-type-collection" />
             </xs:sequence>
+            <xs:attribute name="version" type="xs:integer" use="required" />
+            <xs:anyAttribute processContents="skip" />
         </xs:complexType>
     </xs:element>
 </xs:schema>

@@ -27,7 +27,7 @@
       <share occurrence="3" value="61fa1251-12d3-41e5-bf80-cefbc0a2e45b" desc="Executive SUV"/>
       <share occurrence="6" value="db6f2897-b858-462b-98bf-7bb2bcd931d3" desc="Minivan"/>
     </distribution>
-    <distribution uuid="83bcc985-eac5-4532-bd22-5f42a3768cac" name="Default (Box Trucks)">
+    <distribution uuid="83bcc985-eac5-4532-bd22-5f42a3768cac" name="Default (Single Unit Trucks)">
       <share occurrence="25" value="db4c11de-d707-4286-9ce6-c5fee97cc00e"/>
       <share occurrence="25" value="e7e1dea0-05e3-4939-be01-5f58eb64e010"/>
       <share occurrence="25" value="d0a99208-5a31-4744-a08d-ca47af7eabaa"/>
