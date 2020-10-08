@@ -27,7 +27,7 @@
     -->
     <xs:complexType name="vehicle-type">
         <xs:sequence />
-        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="name" type="xs:string" use="optional" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
         <xs:attribute name="models" type="uuid" use="required" />
         <xs:attribute name="colors" type="uuid" use="required" />
