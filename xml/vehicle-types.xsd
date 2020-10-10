@@ -45,10 +45,11 @@
     <xs:complexType name="vehicle-group-entry">
         <xs:sequence />
         <xs:attribute name="type" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:complexType name="vehicle-group">
         <xs:sequence>
-            <xs:element name="vehicle" type="vehicle-group-entry" maxOccurs="unbounded" />
+            <xs:element name="vehicle" type="vehicle-group-entry" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
@@ -56,7 +57,7 @@
     </xs:complexType>
     <xs:complexType name="vehicle-group-collection">
         <xs:sequence>
-            <xs:element name="groups" type="vehicle-group" maxOccurs="unbounded" />
+            <xs:element name="group" type="vehicle-group" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
