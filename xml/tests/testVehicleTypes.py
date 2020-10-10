@@ -173,6 +173,16 @@ class TestsForVehicleTypes(unittest.TestCase):
             node.attrib[TypeConstants.SHARING_ATTR] = value
             self.assertEqual(self.doc.validate(), expected_result)
 
+    def test_that_other_attributes_are_okay(self):
+        node: etree.ElementBase = create_and_add_clean_type_element(self.target_node)
+        node.attrib['other-attribute'] = 'other value'
+        self.assertTrue(self.doc.validate())
+
+    def test_that_other_sub_elements_are_banned(self):
+        node: etree.ElementBase = create_and_add_clean_type_element(self.target_node)
+        etree.SubElement(node, 'other-element')
+        self.assertFalse(self.doc.validate())
+
 
 if __name__ == '__main__':
     unittest.main()

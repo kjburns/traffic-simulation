@@ -35,11 +35,30 @@
         <xs:attribute name="deceleration" type="uuid" use="required" />
         <xs:attribute name="occupancy" type="uuid" use="required" />
         <xs:attribute name="sharing" type="sharing-type" default="none" />
+        <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:complexType name="vehicle-type-collection">
         <xs:sequence>
             <xs:element name="vehicle-type" type="vehicle-type" maxOccurs="unbounded" />
         </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="vehicle-group-entry">
+        <xs:sequence />
+        <xs:attribute name="type" type="uuid" use="required" />
+    </xs:complexType>
+    <xs:complexType name="vehicle-group">
+        <xs:sequence>
+            <xs:element name="vehicle" type="vehicle-group-entry" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:complexType name="vehicle-group-collection">
+        <xs:sequence>
+            <xs:element name="groups" type="vehicle-group" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:anyAttribute processContents="skip" />
     </xs:complexType>
 
     <!--
@@ -49,6 +68,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="types" type="vehicle-type-collection" />
+                <xs:element name="groups" type="vehicle-group-collection" />
             </xs:sequence>
             <xs:attribute name="version" type="xs:integer" use="required" />
             <xs:anyAttribute processContents="skip" />
