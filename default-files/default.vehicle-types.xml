@@ -24,4 +24,11 @@
                       occupancy="8f77c2f0-c78e-4fcc-a74f-f5e567d81d55"
                       name="Semi-Trucks" />
     </types>
+    <groups>
+        <group uuid="39e0f52f-0a34-46be-afc9-9c3c345fe8e4" name="All Vehicles">
+            <vehicle type="08ca86bd-88a4-4eef-b034-6303d02573fa" />
+            <vehicle type="ffa4d45f-35c0-4766-8aba-e3150d50eaf0" />
+            <vehicle type="7fdc0d76-615a-4224-87e8-476014266b3f" />
+        </group>
+    </groups>
 </vehicle-types-and-groups>
