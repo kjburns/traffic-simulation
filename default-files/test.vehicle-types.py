@@ -25,8 +25,6 @@ class TestsForVehicleTypes(unittest.TestCase):
         self._vehicle_classes_document: etree._ElementTree = etree.parse('default.vehicle-types.xml')
         self._vehicle_types_list: etree.ElementBase = self._vehicle_classes_document.getroot()[0]
 
-        # remember that direct children of the above nodes can be accessed by index
-
     def test_that_file_validates(self):
         xs_doc = etree.parse('../xml/vehicle-types.xsd')
         xsd = etree.XMLSchema(xs_doc)
@@ -75,6 +73,32 @@ class TestsForVehicleTypes(unittest.TestCase):
     def test_occupancy_references_exist(self):
         self.assertTrue(self.are_references_intact_for_certain_attribute(
             'occupancy', self._occupancy_distributions_index))
+
+
+class TestsForVehicleGroups(unittest.TestCase):
+    def setUp(self) -> None:
+        self._vehicle_classes_document: etree._ElementTree = etree.parse('default.vehicle-types.xml')
+        self._vehicle_types_list: etree.ElementBase = self._vehicle_classes_document.getroot()[0]
+        self._vehicle_groups_list: etree.ElementBase = self._vehicle_classes_document.getroot()[1]
+
+    def test_that_all_groups_have_names(self):
+        def is_acceptable(node: etree.ElementBase) -> bool:
+            return ('name' in node.attrib) and (node.attrib['name'].strip() != '')
+
+        self.assertTrue(all(map(is_acceptable, self._vehicle_groups_list)))
+
+    def test_that_uuids_do_not_conflict(self):
+        unique_uuid_set = set(map(lambda node: node.attrib['uuid'], self._vehicle_groups_list))
+        self.assertEqual(len(unique_uuid_set), len(self._vehicle_groups_list))
+
+    def test_that_groups_reference_defined_vehicle_types(self):
+        defined_vehicle_types = list(map(lambda node: node.attrib['uuid'], self._vehicle_types_list))
+        referenced_vehicle_types = []
+
+        for vehicle_group in self._vehicle_groups_list:
+            referenced_vehicle_types.extend(map(lambda node: node.attrib['type'], vehicle_group))
+
+        self.assertTrue(all(map(lambda uuid: uuid in defined_vehicle_types, referenced_vehicle_types)))
 
 
 if __name__ == '__main__':
