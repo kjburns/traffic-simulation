@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vehicle-types-and-groups version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xsi:noNamespaceSchemaLocation="../xml/vehicle-types.xsd">
+    <types>
+        <vehicle-type uuid="08ca86bd-88a4-4eef-b034-6303d02573fa"
+                      models="4e0612c9-5863-48bd-a172-886ddc6afe3a"
+                      colors="52436322-756d-4080-904f-bcb66cdf467c"
+                      acceleration="16cab362-3de3-462f-b117-7238ec56199b"
+                      deceleration="4572b89f-2414-4b5c-860c-1dc1dab3c64c"
+                      occupancy="8f77c2f0-c78e-4fcc-a74f-f5e567d81d55"
+                      name="Passenger Cars" />
+        <vehicle-type uuid="ffa4d45f-35c0-4766-8aba-e3150d50eaf0"
+                      models="83bcc985-eac5-4532-bd22-5f42a3768cac" 
+                      colors="52436322-756d-4080-904f-bcb66cdf467c" 
+                      acceleration="6ac2aa3f-990d-4e6a-aead-bfd9142ed490" 
+                      deceleration="1c01e0e7-e3e1-4ee9-a142-94c61006b2b6"
+                      occupancy="8f77c2f0-c78e-4fcc-a74f-f5e567d81d55"
+                      name="Single Unit Trucks" />
+        <vehicle-type uuid="7fdc0d76-615a-4224-87e8-476014266b3f"
+                      models="fb388d5f-63cd-4960-a719-60b1ea10ea30"
+                      colors="52436322-756d-4080-904f-bcb66cdf467c"
+                      acceleration="80764b12-c76b-4bab-b05c-7223fe066bf3"
+                      deceleration="1c01e0e7-e3e1-4ee9-a142-94c61006b2b6"
+                      occupancy="8f77c2f0-c78e-4fcc-a74f-f5e567d81d55"
+                      name="Semi-Trucks" />
+    </types>
+    <groups>
+        <group uuid="39e0f52f-0a34-46be-afc9-9c3c345fe8e4" name="All Vehicles">
+            <vehicle type="08ca86bd-88a4-4eef-b034-6303d02573fa" />
+            <vehicle type="ffa4d45f-35c0-4766-8aba-e3150d50eaf0" />
+            <vehicle type="7fdc0d76-615a-4224-87e8-476014266b3f" />
+        </group>
+    </groups>
+</vehicle-types-and-groups>

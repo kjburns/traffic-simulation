@@ -2614,20 +2614,6 @@ class TestsForTransitOccupancyDistributions(unittest.TestCase):
         node.attrib['other-attribute'] = 'other value'
         self.assertTrue(self.doc.validate())
 
-    def test_distribution_counts(self):
-        node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
-        test_tuples = [
-            (0, False),
-            (1, True),
-            (2, False),
-            (32, False),
-        ]
-        for (count, expected_result) in test_tuples:
-            node[:] = []
-            for _ in range(count):
-                node.append(create_poisson_distribution_node(0.5))
-            self.assertEqual(self.doc.validate(), expected_result)
-
     def test_distribution_types(self):
         node = create_and_add_clean_transit_passenger_count_distribution(self.target_node)
         test_tuples = [
