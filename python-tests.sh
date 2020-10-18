@@ -8,12 +8,14 @@ echo -e "    Show result of each test individually (for troubleshooting)"
 cd default-files
 for f in *.py
 do
+  echo -e $f
   python3 $f $1
 done
 cd ..
 cd xml/tests
 for f in *.py
 do
+  echo -e $f
   python3 $f $1
 done
 cd ../..
