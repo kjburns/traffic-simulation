@@ -48,30 +48,12 @@ def create_collection_filterer(collection_name):
     return filterer
 
 
-class ConnectorLinkSelectionBehaviorTests(unittest.TestCase):
-    #
-    # For this distribution set, not having duplicate uuids is adequate,
-    # as there are no external references to be resolved.
-    #
-    def setUp(self):
-        self.collection = get_collection_element('connector-link-selection-behaviors')
+class TestCaseWithUuidUniquenessChecker(unittest.TestCase):
+    def check_that_uuids_are_unique(self, collection, collection_name: str = None) -> None:
+        if collection_name is not None:
+            print(collection_name, '... ', sep='', end='')
 
-    def testThatNoUuidsAreDuplicated(self):
-        uuid_counts = get_uuid_counts(self.collection)
-        self.assertEqual(max(uuid_counts.values()), 1)
-
-
-class ConnectorMaxPositioningDistanceTests(unittest.TestCase):
-    #
-    # For this distribution set, not having duplicate uuids is adequate,
-    # as there are no external references to be resolved.
-    # This distribution set may be empty.
-    #
-    def setUp(self):
-        self.collection = get_collection_element('connector-max-positioning-distance')
-
-    def testThatNoUuidsAreDuplicated(self):
-        uuid_counts = get_uuid_counts(self.collection)
+        uuid_counts = get_uuid_counts(collection)
         if len(uuid_counts) > 0:
             self.assertEqual(max(uuid_counts.values()), 1)
         else:
@@ -79,7 +61,26 @@ class ConnectorMaxPositioningDistanceTests(unittest.TestCase):
             self.assertTrue(4 == 4)
 
 
-class VehicleModelDistributionTests(unittest.TestCase):
+class TestsForCollectionsWhichOnlyRequireUuidUniqueness(TestCaseWithUuidUniquenessChecker):
+    def tests(self):
+        collections = [
+            'connector-link-selection-behaviors',
+            'connector-max-positioning-distance',
+            'colors',
+            'acceleration',
+            'max-deceleration',
+            'desired-acceleration-fractions',
+            'desired-deceleration-fractions',
+            'speed-distributions',
+            'posted-speed-deviations',
+            'non-transit-occupancy',
+            'transit-passengers',
+        ]
+        for collection_name in collections:
+            self.check_that_uuids_are_unique(get_collection_element(collection_name), collection_name)
+
+
+class VehicleModelDistributionTests(TestCaseWithUuidUniquenessChecker):
     #
     # For this distribution set, not having duplicate uuids is required,
     # and external references to vehicle models must be resolved.
@@ -89,8 +90,7 @@ class VehicleModelDistributionTests(unittest.TestCase):
         self.vehicles = etree.parse('default.vehicle-models.xml')
 
     def testThatNoUuidsAreDuplicated(self):
-        uuid_counts = get_uuid_counts(self.collection)
-        self.assertEqual(max(uuid_counts.values()), 1)
+        self.check_that_uuids_are_unique(self.collection)
 
     def testThatUuidCounterCountsCorrectly(self):
         # since this collection is known to have more than one distribution
@@ -122,32 +122,6 @@ class VehicleModelDistributionTests(unittest.TestCase):
             for share in distr:
                 veh = getVehicleByUuid(share.attrib['value'])
                 self.assertIsNotNone(veh)
-
-
-class ColorDistributionTests(unittest.TestCase):
-    #
-    # For this distribution set, not having duplicate uuids is adequate,
-    # as there are no external references to be resolved.
-    #
-    def setUp(self):
-        self.collection = get_collection_element('colors')
-
-    def testThatNoUuidsAreDuplicated(self):
-        uuid_counts = get_uuid_counts(self.collection)
-        self.assertEqual(max(uuid_counts.values()), 1)
-
-
-class AccelFunctionDistributionTests(unittest.TestCase):
-    #
-    # For this distribution set, not having duplicate uuids is adequate,
-    # as there are no external references to be resolved.
-    #
-    def setUp(self):
-        self.collection = get_collection_element('acceleration')
-
-    def testThatNoUuidsAreDuplicated(self):
-        uuid_counts = get_uuid_counts(self.collection)
-        self.assertEqual(max(uuid_counts.values()), 1)
 
 
 if __name__ == '__main__':
