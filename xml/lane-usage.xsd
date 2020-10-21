@@ -18,7 +18,7 @@
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="start-type">
-        <xs:restriction>
+        <xs:restriction base="xs:string">
             <xs:enumeration value="all-allowed" />
             <xs:enumeration value="none-allowed" />
         </xs:restriction>
