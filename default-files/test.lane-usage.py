@@ -1,6 +1,6 @@
 from lxml import etree
 import unittest
-from typing import Callable, List
+from typing import Callable, List, Set
 
 
 class LanePolicyConstants:
@@ -23,6 +23,21 @@ class GroupConstants:
     VEHICLE_TYPE_ATTR = 'type'
 
 
+class TypeConstants:
+    TAG = 'vehicle-type'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    MODELS_ATTR = 'models'
+    COLORS_ATTR = 'colors'
+    ACCELERATION_ATTR = 'acceleration'
+    DECELERATION_ATTR = 'deceleration'
+    OCCUPANCY_ATTR = 'occupancy'
+    SHARING_ATTR = 'sharing'
+    SHARING_VALUE_NONE = 'none'
+    SHARING_VALUE_HOV = 'hov'
+    SHARING_VALUE_TRANSIT = 'transit'
+
+
 def does_uuid_exist_in_collection(uuid: str, collection: etree.ElementBase) -> bool:
     # helper function to avoid repetition in tests
 
@@ -42,6 +57,7 @@ def are_all_attribute_values_unique(getter: Callable[[object], None], collection
 class TestsForDefaultLaneUsageFile(unittest.TestCase):
     def setUp(self) -> None:
         self._vehicle_classes_document: etree._ElementTree = etree.parse('default.vehicle-types.xml')
+        self._vehicle_types_list: etree.ElementBase = self._vehicle_classes_document.getroot()[0]
         self._vehicle_groups_list: etree.ElementBase = self._vehicle_classes_document.getroot()[1]
 
         self._lane_usage_document: etree._ElementTree = etree.parse('default.lane-usage.xml')
@@ -84,7 +100,34 @@ class TestsForDefaultLaneUsageFile(unittest.TestCase):
 
         self.assertTrue(all(map(is_valid_policy, self._lane_policies_list)))
 
-    def test_that_all_except_all_does_not_happen(self): pass
+    def test_that_all_except_all_does_not_happen(self):
+        def is_valid_policy(policy_node: etree.ElementBase) -> bool:
+            start_from = policy_node.attrib[LanePolicyConstants.POLICY_START_FROM_ATTR]
+
+            ret: bool
+
+            if start_from == LanePolicyConstants.POLICY_START_FROM_VALUE_NONE:
+                ret = True
+            else:
+                all_type_uuids: List[str] = list(map(
+                    lambda node: node.attrib[TypeConstants.UUID_ATTR], self._vehicle_types_list))
+                referenced_type_uuids: Set[str] = set()
+
+                for exception in policy_node:
+                    uuid: str = exception.attrib[LanePolicyConstants.EXCEPT_GROUP_ATTR]
+                    group_element: etree.ElementBase = list(
+                        filter(lambda node: node.attrib[GroupConstants.UUID_ATTR] == uuid,
+                               self._vehicle_groups_list)
+                    )[0]
+                    type_set: Set[str] = set(map(
+                        lambda node: node.attrib[GroupConstants.VEHICLE_TYPE_ATTR], group_element))
+                    referenced_type_uuids = referenced_type_uuids.union(type_set)
+
+                return len(referenced_type_uuids) < len(all_type_uuids)
+
+            return ret
+
+        self.assertTrue(all(map(is_valid_policy, self._lane_policies_list)))
 
 
 if __name__ == '__main__':
