@@ -30,5 +30,12 @@
             <vehicle type="ffa4d45f-35c0-4766-8aba-e3150d50eaf0" />
             <vehicle type="7fdc0d76-615a-4224-87e8-476014266b3f" />
         </group>
+        <group uuid="a7d4b81a-eec8-4a45-93e7-45390343a994" name="Passenger Cars" >
+            <vehicle type="08ca86bd-88a4-4eef-b034-6303d02573fa" />
+        </group>
+        <group uuid="26f12b3b-3c07-4b95-a9ac-63195d6d1b41" name="Heavy Vehicles">
+            <vehicle type="ffa4d45f-35c0-4766-8aba-e3150d50eaf0" />
+            <vehicle type="7fdc0d76-615a-4224-87e8-476014266b3f" />
+        </group>
     </groups>
 </vehicle-types-and-groups>

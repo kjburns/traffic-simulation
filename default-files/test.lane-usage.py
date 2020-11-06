@@ -70,7 +70,7 @@ class TestsForDefaultLaneUsageFile(unittest.TestCase):
 
     def test_that_policy_uuids_are_unique(self):
         all_unique: bool = are_all_attribute_values_unique(
-            lambda node: node.attrib[LanePolicyConstants.POLICY_UUID_ATTR], self._lane_policies_list)
+            lambda node: node.attrib[LanePolicyConstants.POLICY_UUID_ATTR], list(self._lane_policies_list))
         self.assertTrue(all_unique)
 
     def test_that_policy_except_groups_are_valid_references(self):
