@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type="text/xsl" href="./xs3p-master/xs3p.xsl" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:annotation>
+        <xs:documentation>Schema for lane usage file. This file describes lane usage policies and lane closures.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType name="version-number">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="uuid">
+        <xs:annotation>
+            <xs:documentation>Universally unique identifier.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="start-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="all-allowed" />
+            <xs:enumeration value="none-allowed" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="lane-policy">
+        <xs:sequence>
+            <xs:element name="except" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence />
+                    <xs:attribute name="group" type="uuid" use="required" />
+                    <xs:anyAttribute processContents="skip" />
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="start-from" type="start-type" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <!-- Root Element starts here -->
+    <xs:element name="lane-usage">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="lane-policies">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="policy" type="lane-policy" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute type="version-number" name="version" use="required" />
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
