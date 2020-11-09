@@ -40,13 +40,9 @@
         <xs:attribute name="b-null" type="positive-real-number" default="0.2" /><!-- acceleration in oscillation, m/s^2 -->
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
-    <!-- TODO W74 Definition -->
-    <!-- TODO W99 Definition -->
     <xs:group name="car-following-model">
         <xs:choice>
             <xs:element name="fritzsche" type="fritzsche" />
-            <!-- TODO W74 Reference -->
-            <!-- TODO W99 Reference -->
         </xs:choice>
     </xs:group>
     <xs:element name="behaviors">
@@ -60,6 +56,8 @@
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
+            <xs:attribute name="version" type="version-number" use="required" />
+            <xs:anyAttribute processContents="skip" />
         </xs:complexType>
     </xs:element>
 </xs:schema>
