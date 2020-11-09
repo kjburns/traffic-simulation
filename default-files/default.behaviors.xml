@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<behaviors xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../xml/behavior.xsd" version="1">
+    <car-following>
+        <fritzsche name="Default Car Following Behavior (Fritzsche)" uuid="a003f6fd-f1c6-49d1-8002-1ffa2132e737"/>
+    </car-following>
+</behaviors>

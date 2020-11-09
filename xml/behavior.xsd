@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type="text/xsl" href="./xs3p-master/xs3p.xsl" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:annotation>
+        <xs:documentation>Schema for driving behavior file. This file describes car following, lane change, and speed selection models, as well as the applied driving behaviors.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType name="version-number">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="uuid">
+        <xs:annotation>
+            <xs:documentation>Universally unique identifier.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="positive-real-number">
+        <xs:restriction base="xs:decimal">
+            <xs:minExclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="fritzsche">
+        <xs:annotation>
+            <xs:documentation>Fritzsche Car Following Model</xs:documentation>
+            <xs:documentation>Model parameters not included here are b_min (controlled by vehicle characteristics)</xs:documentation>
+        </xs:annotation>
+        <xs:sequence />
+        <xs:attribute name="name" type="xs:string" default="A Fritzsche Model" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="ssd" type="positive-real-number" default="0.5" /><!-- standstill distance, meters -->
+        <xs:attribute name="t-desired" type="positive-real-number" default="1.8" /><!-- desired time gap, seconds -->
+        <xs:attribute name="t-safe" type="positive-real-number" default="1.0" /><!-- safe time gap, seconds -->
+        <xs:attribute name="t-risky" type="positive-real-number" default="0.5" /><!-- risky time gap, seconds -->
+        <xs:attribute name="f-x" type="positive-real-number" default="0.5" /><!-- Used in perceptible speed differences, m/s assumed -->
+        <xs:attribute name="k-ptp" type="positive-real-number" default="0.001" /><!-- Used in perceptible positive speed differences -->
+        <xs:attribute name="k-ptn" type="positive-real-number" default="0.002" /><!-- Used in perceptible negative speed differences -->
+        <xs:attribute name="b-null" type="positive-real-number" default="0.2" /><!-- acceleration in oscillation, m/s^2 -->
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+    <xs:group name="car-following-model">
+        <xs:choice>
+            <xs:element name="fritzsche" type="fritzsche" />
+        </xs:choice>
+    </xs:group>
+    <xs:element name="behaviors">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="car-following">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:group ref="car-following-model" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="version" type="version-number" use="required" />
+            <xs:anyAttribute processContents="skip" />
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
