@@ -22,6 +22,12 @@
             <xs:minExclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="fraction-of-maximum">
+        <xs:restriction base="xs:decimal" >
+            <xs:minExclusive value="0" />
+            <xs:maxInclusive value="1" />
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="fritzsche">
         <xs:annotation>
             <xs:documentation>Fritzsche Car Following Model</xs:documentation>
@@ -40,9 +46,29 @@
         <xs:attribute name="b-null" type="positive-real-number" default="0.2" /><!-- acceleration in oscillation, m/s^2 -->
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
+    <xs:complexType name="hidas-lane-change">
+        <xs:annotation>
+            <xs:documentation>Hidas Lane Change Model</xs:documentation>
+        </xs:annotation>
+        <xs:sequence />
+        <xs:attribute name="name" type="xs:string" default="A Hidas LC Model" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="g_min" type="positive-real-number" default="2.0" /><!-- Standstill gap, meters -->
+        <xs:attribute name="Dt" type="positive-real-number" default="5.0" /><!-- Elapsed time of lane change, seconds -->
+        <xs:attribute name="c_f" type="positive-real-number" default="0.9" /><!-- calibration constant involving gap to following vehicle -->
+        <xs:attribute name="c_l" type="positive-real-number" default="0.9" /><!-- calibration constant involving gap to leading vehicle -->
+        <xs:attribute name="t_fm" type="positive-real-number" default="10" /><!-- time ahead of last chance that forced lane change window begins, seconds -->
+        <xs:attribute name="f_braking" type="fraction-of-maximum" default="0.15" /><!-- multiplier to max deceleration for cooperative braking -->
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
     <xs:group name="car-following-model">
         <xs:choice>
             <xs:element name="fritzsche" type="fritzsche" />
+        </xs:choice>
+    </xs:group>
+    <xs:group name="lane-change-model">
+        <xs:choice>
+            <xs:element name="hidas" type="hidas-lane-change" />
         </xs:choice>
     </xs:group>
     <xs:element name="behaviors">
@@ -52,6 +78,13 @@
                     <xs:complexType>
                         <xs:sequence>
                             <xs:group ref="car-following-model" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="lane-change">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:group ref="lane-change-model" minOccurs="1" maxOccurs="unbounded" />
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
