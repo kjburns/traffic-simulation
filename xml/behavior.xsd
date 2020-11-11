@@ -28,6 +28,11 @@
             <xs:maxInclusive value="1" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="standard-deviation">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="fritzsche">
         <xs:annotation>
             <xs:documentation>Fritzsche Car Following Model</xs:documentation>
@@ -71,7 +76,8 @@
         <xs:sequence />
         <xs:attribute name="name" type="xs:string" default="Speed Behavior" />
         <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="friction-fs-reduction-factor" type="friction-factor-of-safety" use="required" />
+        <xs:attribute name="friction-fs-reduction-factor-mean" type="friction-factor-of-safety" use="required" />
+        <xs:attribute name="friction-fs-reduction-factor-stdev" type="standard-deviation" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:group name="car-following-model">

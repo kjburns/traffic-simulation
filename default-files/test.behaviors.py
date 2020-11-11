@@ -78,11 +78,6 @@ class TestsForLaneChangeBehaviors(unittest.TestCase):
         self._behaviors_document: etree._ElementTree = etree.parse('default.behaviors.xml')
         self._lane_change_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[1]
 
-    def test_that_document_validates(self):
-        xs_doc = etree.parse('../xml/behavior.xsd')
-        xsd = etree.XMLSchema(xs_doc)
-        self.assertTrue(xsd.validate(self._behaviors_document))
-
     def test_that_uuids_are_unique(self):
         self.assertTrue(are_all_attribute_values_unique(
             lambda node: node.attrib[HidasLCConstants.UUID_ATTR],

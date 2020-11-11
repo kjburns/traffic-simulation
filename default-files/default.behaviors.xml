@@ -10,7 +10,8 @@
         <speed-behavior
                 name="Default Speed Selection Behavior"
                 uuid="3b8cb498-3be8-4e1c-b7e0-442bb9eebd75"
-                friction-fs-reduction-factor="0.95"
+                friction-fs-reduction-factor-mean="0.95"
+                friction-fs-reduction-factor-stdev="0.05"
         />
     </speed>
 </behaviors>

@@ -48,7 +48,8 @@ class SpeedSelectionConstants:
     TAG = 'speed-behavior'
     NAME_ATTR = 'name'
     UUID_ATTR = 'uuid'
-    FRICTION_FS_ATTR = 'friction-fs-reduction-factor'
+    FRICTION_FS_MEAN_ATTR = 'friction-fs-reduction-factor-mean'
+    FRICTION_FS_STDEV_ATTR = 'friction-fs-reduction-factor-stdev'
 
 
 def create_and_add_clean_fritzsche(attach_to: etree.ElementBase) -> etree.ElementBase:
@@ -73,7 +74,8 @@ def create_and_add_clean_speed_selection(attach_to: etree.ElementBase) -> etree.
     node: etree.ElementBase = etree.SubElement(attach_to, SpeedSelectionConstants.TAG, {
         SpeedSelectionConstants.NAME_ATTR: 'A speed selection behavior',
         SpeedSelectionConstants.UUID_ATTR: str(uuid()),
-        SpeedSelectionConstants.FRICTION_FS_ATTR: '0.95',
+        SpeedSelectionConstants.FRICTION_FS_MEAN_ATTR: '0.95',
+        SpeedSelectionConstants.FRICTION_FS_STDEV_ATTR: '0.05',
     })
 
     return node
@@ -385,11 +387,14 @@ class TestsForSpeedSelectionBehaviors(unittest.TestCase):
             node.attrib[SpeedSelectionConstants.UUID_ATTR] = value
             self.assertEqual(self._doc.validate(), expected_result)
 
-    def test_attribute_values(self):
-        # testing friction tolerance
+    def test_that_friction_mean_is_required(self):
+        self.check_effect_of_deleting_attribute(SpeedSelectionConstants.FRICTION_FS_MEAN_ATTR, False)
+
+    def test_friction_tolerance_mean_values(self):
         self._target_node[:] = []
         node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
         test_tuples = [
+            (-1, False),
             (0, False),
             (0.45, False),
             (0.50, True),
@@ -399,7 +404,24 @@ class TestsForSpeedSelectionBehaviors(unittest.TestCase):
             (3, False)
         ]
         for (value, expected_result) in test_tuples:
-            node.attrib[SpeedSelectionConstants.FRICTION_FS_ATTR] = str(value)
+            node.attrib[SpeedSelectionConstants.FRICTION_FS_MEAN_ATTR] = str(value)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_friction_stdev_is_required(self):
+        self.check_effect_of_deleting_attribute(SpeedSelectionConstants.FRICTION_FS_STDEV_ATTR, False)
+
+    def test_friction_tolerance_stdev_values(self):
+        self._target_node[:] = []
+        node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
+        test_tuples = [
+            (-1, False),
+            (-0.1, False),
+            (0, True),
+            (0.50, True),
+            (1.00, True),
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[SpeedSelectionConstants.FRICTION_FS_STDEV_ATTR] = str(value)
             self.assertEqual(self._doc.validate(), expected_result)
 
     def test_that_other_attributes_are_okay(self):
