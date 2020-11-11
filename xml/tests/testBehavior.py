@@ -43,6 +43,14 @@ class HidasLCConstants:
     BRAKING_FRACTION_ATTR = 'f_braking'
 
 
+class SpeedSelectionConstants:
+    COLLECTION_TAG = 'speed'
+    TAG = 'speed-behavior'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    FRICTION_FS_ATTR = 'friction-fs-reduction-factor'
+
+
 def create_and_add_clean_fritzsche(attach_to: etree.ElementBase) -> etree.ElementBase:
     node: etree.ElementBase = etree.SubElement(attach_to, FritzscheConstants.TAG, {
         FritzscheConstants.NAME_ATTR: 'A behavior set',
@@ -56,6 +64,16 @@ def create_and_add_clean_hidas_lc(attach_to: etree.ElementBase) -> etree.Element
     node: etree.ElementBase = etree.SubElement(attach_to, HidasLCConstants.TAG, {
         HidasLCConstants.NAME_ATTR: 'A lane change behavior',
         HidasLCConstants.UUID_ATTR: str(uuid()),
+    })
+
+    return node
+
+
+def create_and_add_clean_speed_selection(attach_to: etree.ElementBase) -> etree.ElementBase:
+    node: etree.ElementBase = etree.SubElement(attach_to, SpeedSelectionConstants.TAG, {
+        SpeedSelectionConstants.NAME_ATTR: 'A speed selection behavior',
+        SpeedSelectionConstants.UUID_ATTR: str(uuid()),
+        SpeedSelectionConstants.FRICTION_FS_ATTR: '0.95',
     })
 
     return node
@@ -78,6 +96,11 @@ class CleanDocument:
             self._document_root, LaneChangeBehaviorConstants.COLLECTION_TAG
         )
         create_and_add_clean_hidas_lc(self._lane_change_behaviors_node)
+
+        self._speed_selection_behaviors_node = etree.SubElement(
+            self._document_root, SpeedSelectionConstants.COLLECTION_TAG
+        )
+        create_and_add_clean_speed_selection(self._speed_selection_behaviors_node)
 
     def print_document_to_console(self):
         print(etree.tostring(self._document_root,
@@ -103,6 +126,9 @@ class CleanDocument:
 
     def get_lane_change_behaviors_node(self):
         return self._lane_change_behaviors_node
+
+    def get_speed_selection_behaviors_node(self):
+        return self._speed_selection_behaviors_node
 
 
 class TestsForFritzscheModel(unittest.TestCase):
@@ -299,6 +325,11 @@ class TestsForHidasLaneChangeModel(unittest.TestCase):
         node: etree.ElementBase = create_and_add_clean_hidas_lc(self._target_node)
         node.attrib['another-attribute'] = 'another value'
         self.assertTrue(self._doc.validate())
+
+
+class TestsForSpeedSelectionBehaviors(unittest.TestCase):
+    # TODO start here tomorrow.
+    pass
 
 
 if __name__ == '__main__':

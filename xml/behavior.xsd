@@ -117,13 +117,13 @@
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="driving-behaviors">
-                    <xs:complexType>
-                        <xs:sequence>
-                            <xs:element name="driving-behavior" type="driving-behavior" maxOccurs="unbounded" />
-                        </xs:sequence>
-                    </xs:complexType>
-                </xs:element>
+<!--                <xs:element name="driving-behaviors">-->
+<!--                    <xs:complexType>-->
+<!--                        <xs:sequence>-->
+<!--                            <xs:element name="driving-behavior" type="driving-behavior" maxOccurs="unbounded" />-->
+<!--                        </xs:sequence>-->
+<!--                    </xs:complexType>-->
+<!--                </xs:element>-->
             </xs:sequence>
             <xs:attribute name="version" type="version-number" use="required" />
             <xs:anyAttribute processContents="skip" />
