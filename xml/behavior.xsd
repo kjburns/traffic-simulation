@@ -61,6 +61,19 @@
         <xs:attribute name="f_braking" type="fraction-of-maximum" default="0.15" /><!-- multiplier to max deceleration for cooperative braking -->
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
+    <xs:simpleType name="friction-factor-of-safety">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0.5" />
+            <xs:maxInclusive value="2.0" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="speed-selection">
+        <xs:sequence />
+        <xs:attribute name="name" type="xs:string" default="Speed Behavior" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="friction-fs-reduction-factor" type="friction-factor-of-safety" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
     <xs:group name="car-following-model">
         <xs:choice>
             <xs:element name="fritzsche" type="fritzsche" />
@@ -77,6 +90,7 @@
         <xs:attribute name="uuid" type="uuid" use="required" />
         <xs:attribute name="following" type="uuid" use="required" />
         <xs:attribute name="lane-change" type="uuid" use="required" />
+        <xs:attribute name="speed-selection" type="uuid" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:element name="behaviors">
@@ -85,14 +99,21 @@
                 <xs:element name="car-following">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:group ref="car-following-model" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:group ref="car-following-model" maxOccurs="unbounded" />
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="lane-change">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:group ref="lane-change-model" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:group ref="lane-change-model" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="speed">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="speed-behavior" type="speed-selection" maxOccurs="unbounded" />
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
