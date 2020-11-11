@@ -33,6 +33,15 @@ class HidasLCConstants:
     BRAKING_FRACTION_ATTR = 'f_braking'
 
 
+class SpeedSelectionConstants:
+    COLLECTION_TAG = 'speed'
+    TAG = 'speed-behavior'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    FRICTION_FS_MEAN_ATTR = 'friction-fs-reduction-factor-mean'
+    FRICTION_FS_STDEV_ATTR = 'friction-fs-reduction-factor-stdev'
+
+
 def does_uuid_exist_in_collection(uuid: str, collection: etree.ElementBase) -> bool:
     # helper function to avoid repetition in tests
 
@@ -90,6 +99,31 @@ class TestsForLaneChangeBehaviors(unittest.TestCase):
                     (behavior_node.attrib[HidasLCConstants.NAME_ATTR].strip() != ''))
 
         self.assertTrue(all(map(is_valid_behavior, self._lane_change_behaviors_list)))
+
+
+class TestsForSpeedSelectionBehaviors(unittest.TestCase):
+    def setUp(self) -> None:
+        self._behaviors_document: etree._ElementTree = etree.parse('default.behaviors.xml')
+        self._speed_selection_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[2]
+
+    def test_that_uuids_are_unique(self):
+        self.assertTrue(are_all_attribute_values_unique(
+            lambda node: node.attrib[SpeedSelectionConstants.UUID_ATTR],
+            list(self._speed_selection_behaviors_list)
+        ))
+
+    def test_that_each_behavior_has_a_name(self):
+        def is_valid_behavior(behavior_node: etree.ElementBase) -> bool:
+            return ((SpeedSelectionConstants.NAME_ATTR in behavior_node.attrib) and
+                    (behavior_node.attrib[SpeedSelectionConstants.NAME_ATTR].strip() != ''))
+
+        self.assertTrue(all(map(is_valid_behavior, self._speed_selection_behaviors_list)))
+
+    def test_that_friction_standard_deviations_are_reasonable(self):
+        def is_valid_behavior(behavior_node: etree.ElementBase) -> bool:
+            return float(behavior_node.attrib[SpeedSelectionConstants.FRICTION_FS_STDEV_ATTR]) <= 0.2
+
+        self.assertTrue(all(map(is_valid_behavior, self._speed_selection_behaviors_list)))
 
 
 if __name__ == '__main__':
