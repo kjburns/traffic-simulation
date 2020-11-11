@@ -99,6 +99,28 @@
         <xs:attribute name="speed-selection" type="uuid" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
+    <xs:complexType name="road-behavior">
+        <xs:sequence>
+            <xs:element name="except" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="group" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence />
+                                <xs:attribute name="id" type="uuid" use="required" />
+                                <xs:anyAttribute processContents="skip" />
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="behavior" type="uuid" use="required" />
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="default-behavior" type="uuid"  use="required"/>
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
     <xs:element name="behaviors">
         <xs:complexType>
             <xs:sequence>
@@ -127,6 +149,13 @@
                     <xs:complexType>
                         <xs:sequence>
                             <xs:element name="driving-behavior" type="driving-behavior" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="road-behaviors">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="road-behaviors" type="road-behavior" maxOccurs="unbounded" />
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
