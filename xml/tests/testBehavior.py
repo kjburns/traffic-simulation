@@ -328,8 +328,84 @@ class TestsForHidasLaneChangeModel(unittest.TestCase):
 
 
 class TestsForSpeedSelectionBehaviors(unittest.TestCase):
-    # TODO start here tomorrow.
-    pass
+    def setUp(self) -> None:
+        self._doc = CleanDocument()
+        self._target_node = self._doc.get_speed_selection_behaviors_node()
+
+    def check_effect_of_deleting_attribute(self, attribute: str, expected_result: bool):
+        node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
+        node.attrib.pop(attribute)
+        self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_collection_is_required(self):
+        remaining_nodes: List[etree.ElementBase] = list(filter(
+            lambda node: node.tag != SpeedSelectionConstants.COLLECTION_TAG,
+            self._doc.get_root_node()
+        ))
+        self._doc.get_root_node()[:] = remaining_nodes
+        self.assertFalse(self._doc.validate())
+
+    def test_behavior_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (100, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self._target_node[:] = []
+            for _ in range(count):
+                create_and_add_clean_speed_selection(self._target_node)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_name_is_optional(self):
+        self.check_effect_of_deleting_attribute(SpeedSelectionConstants.NAME_ATTR, True)
+
+    def test_name_values(self):
+        test_tuples = [
+            ('', True),
+            ('Speed selection behavior name', True),
+            ('002', True)
+        ]
+        node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[SpeedSelectionConstants.NAME_ATTR] = value
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_uuid_is_required(self):
+        self.check_effect_of_deleting_attribute(SpeedSelectionConstants.UUID_ATTR, False)
+
+    def test_uuid_value(self):
+        test_tuples: List[Tuple[str, bool]] = [
+            ('', False),
+            ('de5e513a-5469-4778-ab61-30e5da4bcf4a', True),
+            ('de5e513a-5469-4778-ab61-30e5da4bcg4a', False)
+        ]
+        node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[SpeedSelectionConstants.UUID_ATTR] = value
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_attribute_values(self):
+        # testing friction tolerance
+        self._target_node[:] = []
+        node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
+        test_tuples = [
+            (0, False),
+            (0.45, False),
+            (0.50, True),
+            (1.00, True),
+            (2.00, True),
+            (2.01, False),
+            (3, False)
+        ]
+        for (value, expected_result) in test_tuples:
+            node.attrib[SpeedSelectionConstants.FRICTION_FS_ATTR] = str(value)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_other_attributes_are_okay(self):
+        node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
+        node.attrib['another-attribute'] = 'attribute value'
+        self.assertTrue(self._doc.validate())
 
 
 if __name__ == '__main__':
