@@ -1,6 +1,6 @@
 from lxml import etree
 import unittest
-from typing import Callable
+from typing import Callable, List
 
 
 class FollowingBehaviorConstants:
@@ -40,6 +40,16 @@ class SpeedSelectionConstants:
     UUID_ATTR = 'uuid'
     FRICTION_FS_MEAN_ATTR = 'friction-fs-reduction-factor-mean'
     FRICTION_FS_STDEV_ATTR = 'friction-fs-reduction-factor-stdev'
+
+
+class DrivingBehaviorConstants:
+    COLLECTION_TAG = 'driving-behaviors'
+    TAG = 'driving-behavior'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    FOLLOWING_MODEL_ATTR = 'following'
+    LANE_CHANGE_MODEL_ATTR = 'lane-change'
+    SPEED_SELECTION_MODEL_ATTR = 'speed-selection'
 
 
 def does_uuid_exist_in_collection(uuid: str, collection: etree.ElementBase) -> bool:
@@ -124,6 +134,44 @@ class TestsForSpeedSelectionBehaviors(unittest.TestCase):
             return float(behavior_node.attrib[SpeedSelectionConstants.FRICTION_FS_STDEV_ATTR]) <= 0.2
 
         self.assertTrue(all(map(is_valid_behavior, self._speed_selection_behaviors_list)))
+
+
+class TestsForDrivingBehaviors(unittest.TestCase):
+    def setUp(self) -> None:
+        self._behaviors_document: etree._ElementTree = etree.parse('default.behaviors.xml')
+        self._following_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[0]
+        self._lane_change_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[1]
+        self._speed_selection_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[2]
+        self._driving_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[3]
+
+    def test_that_uuids_are_unique(self):
+        self.assertTrue(are_all_attribute_values_unique(
+            lambda node: node.attrib[DrivingBehaviorConstants.UUID_ATTR],
+            list(self._driving_behaviors_list)
+        ))
+
+    def test_that_each_entry_has_a_name(self):
+        def is_valid_behavior(behavior_node: etree.ElementBase) -> bool:
+            return ((DrivingBehaviorConstants.NAME_ATTR in behavior_node.attrib) and
+                    (behavior_node.attrib[DrivingBehaviorConstants.NAME_ATTR].strip() != ''))
+
+        self.assertTrue(all(map(is_valid_behavior, self._driving_behaviors_list)))
+
+    def test_that_each_entry_references_valid_behaviors(self):
+        def is_valid_behavior(behavior_node: etree.ElementBase) -> bool:
+            return all([
+                does_uuid_exist_in_collection(
+                    behavior_node.attrib[DrivingBehaviorConstants.FOLLOWING_MODEL_ATTR],
+                    self._following_behaviors_list),
+                does_uuid_exist_in_collection(
+                    behavior_node.attrib[DrivingBehaviorConstants.LANE_CHANGE_MODEL_ATTR],
+                    self._lane_change_behaviors_list),
+                does_uuid_exist_in_collection(
+                    behavior_node.attrib[DrivingBehaviorConstants.SPEED_SELECTION_MODEL_ATTR],
+                    self._speed_selection_behaviors_list),
+            ])
+
+        self.assertTrue(all(map(is_valid_behavior, self._driving_behaviors_list)))
 
 
 if __name__ == '__main__':

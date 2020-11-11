@@ -52,6 +52,16 @@ class SpeedSelectionConstants:
     FRICTION_FS_STDEV_ATTR = 'friction-fs-reduction-factor-stdev'
 
 
+class DrivingBehaviorConstants:
+    COLLECTION_TAG = 'driving-behaviors'
+    TAG = 'driving-behavior'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    FOLLOWING_MODEL_ATTR = 'following'
+    LANE_CHANGE_MODEL_ATTR = 'lane-change'
+    SPEED_SELECTION_MODEL_ATTR = 'speed-selection'
+
+
 def create_and_add_clean_fritzsche(attach_to: etree.ElementBase) -> etree.ElementBase:
     node: etree.ElementBase = etree.SubElement(attach_to, FritzscheConstants.TAG, {
         FritzscheConstants.NAME_ATTR: 'A behavior set',
@@ -81,6 +91,25 @@ def create_and_add_clean_speed_selection(attach_to: etree.ElementBase) -> etree.
     return node
 
 
+def create_and_add_driving_behavior(attach_to: etree.ElementBase, following_id: str, lane_change_id: str,
+                                    speed_selection_id: str, name: str = 'A following behavior'):
+    node: etree.ElementBase = etree.SubElement(attach_to, DrivingBehaviorConstants.TAG, {
+        DrivingBehaviorConstants.NAME_ATTR: name,
+        DrivingBehaviorConstants.UUID_ATTR: str(uuid()),
+        DrivingBehaviorConstants.FOLLOWING_MODEL_ATTR: following_id,
+        DrivingBehaviorConstants.LANE_CHANGE_MODEL_ATTR: lane_change_id,
+        DrivingBehaviorConstants.SPEED_SELECTION_MODEL_ATTR: speed_selection_id,
+    })
+
+    return node
+
+
+def create_and_add_clean_driving_behavior(attach_to: etree.ElementBase) -> etree.ElementBase:
+    node = create_and_add_driving_behavior(attach_to, str(uuid()), str(uuid()), str(uuid()))
+
+    return node
+
+
 class CleanDocument:
     def __init__(self):
         ns_map = {"xsi": 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -92,17 +121,27 @@ class CleanDocument:
 
         self._following_behaviors_node = etree.SubElement(
             self._document_root, FollowingBehaviorConstants.COLLECTION_TAG)
-        create_and_add_clean_fritzsche(self._following_behaviors_node)
+        following_node = create_and_add_clean_fritzsche(self._following_behaviors_node)
 
         self._lane_change_behaviors_node = etree.SubElement(
             self._document_root, LaneChangeBehaviorConstants.COLLECTION_TAG
         )
-        create_and_add_clean_hidas_lc(self._lane_change_behaviors_node)
+        lane_change_node = create_and_add_clean_hidas_lc(self._lane_change_behaviors_node)
 
         self._speed_selection_behaviors_node = etree.SubElement(
             self._document_root, SpeedSelectionConstants.COLLECTION_TAG
         )
-        create_and_add_clean_speed_selection(self._speed_selection_behaviors_node)
+        speed_selection_node = create_and_add_clean_speed_selection(self._speed_selection_behaviors_node)
+
+        self._driving_behaviors_node = etree.SubElement(
+            self._document_root, DrivingBehaviorConstants.COLLECTION_TAG
+        )
+        create_and_add_driving_behavior(
+            self._driving_behaviors_node,
+            following_node.attrib[FritzscheConstants.UUID_ATTR],
+            lane_change_node.attrib[HidasLCConstants.UUID_ATTR],
+            speed_selection_node.attrib[SpeedSelectionConstants.UUID_ATTR]
+        )
 
     def print_document_to_console(self):
         print(etree.tostring(self._document_root,
@@ -131,6 +170,9 @@ class CleanDocument:
 
     def get_speed_selection_behaviors_node(self):
         return self._speed_selection_behaviors_node
+
+    def get_driving_behaviors_node(self):
+        return self._driving_behaviors_node
 
 
 class TestsForFritzscheModel(unittest.TestCase):
@@ -427,6 +469,73 @@ class TestsForSpeedSelectionBehaviors(unittest.TestCase):
     def test_that_other_attributes_are_okay(self):
         node: etree.ElementBase = create_and_add_clean_speed_selection(self._target_node)
         node.attrib['another-attribute'] = 'attribute value'
+        self.assertTrue(self._doc.validate())
+
+
+class TestsForDrivingBehaviors(unittest.TestCase):
+    def setUp(self) -> None:
+        self._doc = CleanDocument()
+        self._target_node = self._doc.get_driving_behaviors_node()
+
+    def check_effect_of_deleting_attribute(self, attribute: str, expected_result: bool):
+        self._target_node[:] = []
+        node: etree.ElementBase = create_and_add_clean_driving_behavior(self._target_node)
+        node.attrib.pop(attribute)
+        self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_collection_is_required(self):
+        remaining_nodes: List[etree.ElementBase] = list(filter(
+            lambda node: node.tag != DrivingBehaviorConstants.COLLECTION_TAG,
+            self._doc.get_root_node()
+        ))
+        self._doc.get_root_node()[:] = remaining_nodes
+        self.assertFalse(self._doc.validate())
+
+    def test_behavior_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (100, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self._target_node[:] = []
+            for _ in range(count):
+                create_and_add_clean_driving_behavior(self._target_node)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_parameters_are_required(self):
+        test_tuples = [
+            (DrivingBehaviorConstants.NAME_ATTR, False),
+            (DrivingBehaviorConstants.UUID_ATTR, True),
+            (DrivingBehaviorConstants.FOLLOWING_MODEL_ATTR, True),
+            (DrivingBehaviorConstants.LANE_CHANGE_MODEL_ATTR, True),
+            (DrivingBehaviorConstants.SPEED_SELECTION_MODEL_ATTR, True)
+        ]
+        for (attribute, is_required) in test_tuples:
+            expected_result: bool = not is_required
+            self.check_effect_of_deleting_attribute(attribute, expected_result)
+
+    def test_uuid_values(self):
+        test_tuples: List[Tuple[str, bool]] = [
+            ('', False),
+            ('de5e513a-5469-4778-ab61-30e5da4bcf4a', True),
+            ('de5e513a-5469-4778-ab61-30e5da4bcg4a', False)
+        ]
+        attribute_list = [DrivingBehaviorConstants.UUID_ATTR,
+                          DrivingBehaviorConstants.FOLLOWING_MODEL_ATTR,
+                          DrivingBehaviorConstants.LANE_CHANGE_MODEL_ATTR,
+                          DrivingBehaviorConstants.SPEED_SELECTION_MODEL_ATTR
+                          ]
+        for attribute in attribute_list:
+            self._target_node[:] = []
+            node: etree.ElementBase = create_and_add_clean_driving_behavior(self._target_node)
+            for (value, expected_result) in test_tuples:
+                node.attrib[attribute] = value
+                self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_other_attributes_are_okay(self):
+        node: etree.ElementBase = create_and_add_clean_driving_behavior(self._target_node)
+        node.attrib['another-attribute'] = 'a value'
         self.assertTrue(self._doc.validate())
 
 
