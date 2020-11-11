@@ -3,4 +3,7 @@
     <car-following>
         <fritzsche name="Default Car Following Behavior (Fritzsche)" uuid="a003f6fd-f1c6-49d1-8002-1ffa2132e737"/>
     </car-following>
+    <lane-change>
+        <hidas name="Default Lane Change Behavior (Hidas)" uuid="b45541ad-d5f5-446b-b988-d55ad88700c6"/>
+    </lane-change>
 </behaviors>
