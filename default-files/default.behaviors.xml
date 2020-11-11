@@ -22,4 +22,10 @@
                           speed-selection="3b8cb498-3be8-4e1c-b7e0-442bb9eebd75"
         />
     </driving-behaviors>
+    <road-behaviors>
+        <road-behavior uuid="29d9ce9f-e94b-4587-873f-aa1a5bf29ef5"
+                       default-behavior="512136a6-030f-4bf7-b476-e79ac3a917c1"
+                       name="Default Road Behavior"
+        />
+    </road-behaviors>
 </behaviors>
