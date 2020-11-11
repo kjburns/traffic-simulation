@@ -62,6 +62,18 @@ class DrivingBehaviorConstants:
     SPEED_SELECTION_MODEL_ATTR = 'speed-selection'
 
 
+class RoadBehaviorConstants:
+    COLLECTION_TAG = 'road-behaviors'
+    TAG = 'road-behavior'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    DEFAULT_BEHAVIOR_ATTR = 'default-behavior'
+    EXCEPT_TAG = 'except'
+    EXCEPT_BEHAVIOR_ATTR = 'behavior'
+    EXCEPT_GROUP_TAG = 'group'
+    EXCEPT_GROUP_ID_ATTR = 'id'
+
+
 def create_and_add_clean_fritzsche(attach_to: etree.ElementBase) -> etree.ElementBase:
     node: etree.ElementBase = etree.SubElement(attach_to, FritzscheConstants.TAG, {
         FritzscheConstants.NAME_ATTR: 'A behavior set',
@@ -110,6 +122,34 @@ def create_and_add_clean_driving_behavior(attach_to: etree.ElementBase) -> etree
     return node
 
 
+def create_add_add_road_behavior(attach_to: etree.ElementBase, default_behavior_id: str,
+                                 exception_tuples: List[Tuple[str, List[str]]], name: str = '') -> etree.ElementBase:
+    node = etree.SubElement(attach_to, RoadBehaviorConstants.TAG, {
+        RoadBehaviorConstants.NAME_ATTR: name,
+        RoadBehaviorConstants.UUID_ATTR: str(uuid()),
+        RoadBehaviorConstants.DEFAULT_BEHAVIOR_ATTR: default_behavior_id,
+    })
+    for (alternate_behavior, group_list) in exception_tuples:
+        sub_node = etree.SubElement(node, RoadBehaviorConstants.EXCEPT_TAG, {
+            RoadBehaviorConstants.EXCEPT_BEHAVIOR_ATTR: alternate_behavior,
+        })
+        for group in group_list:
+            etree.SubElement(sub_node, RoadBehaviorConstants.EXCEPT_GROUP_TAG, {
+                RoadBehaviorConstants.EXCEPT_GROUP_ID_ATTR: group,
+            })
+
+    return node
+
+
+def create_and_add_clean_road_behavior(attach_to: etree.ElementBase) -> etree.ElementBase:
+    return create_add_add_road_behavior(attach_to, str(uuid()), [
+        (str(uuid()), [
+            str(uuid()),
+            str(uuid()),
+        ]),
+    ])
+
+
 class CleanDocument:
     def __init__(self):
         ns_map = {"xsi": 'http://www.w3.org/2001/XMLSchema-instance'}
@@ -143,6 +183,11 @@ class CleanDocument:
             speed_selection_node.attrib[SpeedSelectionConstants.UUID_ATTR]
         )
 
+        self._road_behaviors_node = etree.SubElement(
+            self._document_root, RoadBehaviorConstants.COLLECTION_TAG
+        )
+        create_and_add_clean_road_behavior(self._road_behaviors_node)
+
     def print_document_to_console(self):
         print(etree.tostring(self._document_root,
                              xml_declaration=False, pretty_print=True, encoding='unicode'))
@@ -173,6 +218,9 @@ class CleanDocument:
 
     def get_driving_behaviors_node(self):
         return self._driving_behaviors_node
+
+    def get_road_behaviors_node(self):
+        return self._road_behaviors_node
 
 
 class TestsForFritzscheModel(unittest.TestCase):
@@ -537,6 +585,109 @@ class TestsForDrivingBehaviors(unittest.TestCase):
         node: etree.ElementBase = create_and_add_clean_driving_behavior(self._target_node)
         node.attrib['another-attribute'] = 'a value'
         self.assertTrue(self._doc.validate())
+
+
+class TestsForRoadBehaviors(unittest.TestCase):
+    def setUp(self) -> None:
+        self._doc: CleanDocument = CleanDocument()
+        self._target_node: etree.ElementBase = self._doc.get_road_behaviors_node()
+
+    def test_that_collection_is_required(self):
+        remaining_nodes: List[etree.ElementBase] = list(filter(
+            lambda node: node.tag != RoadBehaviorConstants.COLLECTION_TAG,
+            self._doc.get_root_node()
+        ))
+        self._doc.get_root_node()[:] = remaining_nodes
+        self.assertFalse(self._doc.validate())
+
+    def test_instance_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (10, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self._target_node[:] = []
+            for _ in range(count):
+                create_and_add_clean_road_behavior(self._target_node)
+
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_that_attributes_are_optional(self):
+        test_tuples = [
+            (RoadBehaviorConstants.NAME_ATTR, True),
+            (RoadBehaviorConstants.UUID_ATTR, False),
+            (RoadBehaviorConstants.DEFAULT_BEHAVIOR_ATTR, False)
+        ]
+        for (attribute_name, expected_result) in test_tuples:
+            self._target_node[:] = []
+            node: etree.ElementBase = create_and_add_clean_road_behavior(self._target_node)
+            node.attrib.pop(attribute_name)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_name_values(self):
+        test_tuples = [
+            ('', True),
+            ('a name', True),
+            ('110', True),
+        ]
+        node: etree.ElementBase = create_and_add_clean_road_behavior(self._target_node)
+        for (value, expected_result) in test_tuples:
+            node.attrib[RoadBehaviorConstants.NAME_ATTR] = value
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_values_of_attributes_taking_uuids(self):
+        test_tuples: List[Tuple[str, bool]] = [
+            ('', False),
+            ('de5e513a-5469-4778-ab61-30e5da4bcf4a', True),
+            ('de5e513a-5469-4778-ab61-30e5da4bcg4a', False)
+        ]
+        for (prospective_id, expected_result) in test_tuples:
+            self._target_node[:] = []
+            node: etree.ElementBase = create_add_add_road_behavior(self._target_node, prospective_id, [
+                (prospective_id, [prospective_id])
+            ])
+            node.attrib[RoadBehaviorConstants.UUID_ATTR] = prospective_id
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_except_counts(self):
+        test_tuples = [
+            (0, True),
+            (1, True),
+            (10, True),
+        ]
+        for (except_count, expected_result) in test_tuples:
+            self._target_node[:] = []
+            create_add_add_road_behavior(self._target_node, str(uuid()), [
+                (str(uuid()), [str(uuid())]) for _ in range(except_count)
+            ])
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_except_behavior_attribute_is_required(self):
+        road_behavior_node: etree.ElementBase = create_and_add_clean_road_behavior(self._target_node)
+        except_node: etree.ElementBase = road_behavior_node[0]
+        except_node.attrib.pop(RoadBehaviorConstants.EXCEPT_BEHAVIOR_ATTR)
+        self.assertFalse(self._doc.validate())
+
+    def test_except_group_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (10, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            self._target_node[:] = []
+            create_add_add_road_behavior(self._target_node, str(uuid()), [
+                (str(uuid()), [str(uuid()) for _ in range(count)])
+            ])
+            self.assertEqual(self._doc.validate(), expected_result)
+
+    def test_except_group_id_is_required(self):
+        road_behavior_node: etree.ElementBase = create_and_add_clean_road_behavior(self._target_node)
+        except_node: etree.ElementBase = road_behavior_node[0]
+        group_node: etree.ElementBase = except_node[0]
+        group_node.attrib.pop(RoadBehaviorConstants.EXCEPT_GROUP_ID_ATTR)
+        self.assertFalse(self._doc.validate())
 
 
 if __name__ == '__main__':

@@ -104,7 +104,7 @@
             <xs:element name="except" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="group" minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="group" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence />
                                 <xs:attribute name="id" type="uuid" use="required" />
@@ -155,7 +155,7 @@
                 <xs:element name="road-behaviors">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="road-behaviors" type="road-behavior" maxOccurs="unbounded" />
+                            <xs:element name="road-behavior" type="road-behavior" maxOccurs="unbounded" />
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
