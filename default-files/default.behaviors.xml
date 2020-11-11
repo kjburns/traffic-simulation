@@ -6,4 +6,11 @@
     <lane-change>
         <hidas name="Default Lane Change Behavior (Hidas)" uuid="b45541ad-d5f5-446b-b988-d55ad88700c6"/>
     </lane-change>
+    <speed>
+        <speed-behavior
+                name="Default Speed Selection Behavior"
+                uuid="3b8cb498-3be8-4e1c-b7e0-442bb9eebd75"
+                friction-fs-reduction-factor="0.95"
+        />
+    </speed>
 </behaviors>
