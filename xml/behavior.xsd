@@ -71,6 +71,14 @@
             <xs:element name="hidas" type="hidas-lane-change" />
         </xs:choice>
     </xs:group>
+    <xs:complexType name="driving-behavior">
+        <xs:sequence />
+        <xs:attribute name="name" type="xs:string" default="" />
+        <xs:attribute name="uuid" type="uuid" use="required" />
+        <xs:attribute name="following" type="uuid" use="required" />
+        <xs:attribute name="lane-change" type="uuid" use="required" />
+        <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
     <xs:element name="behaviors">
         <xs:complexType>
             <xs:sequence>
@@ -85,6 +93,13 @@
                     <xs:complexType>
                         <xs:sequence>
                             <xs:group ref="lane-change-model" minOccurs="1" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="driving-behaviors">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="driving-behavior" type="driving-behavior" maxOccurs="unbounded" />
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
