@@ -118,9 +118,26 @@ class TestsForFritzscheModel(unittest.TestCase):
     def test_that_clean_document_validates(self):
         self.assertTrue(self._doc.validate())
 
-    def test_that_collection_is_required(self): pass  # TODO
+    def test_that_collection_is_required(self):
+        remaining_nodes: List[etree.ElementBase] = list(filter(
+            lambda node: node.tag != FollowingBehaviorConstants.COLLECTION_TAG,
+            self._doc.get_root_node()
+        ))
+        self._doc.get_root_node()[:] = remaining_nodes
+        self.assertFalse(self._doc.validate())
 
-    def test_instance_counts(self): pass  # TODO
+    def test_instance_counts(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (4, True),
+            (100, True)
+        ]
+        for (count, expected_result) in test_tuples:
+            self._target_node[:] = []
+            for _ in range(count):
+                create_and_add_clean_fritzsche(self._target_node)
+            self.assertEqual(self._doc.validate(), expected_result)
 
     def test_that_name_is_optional(self):
         self.check_effect_of_deleting_attribute(FritzscheConstants.NAME_ATTR, True)
