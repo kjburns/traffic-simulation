@@ -35,7 +35,7 @@
     </xs:simpleType>
     <xs:simpleType name="simulation-duration">
         <xs:restriction base="xs:duration">
-            <xs:minExclusive value="0" />
+            <xs:minExclusive value="PT0S" />
             <xs:maxExclusive value="PT24H" />
         </xs:restriction>
     </xs:simpleType>
