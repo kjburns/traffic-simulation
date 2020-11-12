@@ -52,6 +52,18 @@ class DrivingBehaviorConstants:
     SPEED_SELECTION_MODEL_ATTR = 'speed-selection'
 
 
+class RoadBehaviorConstants:
+    COLLECTION_TAG = 'road-behaviors'
+    TAG = 'road-behavior'
+    NAME_ATTR = 'name'
+    UUID_ATTR = 'uuid'
+    DEFAULT_BEHAVIOR_ATTR = 'default-behavior'
+    EXCEPT_TAG = 'except'
+    EXCEPT_BEHAVIOR_ATTR = 'behavior'
+    EXCEPT_GROUP_TAG = 'group'
+    EXCEPT_GROUP_ID_ATTR = 'id'
+
+
 def does_uuid_exist_in_collection(uuid: str, collection: etree.ElementBase) -> bool:
     # helper function to avoid repetition in tests
 
@@ -172,6 +184,56 @@ class TestsForDrivingBehaviors(unittest.TestCase):
             ])
 
         self.assertTrue(all(map(is_valid_behavior, self._driving_behaviors_list)))
+
+
+class TestsForRoadBehaviors(unittest.TestCase):
+    def setUp(self) -> None:
+        self._behaviors_document: etree._ElementTree = etree.parse('default.behaviors.xml')
+        self._driving_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[3]
+        self._road_behaviors_list: etree.ElementBase = self._behaviors_document.getroot()[4]
+
+        self._vehicle_types_document: etree._ElementTree = etree.parse('default.vehicle-types.xml')
+        self._vehicle_groups_list: etree.ElementBase = self._vehicle_types_document.getroot()[1]
+
+    def test_that_uuids_are_unique(self):
+        self.assertTrue(are_all_attribute_values_unique(
+            lambda node: node.attrib[RoadBehaviorConstants.UUID_ATTR],
+            list(self._road_behaviors_list)
+        ))
+
+    def test_that_each_entry_has_a_name(self):
+        def is_valid_behavior(behavior_node: etree.ElementBase) -> bool:
+            return ((RoadBehaviorConstants.NAME_ATTR in behavior_node.attrib) and
+                    (behavior_node.attrib[RoadBehaviorConstants.NAME_ATTR].strip() != ''))
+
+        self.assertTrue(all(map(is_valid_behavior, self._road_behaviors_list)))
+
+    def test_that_each_entry_references_valid_behaviors(self):
+        def is_valid_behavior(behavior_node: etree.ElementBase) -> bool:
+            return all([
+                does_uuid_exist_in_collection(  # Default driving behavior's ID in collection?
+                    behavior_node.attrib[RoadBehaviorConstants.DEFAULT_BEHAVIOR_ATTR],
+                    self._driving_behaviors_list),
+                all(map(  # Exception driving behavior ID in collection?
+                    lambda except_node: does_uuid_exist_in_collection(
+                        except_node.attrib[RoadBehaviorConstants.EXCEPT_BEHAVIOR_ATTR],
+                        self._driving_behaviors_list
+                    ),
+                    behavior_node
+                )),
+                all(map(  # Vehicle groups referenced by exception exist in their collection?
+                    lambda except_node: all(map(
+                        lambda group_node: does_uuid_exist_in_collection(
+                            group_node.attrib[RoadBehaviorConstants.EXCEPT_GROUP_ID_ATTR],
+                            self._vehicle_groups_list
+                        ),
+                        except_node
+                    )),
+                    behavior_node
+                ))
+            ])
+
+        self.assertTrue(all(map(is_valid_behavior, self._road_behaviors_list)))
 
 
 if __name__ == '__main__':
