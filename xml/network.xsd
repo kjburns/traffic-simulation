@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type="text/xsl" href="./xs3p-master/xs3p.xsl" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:annotation>
+        <xs:documentation>Schema for network file. This file describes roads, connectors, and other network objects.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType name="version-number">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="uuid">
+        <xs:annotation>
+            <xs:documentation>Universally unique identifier.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="speed-units">
+        <xs:restriction>
+            <xs:enumeration value="miles-per-hour" />
+            <xs:enumeration value="kilometers-per-hour" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="layout-units">
+        <xs:restriction>
+            <xs:enumeration value="feet" />
+            <xs:enumeration value="meters" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="length">
+        <xs:restriction base="xs:decimal">
+            <xs:minExclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="side">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="left" />
+            <xs:enumeration value="right" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="end">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="a" />
+            <xs:enumeration value="b" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="ordinate">
+        <xs:union memberTypes="end length" />
+    </xs:simpleType>
+    <xs:simpleType name="chain-xy-list">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(-?\d+(\.\d*)?,-?\d+(\.\d*)?\s*){2,}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="network">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="roads">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="road" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="chain">
+                                            <xs:complexType>
+                                                <xs:attribute name="length" type="length" /><!-- optional, for coder's reference only. Calculated automatically by simulator. -->
+                                                <xs:attribute name="points" type="chain-xy-list" use="required" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="lanes">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="lane" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="policy">
+                                                                    <xs:complexType>
+                                                                        <xs:sequence>
+                                                                            <xs:element name="except" minOccurs="0" maxOccurs="unbounded">
+                                                                                <xs:complexType>
+                                                                                    <xs:sequence />
+                                                                                    <xs:attribute name="policy" type="uuid" use="required" />
+                                                                                    <xs:attribute name="start-time" type="xs:time" use="required" />
+                                                                                    <xs:attribute name="end-time" type="xs:time" use="required" />
+                                                                                </xs:complexType>
+                                                                            </xs:element>
+                                                                        </xs:sequence>
+                                                                        <xs:attribute name="id" type="uuid" use="required" />
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                            <xs:attribute name="ordinal" type="xs:nonNegativeInteger" use="required" />
+                                                            <xs:attribute name="width" type="length" use="required" />
+                                                            <xs:attribute name="may-move-left" type="xs:boolean" default="true" />
+                                                            <xs:attribute name="may-move-right" type="xs:boolean" default="true" />
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="pockets">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="pocket" minOccurs="0" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence/>
+                                                            <xs:attribute name="side" type="side" use="required" />
+                                                            <xs:attribute name="start-ord" type="ordinate" use="required" />
+                                                            <xs:attribute name="end-ord" type="ordinate" use="required" />
+                                                            <xs:attribute name="start-taper" type="length" default="0" />
+                                                            <xs:attribute name="end-taper" type="length" default="0" />
+                                                            <xs:attribute name="lane-count" type="xs:positiveInteger" default="1" />
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="behavior" type="uuid" use="required" />
+                                    <xs:attribute name="speed-limit" type="xs:positiveInteger" use="required" />
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="speed-limit-units" type="speed-units" use="required" />
+            <xs:attribute name="layout-units" type="layout-units" use="required" />
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
