@@ -47,13 +47,12 @@
                         <xs:complexType>
                             <xs:sequence />
                             <xs:attribute name="network" type="path" use="prohibited" /> <!-- because it's not defined yet -->
-                            <xs:attribute name="vehicle-types" type="path" use="required" />
-                            <xs:attribute name="vehicle-models" type="path" use="required" />
-                            <xs:attribute name="distributions" type="path" use="required" />
-                            <xs:attribute name="lane-usage" type="path" use="required" />
-                            <xs:attribute name="behavior" type="path" use="required" />
+                            <xs:attribute name="vehicle-types" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="vehicle-models" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="distributions" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="lane-usage" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="behavior" type="path" /> <!-- if not specified, use system default -->
                             <xs:attribute name="evaluation" type="path" use="prohibited" /> <!-- because it's not defined yet -->
-                            <xs:anyAttribute processContents="skip" />
                         </xs:complexType>
                     </xs:element>
                     <xs:element name="archive">
@@ -65,8 +64,8 @@
                         </xs:annotation>
                         <xs:complexType>
                             <xs:sequence />
-                            <xs:attribute name="path" type="path" />
-                            <xs:attribute name="type" type="archive-variety" />
+                            <xs:attribute name="path" type="path" use="required"/>
+                            <xs:attribute name="type" type="archive-variety" use="required" />
                             <xs:anyAttribute processContents="skip" />
                         </xs:complexType>
                     </xs:element>
