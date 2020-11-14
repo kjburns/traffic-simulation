@@ -18,20 +18,20 @@
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="speed-units">
-        <xs:restriction>
+        <xs:restriction base="xs:string">
             <xs:enumeration value="miles-per-hour" />
             <xs:enumeration value="kilometers-per-hour" />
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="layout-units">
-        <xs:restriction>
+        <xs:restriction base="xs:string">
             <xs:enumeration value="feet" />
             <xs:enumeration value="meters" />
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="length">
         <xs:restriction base="xs:decimal">
-            <xs:minExclusive value="0" />
+            <xs:minInclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="side">
@@ -65,6 +65,7 @@
                                     <xs:sequence>
                                         <xs:element name="chain">
                                             <xs:complexType>
+                                                <xs:sequence/>
                                                 <xs:attribute name="length" type="length" /><!-- optional, for coder's reference only. Calculated automatically by simulator. -->
                                                 <xs:attribute name="points" type="chain-xy-list" use="required" />
                                             </xs:complexType>
@@ -130,6 +131,7 @@
             </xs:sequence>
             <xs:attribute name="speed-limit-units" type="speed-units" use="required" />
             <xs:attribute name="layout-units" type="layout-units" use="required" />
+            <xs:attribute name="version" type="version-number" use="required" fixed="1" />
         </xs:complexType>
     </xs:element>
 </xs:schema>
