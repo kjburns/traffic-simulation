@@ -239,6 +239,157 @@ class TestsForRoads(TestHelper):
 
         self.check_effect_of_removing_field(node, RoadConstants.SPEED_LIMIT_ATTR, False)
 
+    def test_that_sub_elements_are_required(self):
+        collections = [
+            RoadConstants.LANES_COLLECTION_TAG,
+            RoadConstants.POCKETS_COLLECTION_TAG,
+            RoadConstants.CHAIN_TAG,
+        ]
+        for collection in collections:
+            self._doc.get_roads_node()[:] = []
+            node: etree.ElementBase = create_clean_road_node()
+            self._doc.get_roads_node().append(node)
+            collection_node: etree.ElementBase = node.find(collection)
+            node.remove(collection_node)
+            self.assertFalse(self._doc.validate())
+
+    @staticmethod
+    def create_lane_element(ordinal: int) -> etree.ElementBase:
+        node: etree._ElementBase = etree.Element(RoadConstants.LANE_TAG, {
+            RoadConstants.LANE_ORDINAL_ATTR: str(ordinal),
+            RoadConstants.LANE_WIDTH_ATTR: '12',
+        })
+        etree.SubElement(node, RoadConstants.LANE_POLICY_TAG, {
+            RoadConstants.LANE_POLICY_ID_ATTR: str(uuid()),
+        })
+
+        return node
+
+    def test_lane_counts(self):
+        road: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(road)
+        lanes_collection = road.find(RoadConstants.LANES_COLLECTION_TAG)
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (2, True),
+            (9, True),
+        ]
+        for (count, expected_value) in test_tuples:
+            lanes_collection[:] = [TestsForRoads.create_lane_element(i) for i in range(count)]
+            self.assertEqual(self._doc.validate(), expected_value)
+
+    def test_lane_ordinal_attr(self):
+        road: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(road)
+        lane: etree.ElementBase = self.create_lane_element(0)
+        road.find(RoadConstants.LANES_COLLECTION_TAG)[:] = [lane]
+        test_tuples = [
+            (0, True),
+            (4, True),
+            (-2, False),
+        ]
+        for (value, expected_result) in test_tuples:
+            lane.attrib[RoadConstants.LANE_ORDINAL_ATTR] = str(value)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(lane, RoadConstants.LANE_ORDINAL_ATTR, False)
+
+    def test_lane_width_attr(self):
+        road: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(road)
+        lane: etree.ElementBase = self.create_lane_element(0)
+        road.find(RoadConstants.LANES_COLLECTION_TAG)[:] = [lane]
+        test_tuples = [
+            (0, False),
+            (4, True),
+            (-2, False),
+            (12, True),
+        ]
+        for (value, expected_result) in test_tuples:
+            lane.attrib[RoadConstants.LANE_WIDTH_ATTR] = str(value)
+            self.assertEqual(self._doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(lane, RoadConstants.LANE_WIDTH_ATTR, False)
+
+    def test_lane_change_restrictions(self):
+        road: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(road)
+        lane: etree.ElementBase = self.create_lane_element(0)
+        road.find(RoadConstants.LANES_COLLECTION_TAG)[:] = [lane]
+
+        for attr in [RoadConstants.LANE_MAY_MOVE_LEFT_ATTR, RoadConstants.LANE_MAY_MOVE_RIGHT_ATTR]:
+            self.check_effect_of_removing_field(lane, attr, True)
+
+            test_tuples = [
+                (0, True),
+                (1, True),
+                ('true', True),
+                ('false', True),
+                ('', False),
+            ]
+            for (value, expected_result) in test_tuples:
+                lane.attrib[attr] = str(value)
+                self.assertEqual(self._doc.validate(), expected_result)
+            lane.attrib.pop(attr)
+
+    def test_lane_policy_element(self):
+        road: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(road)
+        lane: etree.ElementBase = self.create_lane_element(0)
+        road.find(RoadConstants.LANES_COLLECTION_TAG)[:] = [lane]
+        policy_element: etree.ElementBase = lane.find(RoadConstants.LANE_POLICY_TAG)
+
+        self.check_value_of_uuid_field(policy_element, RoadConstants.LANE_POLICY_ID_ATTR)
+        self.check_effect_of_removing_field(policy_element, RoadConstants.LANE_POLICY_ID_ATTR, False)
+
+        lane.remove(policy_element)
+        self.assertFalse(self._doc.validate())
+
+    def test_lane_policy_exceptions(self):
+        def create_policy_exception():
+            return etree.Element(RoadConstants.LANE_POLICY_EXCEPT_TAG, {
+                RoadConstants.LANE_POLICY_EXCEPT_POLICY_ATTR: str(uuid()),
+                RoadConstants.LANE_POLICY_EXCEPT_START_ATTR: '13:00:00-05:00',
+                RoadConstants.LANE_POLICY_EXCEPT_END_ATTR: '18:00:00-05:00',
+            })
+
+        road: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(road)
+        lane: etree.ElementBase = self.create_lane_element(0)
+        road.find(RoadConstants.LANES_COLLECTION_TAG)[:] = [lane]
+        policy_element: etree.ElementBase = lane.find(RoadConstants.LANE_POLICY_TAG)
+
+        test_tuples = [
+            (0, True),
+            (1, True),
+            (5, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            policy_element[:] = [create_policy_exception() for _ in range(count)]
+            self.assertEqual(self._doc.validate(), expected_result)
+
+        policy_exception = create_policy_exception()
+        policy_element[:] = [policy_exception]
+        self.check_value_of_uuid_field(policy_exception, RoadConstants.LANE_POLICY_EXCEPT_POLICY_ATTR)
+        self.check_effect_of_removing_field(policy_exception, RoadConstants.LANE_POLICY_EXCEPT_POLICY_ATTR, False)
+
+        for attr in [RoadConstants.LANE_POLICY_EXCEPT_START_ATTR, RoadConstants.LANE_POLICY_EXCEPT_END_ATTR]:
+            policy_exception = create_policy_exception()
+            policy_element[:] = [policy_exception]
+            tuples = [
+                ('', False),
+                ('T13:00:00', False),
+                ('13:00:00', True),
+                ('13:00', False),
+                ('13:00:00-06:00', True)
+            ]
+            for (value, expected_result) in tuples:
+                policy_exception.attrib[attr] = value
+                self.assertEqual(self._doc.validate(), expected_result)
+
+            self.check_effect_of_removing_field(policy_exception, attr, False)
+
 
 if __name__ == '__main__':
     unittest.main()
