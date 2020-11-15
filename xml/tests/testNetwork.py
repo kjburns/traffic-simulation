@@ -40,6 +40,14 @@ class RoadConstants:
     POCKET_START_TAPER_ATTR = 'start-taper'
     POCKET_END_TAPER_ATTR = 'end-taper'
     POCKET_LANE_COUNT_ATTR = 'lane-count'
+    ENTRY_TAG = 'vehicle-entry'
+    ENTRY_INTERVAL_TAG = 'interval'
+    ENTRY_INTERVAL_START_ATTR = 'start'
+    ENTRY_INTERVAL_END_ATTR = 'end'
+    ENTRY_INTERVAL_VEHICLE_TAG = 'vehicle'
+    ENTRY_INTERVAL_VEHICLE_TYPE_ATTR = 'type'
+    ENTRY_INTERVAL_VEHICLE_COUNT_ATTR = 'count'
+    ENTRY_INTERVAL_VEHICLE_BYPASS_ATTR = 'congestion-bypassing-fraction'
 
 
 def create_clean_road_node() -> etree.ElementBase:
@@ -69,6 +77,18 @@ def create_clean_road_node() -> etree.ElementBase:
 
     # no pockets
     etree.SubElement(node, RoadConstants.POCKETS_COLLECTION_TAG)
+
+    # input volumes
+    input_node: etree.ElementBase = etree.SubElement(node, RoadConstants.ENTRY_TAG, {})
+    interval_node: etree.ElementBase = etree.SubElement(input_node, RoadConstants.ENTRY_INTERVAL_TAG, {
+        RoadConstants.ENTRY_INTERVAL_START_ATTR: '13:00:00',
+        RoadConstants.ENTRY_INTERVAL_END_ATTR: '13:15:00',
+    })
+    for vehicle_count in [340, 110]:
+        etree.SubElement(interval_node, RoadConstants.ENTRY_INTERVAL_VEHICLE_TAG, {
+            RoadConstants.ENTRY_INTERVAL_VEHICLE_TYPE_ATTR: str(uuid()),
+            RoadConstants.ENTRY_INTERVAL_VEHICLE_COUNT_ATTR: str(vehicle_count)
+        })
 
     return node
 
@@ -252,6 +272,19 @@ class TestsForRoads(TestHelper):
             collection_node: etree.ElementBase = node.find(collection)
             node.remove(collection_node)
             self.assertFalse(self.doc.validate())
+
+    def test_that_sub_elements_are_optional(self):
+        elements = [
+            RoadConstants.ENTRY_TAG
+        ]
+        for element in elements:
+            self.doc.get_roads_node()[:] = []
+            node: etree.ElementBase = create_clean_road_node()
+            self.doc.get_roads_node().append(node)
+            collection_node: etree.ElementBase = node.find(element)
+            if collection_node is not None:
+                node.remove(collection_node)
+            self.assertTrue(self.doc.validate())
 
     @staticmethod
     def create_lane_element(ordinal: int) -> etree.ElementBase:
@@ -551,6 +584,149 @@ class TestsForRoads(TestHelper):
 
     def test_pocket_end_taper_attr(self):
         self.check_taper_lengths(RoadConstants.POCKET_END_TAPER_ATTR)
+
+    @staticmethod
+    def create_interval_element():
+        node: etree.ElementBase = etree.Element(RoadConstants.ENTRY_INTERVAL_TAG, {
+            RoadConstants.ENTRY_INTERVAL_START_ATTR: '08:45:00',
+            RoadConstants.ENTRY_INTERVAL_END_ATTR: '09:00:00',
+        })
+        for veh_count in [330, 23]:
+            node.append(TestsForRoads.create_interval_vehicle_element(veh_count))
+
+        return node
+
+    @staticmethod
+    def create_interval_vehicle_element(veh_count):
+        return etree.Element(RoadConstants.ENTRY_INTERVAL_VEHICLE_TAG, {
+            RoadConstants.ENTRY_INTERVAL_VEHICLE_TYPE_ATTR: str(uuid()),
+            RoadConstants.ENTRY_INTERVAL_VEHICLE_COUNT_ATTR: str(veh_count),
+        })
+
+    @staticmethod
+    def create_entry_element():
+        node: etree.ElementBase = etree.Element(RoadConstants.ENTRY_TAG, {})
+        node.append(TestsForRoads.create_interval_element())
+
+        return node
+
+    def test_entry_element_counts(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        entry_element: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG)
+        if entry_element is not None:
+            node.remove(entry_element)
+        self.assertTrue(self.doc.validate())
+
+        node.append(TestsForRoads.create_entry_element())
+        self.assertTrue(self.doc.validate())
+
+        node.append(TestsForRoads.create_entry_element())
+        self.assertFalse(self.doc.validate())
+
+    def test_entry_interval_counts(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        entry_element: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG)
+
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (5, True),
+        ]
+        for (count, expected_result) in test_tuples:
+            entry_element[:] = [TestsForRoads.create_interval_element() for _ in range(count)]
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_entry_interval_time_values(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        x: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG).find(RoadConstants.ENTRY_INTERVAL_TAG)
+
+        test_tuples = [
+            ('00:00:00', True),
+            ('23:00:00-00:30', True),
+            ('03:00', False),
+            ('4:00 PM', False),
+            ('04:00:00 PM', False),
+        ]
+        for attr in [RoadConstants.ENTRY_INTERVAL_START_ATTR, RoadConstants.ENTRY_INTERVAL_END_ATTR]:
+            old_value: str = x.attrib[attr]
+
+            for (value, expected_result) in test_tuples:
+                x.attrib[attr] = value
+                self.assertEqual(self.doc.validate(), expected_result)
+
+            x.attrib.pop(attr)
+            self.assertFalse(self.doc.validate())
+            x.attrib[attr] = old_value
+
+    def test_entry_interval_vehicle_type_counts(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (6, True),
+        ]
+        interval_node: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG).find(RoadConstants.ENTRY_INTERVAL_TAG)
+        for (count, expected_result) in test_tuples:
+            interval_node[:] = [TestsForRoads.create_interval_vehicle_element(55) for _ in range(count)]
+            self.assertEqual(self.doc.validate(), expected_result)
+
+    def test_entry_interval_vehicle_type_attr(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        vehicle_node: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG)\
+            .find(RoadConstants.ENTRY_INTERVAL_TAG).find(RoadConstants.ENTRY_INTERVAL_VEHICLE_TAG)
+        self.check_value_of_uuid_field(vehicle_node, RoadConstants.ENTRY_INTERVAL_VEHICLE_TYPE_ATTR)
+
+        vehicle_node.attrib.pop(RoadConstants.ENTRY_INTERVAL_VEHICLE_TYPE_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_entry_interval_vehicle_count_attr(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        vehicle_node: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG)\
+            .find(RoadConstants.ENTRY_INTERVAL_TAG).find(RoadConstants.ENTRY_INTERVAL_VEHICLE_TAG)
+        test_tuples = [
+            (-4, False),
+            (0, True),
+            (400, True),
+        ]
+        for (value, expected_result) in test_tuples:
+            vehicle_node.attrib[RoadConstants.ENTRY_INTERVAL_VEHICLE_COUNT_ATTR] = str(value)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        vehicle_node.attrib.pop(RoadConstants.ENTRY_INTERVAL_VEHICLE_COUNT_ATTR)
+        self.assertFalse(self.doc.validate())
+
+    def test_entry_interval_vehicle_bypassing_attr(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        vehicle_node: etree.ElementBase = node.find(RoadConstants.ENTRY_TAG)\
+            .find(RoadConstants.ENTRY_INTERVAL_TAG).find(RoadConstants.ENTRY_INTERVAL_VEHICLE_TAG)
+        test_tuples = [
+            (-0.5, False),
+            (0, True),
+            (0.5, True),
+            (1.0, True),
+            (1.1, False),
+            (400, False),
+        ]
+        for (value, expected_result) in test_tuples:
+            vehicle_node.attrib[RoadConstants.ENTRY_INTERVAL_VEHICLE_BYPASS_ATTR] = str(value)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        vehicle_node.attrib.pop(RoadConstants.ENTRY_INTERVAL_VEHICLE_BYPASS_ATTR)
+        self.assertTrue(self.doc.validate())
 
 
 if __name__ == '__main__':
