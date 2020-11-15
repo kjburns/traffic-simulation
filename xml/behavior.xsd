@@ -4,11 +4,6 @@
     <xs:annotation>
         <xs:documentation>Schema for driving behavior file. This file describes car following, lane change, and speed selection models, as well as the applied driving behaviors.</xs:documentation>
     </xs:annotation>
-    <xs:simpleType name="version-number">
-        <xs:restriction base="xs:integer">
-            <xs:minInclusive value="1" />
-        </xs:restriction>
-    </xs:simpleType>
     <xs:simpleType name="uuid">
         <xs:annotation>
             <xs:documentation>Universally unique identifier.</xs:documentation>
@@ -22,145 +17,153 @@
             <xs:minExclusive value="0" />
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="fraction-of-maximum">
-        <xs:restriction base="xs:decimal" >
-            <xs:minExclusive value="0" />
-            <xs:maxInclusive value="1" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="standard-deviation">
-        <xs:restriction base="xs:decimal">
-            <xs:minInclusive value="0" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:complexType name="fritzsche">
-        <xs:annotation>
-            <xs:documentation>Fritzsche Car Following Model</xs:documentation>
-            <xs:documentation>Model parameters not included here are b_min (controlled by vehicle characteristics)</xs:documentation>
-        </xs:annotation>
-        <xs:sequence />
-        <xs:attribute name="name" type="xs:string" default="A Fritzsche Model" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="ssd" type="positive-real-number" default="0.5" /><!-- standstill distance, meters -->
-        <xs:attribute name="t-desired" type="positive-real-number" default="1.8" /><!-- desired time gap, seconds -->
-        <xs:attribute name="t-safe" type="positive-real-number" default="1.0" /><!-- safe time gap, seconds -->
-        <xs:attribute name="t-risky" type="positive-real-number" default="0.5" /><!-- risky time gap, seconds -->
-        <xs:attribute name="f-x" type="positive-real-number" default="0.5" /><!-- Used in perceptible speed differences, m/s assumed -->
-        <xs:attribute name="k-ptp" type="positive-real-number" default="0.001" /><!-- Used in perceptible positive speed differences -->
-        <xs:attribute name="k-ptn" type="positive-real-number" default="0.002" /><!-- Used in perceptible negative speed differences -->
-        <xs:attribute name="b-null" type="positive-real-number" default="0.2" /><!-- acceleration in oscillation, m/s^2 -->
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="hidas-lane-change">
-        <xs:annotation>
-            <xs:documentation>Hidas Lane Change Model</xs:documentation>
-        </xs:annotation>
-        <xs:sequence />
-        <xs:attribute name="name" type="xs:string" default="A Hidas LC Model" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="g_min" type="positive-real-number" default="2.0" /><!-- Standstill gap, meters -->
-        <xs:attribute name="Dt" type="positive-real-number" default="5.0" /><!-- Elapsed time of lane change, seconds -->
-        <xs:attribute name="c_f" type="positive-real-number" default="0.9" /><!-- calibration constant involving gap to following vehicle -->
-        <xs:attribute name="c_l" type="positive-real-number" default="0.9" /><!-- calibration constant involving gap to leading vehicle -->
-        <xs:attribute name="t_fm" type="positive-real-number" default="10" /><!-- time ahead of last chance that forced lane change window begins, seconds -->
-        <xs:attribute name="f_braking" type="fraction-of-maximum" default="0.15" /><!-- multiplier to max deceleration for cooperative braking -->
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:simpleType name="friction-factor-of-safety">
-        <xs:restriction base="xs:decimal">
-            <xs:minInclusive value="0.5" />
-            <xs:maxInclusive value="2.0" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:complexType name="speed-selection">
-        <xs:sequence />
-        <xs:attribute name="name" type="xs:string" default="Speed Behavior" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="friction-fs-reduction-factor-mean" type="friction-factor-of-safety" use="required" />
-        <xs:attribute name="friction-fs-reduction-factor-stdev" type="standard-deviation" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:group name="car-following-model">
-        <xs:choice>
-            <xs:element name="fritzsche" type="fritzsche" />
-        </xs:choice>
-    </xs:group>
-    <xs:group name="lane-change-model">
-        <xs:choice>
-            <xs:element name="hidas" type="hidas-lane-change" />
-        </xs:choice>
-    </xs:group>
-    <xs:complexType name="driving-behavior">
-        <xs:sequence />
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="following" type="uuid" use="required" />
-        <xs:attribute name="lane-change" type="uuid" use="required" />
-        <xs:attribute name="speed-selection" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="road-behavior">
-        <xs:sequence>
-            <xs:element name="except" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="group" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:sequence />
-                                <xs:attribute name="id" type="uuid" use="required" />
-                                <xs:anyAttribute processContents="skip" />
-                            </xs:complexType>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attribute name="behavior" type="uuid" use="required" />
-                </xs:complexType>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="default-behavior" type="uuid"  use="required"/>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
     <xs:element name="behaviors">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="car-following">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:group ref="car-following-model" maxOccurs="unbounded" />
+                            <xs:choice maxOccurs="unbounded">
+                                <xs:element name="fritzsche">
+                                    <xs:complexType>
+                                        <xs:annotation>
+                                            <xs:documentation>Fritzsche Car Following Model</xs:documentation>
+                                            <xs:documentation>Model parameters not included here are b_min (controlled by vehicle characteristics)</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:sequence />
+                                        <xs:attribute name="name" type="xs:string" default="A Fritzsche Model" />
+                                        <xs:attribute name="uuid" type="uuid" use="required" />
+                                        <xs:attribute name="ssd" type="positive-real-number" default="0.5" /><!-- standstill distance, meters -->
+                                        <xs:attribute name="t-desired" type="positive-real-number" default="1.8" /><!-- desired time gap, seconds -->
+                                        <xs:attribute name="t-safe" type="positive-real-number" default="1.0" /><!-- safe time gap, seconds -->
+                                        <xs:attribute name="t-risky" type="positive-real-number" default="0.5" /><!-- risky time gap, seconds -->
+                                        <xs:attribute name="f-x" type="positive-real-number" default="0.5" /><!-- Used in perceptible speed differences, m/s assumed -->
+                                        <xs:attribute name="k-ptp" type="positive-real-number" default="0.001" /><!-- Used in perceptible positive speed differences -->
+                                        <xs:attribute name="k-ptn" type="positive-real-number" default="0.002" /><!-- Used in perceptible negative speed differences -->
+                                        <xs:attribute name="b-null" type="positive-real-number" default="0.2" /><!-- acceleration in oscillation, m/s^2 -->
+                                        <xs:anyAttribute processContents="skip" />
+                                    </xs:complexType>
+                                </xs:element>
+                            </xs:choice>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="lane-change">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:group ref="lane-change-model" maxOccurs="unbounded" />
+                            <xs:choice maxOccurs="unbounded">
+                                <xs:element name="hidas">
+                                    <xs:complexType>
+                                        <xs:annotation>
+                                            <xs:documentation>Hidas Lane Change Model</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:sequence />
+                                        <xs:attribute name="name" type="xs:string" default="A Hidas LC Model" />
+                                        <xs:attribute name="uuid" type="uuid" use="required" />
+                                        <xs:attribute name="g_min" type="positive-real-number" default="2.0" /><!-- Standstill gap, meters -->
+                                        <xs:attribute name="Dt" type="positive-real-number" default="5.0" /><!-- Elapsed time of lane change, seconds -->
+                                        <xs:attribute name="c_f" type="positive-real-number" default="0.9" /><!-- calibration constant involving gap to following vehicle -->
+                                        <xs:attribute name="c_l" type="positive-real-number" default="0.9" /><!-- calibration constant involving gap to leading vehicle -->
+                                        <xs:attribute name="t_fm" type="positive-real-number" default="10" /><!-- time ahead of last chance that forced lane change window begins, seconds -->
+                                        <xs:attribute name="f_braking" default="0.15"><!-- multiplier to max deceleration for cooperative braking -->
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:decimal" >
+                                                    <xs:minExclusive value="0" />
+                                                    <xs:maxInclusive value="1" />
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                        </xs:attribute>
+                                        <xs:anyAttribute processContents="skip" />
+                                    </xs:complexType>
+                                </xs:element>
+                            </xs:choice>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="speed">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="speed-behavior" type="speed-selection" maxOccurs="unbounded" />
+                            <xs:element name="speed-behavior" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence />
+                                    <xs:attribute name="name" type="xs:string" default="Speed Behavior" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:attribute name="friction-fs-reduction-factor-mean" use="required">
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:decimal">
+                                                <xs:minInclusive value="0.5" />
+                                                <xs:maxInclusive value="2.0" />
+                                            </xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
+                                    <xs:attribute name="friction-fs-reduction-factor-stdev" use="required">
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:decimal">
+                                                <xs:minInclusive value="0" />
+                                            </xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="driving-behaviors">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="driving-behavior" type="driving-behavior" maxOccurs="unbounded" />
+                            <xs:element name="driving-behavior" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence />
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:attribute name="following" type="uuid" use="required" />
+                                    <xs:attribute name="lane-change" type="uuid" use="required" />
+                                    <xs:attribute name="speed-selection" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="road-behaviors">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="road-behavior" type="road-behavior" maxOccurs="unbounded" />
+                            <xs:element name="road-behavior" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="except" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="group" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence />
+                                                            <xs:attribute name="id" type="uuid" use="required" />
+                                                            <xs:anyAttribute processContents="skip" />
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                                <xs:attribute name="behavior" type="uuid" use="required" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:attribute name="default-behavior" type="uuid"  use="required"/>
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="version" type="version-number" use="required" />
+            <xs:attribute name="version" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:anyAttribute processContents="skip" />
         </xs:complexType>
     </xs:element>
