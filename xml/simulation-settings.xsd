@@ -4,34 +4,8 @@
     <xs:annotation>
         <xs:documentation>Schema for simulation settings</xs:documentation>
     </xs:annotation>
-    <xs:simpleType name="version-number">
-        <xs:restriction base="xs:integer">
-            <xs:minInclusive value="1" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="uuid">
-        <xs:annotation>
-            <xs:documentation>Universally unique identifier.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
-        </xs:restriction>
-    </xs:simpleType>
     <xs:simpleType name="path">  <!-- for now -->
         <xs:restriction base="xs:string" />
-    </xs:simpleType>
-    <xs:simpleType name="archive-variety">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="zip" />
-            <xs:enumeration value="gz" />
-            <xs:enumeration value="7z" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="utc-offset">
-        <xs:restriction base="xs:decimal">
-            <xs:minExclusive value="-24" />
-            <xs:maxExclusive value="24" />
-        </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="simulation-duration">
         <xs:restriction base="xs:duration">
@@ -65,7 +39,15 @@
                         <xs:complexType>
                             <xs:sequence />
                             <xs:attribute name="path" type="path" use="required"/>
-                            <xs:attribute name="type" type="archive-variety" use="required" />
+                            <xs:attribute name="type" use="required">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                        <xs:enumeration value="zip" />
+                                        <xs:enumeration value="gz" />
+                                        <xs:enumeration value="7z" />
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:attribute>
                             <xs:anyAttribute processContents="skip" />
                         </xs:complexType>
                     </xs:element>
@@ -75,7 +57,14 @@
                         <xs:sequence />
                         <!-- timezone provided in 'utc-offset' overrides any timezone provided in 'simulation-start-time' -->
                         <xs:attribute name="simulation-start-time" type="xs:time" use="required" />
-                        <xs:attribute name="utc-offset" type="utc-offset" default="0" />
+                        <xs:attribute name="utc-offset" default="0">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:decimal">
+                                    <xs:minExclusive value="-24" />
+                                    <xs:maxExclusive value="24" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
                         <xs:attribute name="evaluation-length" type="simulation-duration" use="required" />
                         <xs:attribute name="seed-length" type="simulation-duration" use="required" />
                         <xs:attribute name="time-steps-per-second" type="xs:positiveInteger" default="10" />
@@ -90,7 +79,13 @@
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="version" type="version-number" use="required" fixed="1" />
+            <xs:attribute name="version" use="required" fixed="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="run-count" type="xs:positiveInteger" default="1" />
         </xs:complexType>
     </xs:element>
