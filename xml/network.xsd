@@ -54,8 +54,13 @@
             <xs:enumeration value="b" />
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="non-negative-real">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+        </xs:restriction>
+    </xs:simpleType>
     <xs:simpleType name="ordinate">
-        <xs:union memberTypes="end length" />
+        <xs:union memberTypes="end non-negative-real" />
     </xs:simpleType>
     <xs:simpleType name="chain-xy-list">
         <xs:restriction base="xs:string">
@@ -120,7 +125,7 @@
                                                             <xs:attribute name="end-ord" type="ordinate" use="required" />
                                                             <xs:attribute name="start-taper" type="length-nullable" default="none" />
                                                             <xs:attribute name="end-taper" type="length-nullable" default="none" />
-                                                            <xs:attribute name="lane-count" type="xs:positiveInteger" default="1" />
+                                                            <xs:attribute name="lane-count" type="xs:positiveInteger" default="1"/>
                                                         </xs:complexType>
                                                     </xs:element>
                                                 </xs:sequence>

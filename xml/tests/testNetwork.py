@@ -112,13 +112,13 @@ class CleanDocument:
 
 class TestHelper(unittest.TestCase):
     def setUp(self) -> None:
-        self._doc = CleanDocument()
+        self.doc = CleanDocument()
 
     def check_effect_of_removing_field(self, element: etree.ElementBase,
                                        attr_name: str, expected_validation_result: bool) -> None:
         if attr_name in element.attrib:
             element.attrib.pop(attr_name)
-        self.assertEqual(self._doc.validate(), expected_validation_result)
+        self.assertEqual(self.doc.validate(), expected_validation_result)
 
     def check_value_of_uuid_field(self, element: etree.ElementBase, attr_name: str):
         test_tuples = [
@@ -129,16 +129,16 @@ class TestHelper(unittest.TestCase):
 
         for (value, expected_result) in test_tuples:
             element.attrib[attr_name] = value
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
 
 class TestsForNetworkDocument(TestHelper):
     def setUp(self) -> None:
         super().setUp()
-        self._target_node = self._doc.get_root_node()
+        self._target_node = self.doc.get_root_node()
 
     def test_that_clean_document_validates(self):
-        self.assertTrue(self._doc.validate())
+        self.assertTrue(self.doc.validate())
 
     def test_version_attr(self):
         test_tuples = [
@@ -150,7 +150,7 @@ class TestsForNetworkDocument(TestHelper):
         ]
         for (value, expected_result) in test_tuples:
             self._target_node.attrib[NetworkConstants.VERSION_ATTR] = str(value)
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
         self.check_effect_of_removing_field(self._target_node, NetworkConstants.VERSION_ATTR, False)
 
@@ -158,33 +158,33 @@ class TestsForNetworkDocument(TestHelper):
         acceptable_values = ['miles-per-hour', 'kilometers-per-hour']
         for value in acceptable_values:
             self._target_node.attrib[NetworkConstants.SPEED_UNITS_ATTR] = value
-            self.assertTrue(self._doc.validate())
+            self.assertTrue(self.doc.validate())
 
         unacceptable_values = ['', 'mph', 'km/h']
         for value in unacceptable_values:
             self._target_node.attrib[NetworkConstants.LAYOUT_UNITS_ATTR] = value
-            self.assertFalse(self._doc.validate())
+            self.assertFalse(self.doc.validate())
 
     def test_layout_unit_attr(self):
         acceptable_values = ['feet', 'meters']
         for value in acceptable_values:
             self._target_node.attrib[NetworkConstants.LAYOUT_UNITS_ATTR] = value
-            self.assertTrue(self._doc.validate())
+            self.assertTrue(self.doc.validate())
 
         unacceptable_values = ['', 'metres', 'inches']
         for value in unacceptable_values:
             self._target_node.attrib[NetworkConstants.LAYOUT_UNITS_ATTR] = value
-            self.assertFalse(self._doc.validate())
+            self.assertFalse(self.doc.validate())
 
     def test_that_roads_node_is_required(self):
-        self._doc.get_root_node().remove(self._doc.get_roads_node())
-        self.assertFalse(self._doc.validate())
+        self.doc.get_root_node().remove(self.doc.get_roads_node())
+        self.assertFalse(self.doc.validate())
 
 
 class TestsForRoads(TestHelper):
     def setUp(self) -> None:
         super().setUp()
-        self._target_node = self._doc.get_roads_node()
+        self._target_node = self.doc.get_roads_node()
 
     def test_instance_count(self):
         test_tuples = [
@@ -194,7 +194,7 @@ class TestsForRoads(TestHelper):
         ]
         for (count, expected_result) in test_tuples:
             self._target_node[:] = [create_clean_road_node() for _ in range(count)]
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
     def test_road_name_attr(self):
         node: etree.ElementBase = create_clean_road_node()
@@ -205,7 +205,7 @@ class TestsForRoads(TestHelper):
         acceptable_names = ['', 'Main Street', '0012']
         for name in acceptable_names:
             node.attrib[RoadConstants.NAME_ATTR] = name
-            self.assertTrue(self._doc.validate())
+            self.assertTrue(self.doc.validate())
 
     def test_road_uuid_attr(self):
         node: etree.ElementBase = create_clean_road_node()
@@ -235,7 +235,7 @@ class TestsForRoads(TestHelper):
         ]
         for (value, expected_result) in test_tuples:
             node.attrib[RoadConstants.SPEED_LIMIT_ATTR] = str(value)
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
         self.check_effect_of_removing_field(node, RoadConstants.SPEED_LIMIT_ATTR, False)
 
@@ -246,12 +246,12 @@ class TestsForRoads(TestHelper):
             RoadConstants.CHAIN_TAG,
         ]
         for collection in collections:
-            self._doc.get_roads_node()[:] = []
+            self.doc.get_roads_node()[:] = []
             node: etree.ElementBase = create_clean_road_node()
-            self._doc.get_roads_node().append(node)
+            self.doc.get_roads_node().append(node)
             collection_node: etree.ElementBase = node.find(collection)
             node.remove(collection_node)
-            self.assertFalse(self._doc.validate())
+            self.assertFalse(self.doc.validate())
 
     @staticmethod
     def create_lane_element(ordinal: int) -> etree.ElementBase:
@@ -277,7 +277,7 @@ class TestsForRoads(TestHelper):
         ]
         for (count, expected_value) in test_tuples:
             lanes_collection[:] = [TestsForRoads.create_lane_element(i) for i in range(count)]
-            self.assertEqual(self._doc.validate(), expected_value)
+            self.assertEqual(self.doc.validate(), expected_value)
 
     def test_lane_ordinal_attr(self):
         road: etree.ElementBase = create_clean_road_node()
@@ -291,7 +291,7 @@ class TestsForRoads(TestHelper):
         ]
         for (value, expected_result) in test_tuples:
             lane.attrib[RoadConstants.LANE_ORDINAL_ATTR] = str(value)
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
         self.check_effect_of_removing_field(lane, RoadConstants.LANE_ORDINAL_ATTR, False)
 
@@ -308,7 +308,7 @@ class TestsForRoads(TestHelper):
         ]
         for (value, expected_result) in test_tuples:
             lane.attrib[RoadConstants.LANE_WIDTH_ATTR] = str(value)
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
         self.check_effect_of_removing_field(lane, RoadConstants.LANE_WIDTH_ATTR, False)
 
@@ -330,7 +330,7 @@ class TestsForRoads(TestHelper):
             ]
             for (value, expected_result) in test_tuples:
                 lane.attrib[attr] = str(value)
-                self.assertEqual(self._doc.validate(), expected_result)
+                self.assertEqual(self.doc.validate(), expected_result)
             lane.attrib.pop(attr)
 
     def test_lane_policy_element(self):
@@ -344,7 +344,7 @@ class TestsForRoads(TestHelper):
         self.check_effect_of_removing_field(policy_element, RoadConstants.LANE_POLICY_ID_ATTR, False)
 
         lane.remove(policy_element)
-        self.assertFalse(self._doc.validate())
+        self.assertFalse(self.doc.validate())
 
     def test_lane_policy_exceptions(self):
         def create_policy_exception():
@@ -367,7 +367,7 @@ class TestsForRoads(TestHelper):
         ]
         for (count, expected_result) in test_tuples:
             policy_element[:] = [create_policy_exception() for _ in range(count)]
-            self.assertEqual(self._doc.validate(), expected_result)
+            self.assertEqual(self.doc.validate(), expected_result)
 
         policy_exception = create_policy_exception()
         policy_element[:] = [policy_exception]
@@ -386,9 +386,171 @@ class TestsForRoads(TestHelper):
             ]
             for (value, expected_result) in tuples:
                 policy_exception.attrib[attr] = value
-                self.assertEqual(self._doc.validate(), expected_result)
+                self.assertEqual(self.doc.validate(), expected_result)
 
             self.check_effect_of_removing_field(policy_exception, attr, False)
+
+    def test_chain_counts(self):
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        chains_element: etree.ElementBase = node.find(RoadConstants.CHAIN_TAG)
+        existing_chain_index: int = node.index(chains_element)
+        second_chain: etree.ElementBase = etree.Element(RoadConstants.CHAIN_TAG, {
+            RoadConstants.CHAIN_POINTS_ATTR: '100,100 110,200'
+        })
+        node.insert(existing_chain_index + 1, second_chain)
+        self.assertFalse(self.doc.validate())
+
+    def test_chain_points_attr(self):
+        test_tuples = [
+            ('', False),
+            ('100,100', False),
+            ('100,100 150,150', True),
+            ('path', False),
+        ]
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        chains_element: etree.ElementBase = node.find(RoadConstants.CHAIN_TAG)
+        for (value, expected_result) in test_tuples:
+            chains_element.attrib[RoadConstants.CHAIN_POINTS_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(chains_element, RoadConstants.CHAIN_POINTS_ATTR, False)
+
+    def test_chain_length_attr(self):
+        test_tuples = [
+            ('', False),
+            ('0', False),
+            ('1', True),
+            ('-22', False),
+            ('44.22', True),
+        ]
+
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        chains_element: etree.ElementBase = node.find(RoadConstants.CHAIN_TAG)
+        for (value, expected_result) in test_tuples:
+            chains_element.attrib[RoadConstants.CHAIN_LENGTH_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(chains_element, RoadConstants.CHAIN_LENGTH_ATTR, True)
+
+    @staticmethod
+    def create_pocket_element():
+        node: etree.ElementBase = etree.Element(RoadConstants.POCKET_TAG, {
+            RoadConstants.POCKET_SIDE_ATTR: 'left',
+            RoadConstants.POCKET_LANE_COUNT_ATTR: '2',
+            RoadConstants.POCKET_START_ORD_ATTR: '20',
+            RoadConstants.POCKET_END_ORD_ATTR: 'b',
+            RoadConstants.POCKET_START_TAPER_ATTR: '50',
+            RoadConstants.POCKET_END_TAPER_ATTR: 'none',
+        })
+        return node
+
+    def test_pocket_counts(self):
+        acceptable_counts = [0, 1, 2, 30]
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        pockets_element: etree.ElementBase = node.find(RoadConstants.POCKETS_COLLECTION_TAG)
+        for count in acceptable_counts:
+            pockets_element[:] = [self.create_pocket_element() for _ in range(count)]
+            self.assertTrue(self.doc.validate())
+
+    def test_pocket_side_attr(self):
+        test_tuples = [
+            ('left', True),
+            ('right', True),
+            ('', False),
+            ('LEFT', False)
+        ]
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        pockets_element: etree.ElementBase = node.find(RoadConstants.POCKETS_COLLECTION_TAG)
+        pocket_node: etree.ElementBase = self.create_pocket_element()
+        pockets_element.append(pocket_node)
+        for (value, expected_result) in test_tuples:
+            pocket_node.attrib[RoadConstants.POCKET_SIDE_ATTR] = value
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(pocket_node, RoadConstants.POCKET_SIDE_ATTR, False)
+
+    def test_pocket_lane_count_attr(self):
+        test_tuples = [
+            (0, False),
+            (1, True),
+            (2, True),
+            (9, True),
+        ]
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        pockets_element: etree.ElementBase = node.find(RoadConstants.POCKETS_COLLECTION_TAG)
+        pocket_node: etree.ElementBase = self.create_pocket_element()
+        pockets_element.append(pocket_node)
+        for (value, expected_result) in test_tuples:
+            pocket_node.attrib[RoadConstants.POCKET_LANE_COUNT_ATTR] = str(value)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(pocket_node, RoadConstants.POCKET_LANE_COUNT_ATTR, True)
+
+    def check_ordinates(self, attr_name: str):
+        test_tuples = [
+            (0, True),
+            (10.5, True),
+            (-2.6, False),
+            ('a', True),
+            ('b', True),
+            ('A', False),
+        ]
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        pockets_element: etree.ElementBase = node.find(RoadConstants.POCKETS_COLLECTION_TAG)
+        pocket_node: etree.ElementBase = self.create_pocket_element()
+        pockets_element.append(pocket_node)
+        for (value, expected_result) in test_tuples:
+            pocket_node.attrib[attr_name] = str(value)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(pocket_node, attr_name, False)
+
+    def test_pocket_start_ordinate_attr(self):
+        self.check_ordinates(RoadConstants.POCKET_START_ORD_ATTR)
+
+    def test_pocket_end_ordinate_attr(self):
+        self.check_ordinates(RoadConstants.POCKET_END_ORD_ATTR)
+
+    def check_taper_lengths(self, attr_name: str):
+        test_tuples = [
+            (0, False),
+            (10.5, True),
+            (-2.6, False),
+            ('none', True),
+            ('NONE', False),
+            ('None', False),
+        ]
+        node: etree.ElementBase = create_clean_road_node()
+        self._target_node.append(node)
+
+        pockets_element: etree.ElementBase = node.find(RoadConstants.POCKETS_COLLECTION_TAG)
+        pocket_node: etree.ElementBase = self.create_pocket_element()
+        pockets_element.append(pocket_node)
+        for (value, expected_result) in test_tuples:
+            pocket_node.attrib[attr_name] = str(value)
+            self.assertEqual(self.doc.validate(), expected_result)
+
+        self.check_effect_of_removing_field(pocket_node, attr_name, True)
+
+    def test_pocket_start_taper_attr(self):
+        self.check_taper_lengths(RoadConstants.POCKET_START_TAPER_ATTR)
+
+    def test_pocket_end_taper_attr(self):
+        self.check_taper_lengths(RoadConstants.POCKET_END_TAPER_ATTR)
 
 
 if __name__ == '__main__':
