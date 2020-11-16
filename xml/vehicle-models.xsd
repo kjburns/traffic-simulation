@@ -7,30 +7,12 @@
     <!--
     Very basic types
     -->
-    <xs:simpleType name="uuid">
-        <xs:annotation>
-            <xs:documentation>Universally unique identifier.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
-        </xs:restriction>
-    </xs:simpleType>
     <xs:simpleType name="vehicle-dimension">
         <xs:annotation>
             <xs:documentation>Width, length, or height of a vehicle. This value must be positive.</xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:decimal">
             <xs:minExclusive value="0" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="units-enumeration">
-        <xs:annotation>
-            <xs:documentation>Units used to describe vehicles in this file.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="metres" />
-            <xs:enumeration value="meters" />
-            <xs:enumeration value="feet" />
         </xs:restriction>
     </xs:simpleType>
     <!--
@@ -41,11 +23,26 @@
             <xs:documentation>An abstract vehicle with the common attributes of lead vehicles and trailers.</xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="trailer" type="trailer" minOccurs="0" maxOccurs="1">
+            <xs:element name="trailer" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>A trailer towed by the containing vehicle. The containing vehicle may have at most one trailer, but this trailer can itself have trailers.</xs:documentation>
                     <xs:documentation>The resultant xml structure would be very deep for a train, but it ensures that the order of trailers is correct without a potentially buggy ordering attribute.</xs:documentation>
                 </xs:annotation>
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>A unit that is towed behind another unit.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexContent>
+                        <xs:extension base="unit">
+                            <xs:attribute name="towing-point" type="vehicle-dimension" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>The distance from the front of the unit to the point that attaches to a towing vehicle.</xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:anyAttribute processContents="skip" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
             </xs:element>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
@@ -66,41 +63,47 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="trailer">
-        <xs:annotation>
-            <xs:documentation>A unit that is towed behind another unit.</xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="unit">
-                <xs:attribute name="towing-point" type="vehicle-dimension" use="required">
-                    <xs:annotation>
-                        <xs:documentation>The distance from the front of the unit to the point that attaches to a towing vehicle.</xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:anyAttribute processContents="skip" />
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:complexType name="lead-vehicle">
-        <xs:annotation>
-            <xs:documentation>A unit that is not towed by another unit and may tow another unit.</xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="unit">
-                <xs:attribute name="uuid" type="uuid" use="required" />
-                <xs:anyAttribute processContents="skip" />
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
     <!--
     The actual document
     -->
     <xs:element name="vehicle-models">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="vehicle-model" type="lead-vehicle" minOccurs="1" maxOccurs="unbounded" />
+                <xs:element name="vehicle-model" minOccurs="1" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation>A unit that is not towed by another unit and may tow another unit.</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexContent>
+                            <xs:extension base="unit">
+                                <xs:attribute name="uuid" use="required">
+                                    <xs:simpleType>
+                                        <xs:annotation>
+                                            <xs:documentation>Universally unique identifier.</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:restriction base="xs:string">
+                                            <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
+                                <xs:anyAttribute processContents="skip" />
+                            </xs:extension>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="units" type="units-enumeration" use="required" />
+            <xs:attribute name="units" use="required">
+                <xs:simpleType>
+                    <xs:annotation>
+                        <xs:documentation>Units used to describe vehicles in this file.</xs:documentation>
+                    </xs:annotation>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="metres" />
+                        <xs:enumeration value="meters" />
+                        <xs:enumeration value="feet" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
             <xs:attribute name="version" type="xs:integer" use="required" />
             <xs:anyAttribute processContents="skip" />
         </xs:complexType>
