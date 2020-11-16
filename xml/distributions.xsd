@@ -52,22 +52,6 @@
             <xs:enumeration value="none" />
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="bin-observation-count">
-        <xs:annotation>
-            <xs:documentation>Count of observations in a particular bin. This value must be a non-negative integer.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:integer">
-            <xs:minInclusive value="0" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="color">
-        <xs:annotation>
-            <xs:documentation>Hex-encoded color.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:pattern value="#[a-fA-F0-9]{6}"/>
-        </xs:restriction>
-    </xs:simpleType>
     <xs:simpleType name="distance-unit-enum">
         <xs:restriction base="xs:string">
             <xs:enumeration value="meters" />
@@ -89,12 +73,6 @@
             <xs:enumeration value="meters-per-second-squared" />
             <xs:enumeration value="feet-per-second-squared" />
             <xs:enumeration value="g" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="zero-to-one">
-        <xs:restriction base="xs:decimal">
-            <xs:minInclusive value="0" />
-            <xs:maxInclusive value="1" />
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="positive-real-number">
@@ -168,66 +146,6 @@
         </xs:sequence>
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
-    <xs:complexType name="distribution-empirical-raw-observation">
-        <xs:annotation>
-            <xs:documentation>Observation for a distribution that is based on observed values.</xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="value" type="xs:decimal" use="required">
-            <xs:annotation>
-                <xs:documentation>The observed value</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="distribution-empirical-raw">
-        <xs:annotation>
-            <xs:documentation>A set of observations to be used to mimic some behavior in the model. An example could be spot speeds from a speed study.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="dp" type="distribution-empirical-raw-observation" minOccurs="1" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation>An observation</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="binned-distribution-observation">
-        <xs:annotation>
-            <xs:documentation>A range of values with the number of observations in that range.</xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="min-value" type="xs:decimal" use="required">
-            <xs:annotation>
-                <xs:documentation>The minimum value of the bin</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="max-value" type="xs:decimal" use="required">
-            <xs:annotation>
-                <xs:documentation>The maximum value of the bin</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="count" type="bin-observation-count" use="required">
-            <xs:annotation>
-                <xs:documentation>The number of observations the bin</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="distribution-binned">
-        <xs:annotation>
-            <xs:documentation>A representation of a histogram. An example could be the output of an automatic vehicle counter that provides speeds in 5mph bins.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="bin" type="binned-distribution-observation" minOccurs="1" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation>A bin in the histogram</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
     <xs:group name="real-number-distribution">
         <xs:annotation>
             <xs:documentation>A generalization of distributions that provide a number based on a probability.</xs:documentation>
@@ -235,8 +153,78 @@
         <xs:choice>
             <xs:element name="empirical-distribution" type="distribution-empirical" />
             <xs:element name="normal-distribution" type="distribution-normal" />
-            <xs:element name="raw-empirical-distribution" type="distribution-empirical-raw" />
-            <xs:element name="binned-distribution" type="distribution-binned" />
+            <xs:element name="raw-empirical-distribution">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>A set of observations to be used to mimic some behavior in the model. An example could be spot speeds from a speed study.</xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence>
+                        <xs:element name="dp" minOccurs="1" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>An observation</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:annotation>
+                                    <xs:documentation>Observation for a distribution that is based on observed values.</xs:documentation>
+                                </xs:annotation>
+                                <xs:attribute name="value" type="xs:decimal" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>The observed value</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:anyAttribute processContents="skip" />
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
+                    <xs:anyAttribute processContents="skip" />
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="binned-distribution">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>A representation of a histogram. An example could be the output of an automatic vehicle counter that provides speeds in 5mph bins.</xs:documentation>
+                    </xs:annotation>
+                    <xs:sequence>
+                        <xs:element name="bin" minOccurs="1" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>A bin in the histogram</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:annotation>
+                                    <xs:documentation>A range of values with the number of observations in that range.</xs:documentation>
+                                </xs:annotation>
+                                <xs:attribute name="min-value" type="xs:decimal" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>The minimum value of the bin</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="max-value" type="xs:decimal" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>The maximum value of the bin</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="count" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>The number of observations the bin</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:simpleType>
+                                        <xs:annotation>
+                                            <xs:documentation>Count of observations in a particular bin. This value must be a non-negative integer.</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:restriction base="xs:integer">
+                                            <xs:minInclusive value="0" />
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
+                                <xs:anyAttribute processContents="skip" />
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="aggression" type="aggression-trend-direction-enumeration" use="required" />
+                    <xs:anyAttribute processContents="skip" />
+                </xs:complexType>
+            </xs:element>
         </xs:choice>
     </xs:group>
     <xs:complexType name="distribution-with-units" abstract="true">
@@ -246,14 +234,6 @@
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" default="" />
         <xs:attribute name="uuid" type="uuid" use="required" />
-    </xs:complexType>
-    <xs:complexType name="acceleration-distribution">
-        <xs:complexContent>
-            <xs:extension base="distribution-with-units">
-                <xs:attribute name="units" type="acceleration-unit-enum" use="required"/>
-                <xs:anyAttribute processContents="skip"/>
-            </xs:extension>
-        </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="speed-distribution">
         <xs:complexContent>
@@ -271,58 +251,55 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:complexType name="fractional-normal-distribution">
-        <xs:annotation>
-            <xs:documentation>For a normal distribution that is guaranteed to have bounds [0, 1]</xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:restriction base="distribution-normal">
-                <xs:attribute name="min-value" type="xs:decimal" fixed="0" use="required"/>
-                <xs:attribute name="max-value" type="xs:decimal" fixed="1" use="required"/>
-            </xs:restriction>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:complexType name="fractional-empirical-distribution-point">
-        <xs:complexContent>
-            <xs:restriction base="distribution-empirical-observation">
-                <xs:attribute name="val" type="zero-to-one" use="required" />
-            </xs:restriction>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:complexType name="fractional-empirical-distribution">
-        <xs:annotation>
-            <xs:documentation>For an empirical distribution that is guaranteed to have data points in the range [0, 1]</xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:restriction base="distribution-empirical">
-                <xs:sequence>
-                    <xs:element name="dp" type="fractional-empirical-distribution-point" minOccurs="1" maxOccurs="unbounded"/>
-                </xs:sequence>
-            </xs:restriction>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:group name="fractional-distribution-group">
-        <xs:choice>
-            <xs:element name="normal-distribution" type="fractional-normal-distribution"/>
-            <xs:element name="empirical-distribution" type="fractional-empirical-distribution"/>
-        </xs:choice>
-    </xs:group>
     <xs:complexType name="fractional-distribution">
         <xs:sequence>
-            <xs:group ref="fractional-distribution-group" minOccurs="1" maxOccurs="1" />
+            <xs:choice>
+                <xs:element name="normal-distribution">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation>For a normal distribution that is guaranteed to have bounds [0, 1]</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexContent>
+                            <xs:restriction base="distribution-normal">
+                                <xs:attribute name="min-value" type="xs:decimal" fixed="0" use="required"/>
+                                <xs:attribute name="max-value" type="xs:decimal" fixed="1" use="required"/>
+                            </xs:restriction>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="empirical-distribution">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation>For an empirical distribution that is guaranteed to have data points in the range [0, 1]</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexContent>
+                            <xs:restriction base="distribution-empirical">
+                                <xs:sequence>
+                                    <xs:element name="dp" minOccurs="1" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                            <xs:complexContent>
+                                                <xs:restriction base="distribution-empirical-observation">
+                                                    <xs:attribute name="val" use="required">
+                                                        <xs:simpleType>
+                                                            <xs:restriction base="xs:decimal">
+                                                                <xs:minInclusive value="0" />
+                                                                <xs:maxInclusive value="1" />
+                                                            </xs:restriction>
+                                                        </xs:simpleType>
+                                                    </xs:attribute>
+                                                </xs:restriction>
+                                            </xs:complexContent>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:restriction>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="optional" />
         <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-
-    <xs:complexType name="poisson-distribution">
-        <xs:annotation>
-            <xs:documentation>A distribution that describes the number of events per time interval.</xs:documentation>
-            <xs:documentation>Used here, we will generalize this to be a distribution of non-negative integers.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence />
-        <xs:attribute name="lambda" type="positive-real-number" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
     <xs:complexType name="zero-truncated-poisson-distribution">
@@ -334,187 +311,8 @@
         <xs:attribute name="lambda" type="positive-real-number" use="required" />
         <xs:anyAttribute processContents="skip" />
     </xs:complexType>
-    <xs:group name="non-negative-integer-distribution-group">
-        <xs:choice>
-            <xs:element type="poisson-distribution" name="poisson-distribution" />
-            <xs:element type="zero-truncated-poisson-distribution" name="positive-poisson-distribution" />
-            <!-- TODO add further whole number empirical distributions here -->
-        </xs:choice>
-    </xs:group>
-    <xs:group name="positive-integer-distribution-group">
-        <xs:choice>
-            <xs:element type="zero-truncated-poisson-distribution" name="positive-poisson-distribution" />
-            <!-- TODO add further whole number empirical distributions here -->
-        </xs:choice>
-    </xs:group>
 
     <!--
-    Connector Link Selection Behaviors
-    -->
-    <xs:simpleType name="connector-link-selection-behavior-type">
-        <xs:annotation>
-            <xs:documentation>Behaviors that vehicles will observe when selecting a link in a connector.</xs:documentation>
-            <xs:documentation>Background: connectors are driven by vehicles to move from one road to another. Connectors may have several links originating from one lane on the upstream road, with each link ending on a different lane of the downstream road. Vehicles generally have infinite knowledge of network topology, and so they can select connector links using several methods, enumerated here.</xs:documentation>
-            <xs:documentation>NEAREST means that the vehicle will select the nearest lane on the downstream road. This is the subset of vehicles that are strictly law-abiding.</xs:documentation>
-            <xs:documentation>FARTHEST means that the vehicle will select the farthest lane on the downstream road. This is the subset of vehicles that wants to maximize turnings speed.</xs:documentation>
-            <xs:documentation>BEST means that the vehicle will select the link that minimizes downstream lane changes to continue on its route.</xs:documentation>
-            <xs:documentation>RANDOM means that the vehicle will select a link at random.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NEAREST" />
-            <xs:enumeration value="FARTHEST" />
-            <xs:enumeration value="BEST" />
-            <xs:enumeration value="RANDOM" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:complexType name="connector-link-selection-behavior-share">
-        <xs:annotation>
-            <xs:documentation>A relation of relative occurrence of a link selection behavior. </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
-            <xs:annotation>
-                <xs:documentation>Relative number of vehicles selecting this behavior.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="value" type="connector-link-selection-behavior-type" use="required">
-            <xs:annotation>
-                <xs:documentation>The selected behavior.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="connector-link-selection-behavior-distribution">
-        <xs:annotation>
-            <xs:documentation>A distribution of link selection behaviors. Every available behavior is not required to appear.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:annotation>
-                <xs:documentation>If an enumeration value is used, it should only appear once. If it appears multiple times, one of the supplied occurrences will be used, but which one is undefined.</xs:documentation>
-            </xs:annotation>
-            <xs:element name="share" type="connector-link-selection-behavior-share" minOccurs="1" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-
-    <!--
-    Vehicle Model Distributions
-    -->
-    <xs:complexType name="vehicle-model-share">
-        <xs:annotation>
-            <xs:documentation>A relation of relative occurrence of a vehicle model. </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
-            <xs:annotation>
-                <xs:documentation>Relative number occurrences of this vehicle model.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="value" type="uuid" use="required">
-            <xs:annotation>
-                <xs:documentation>UUID of the vehicle model in this share.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="vehicle-model-distribution">
-        <xs:annotation>
-            <xs:documentation>A distribution of vehicle models.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:annotation>
-                <xs:documentation>If a vehicle model is used, it should only appear once. If it appears multiple times, all the shares for that vehicle model will be added together.</xs:documentation>
-            </xs:annotation>
-            <xs:element name="share" type="vehicle-model-share" minOccurs="1" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-
-    <!-- 
-    Color Distributions
-    -->
-    <xs:complexType name="color-share">
-        <xs:annotation>
-            <xs:documentation>A relation of relative occurrence of a color. </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
-            <xs:annotation>
-                <xs:documentation>Relative number occurrences of this color.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="value" type="color" use="required">
-            <xs:annotation>
-                <xs:documentation>Color represented by this share.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="color-distribution">
-        <xs:annotation>
-            <xs:documentation>A distribution of colors.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:annotation>
-                <xs:documentation>If a color appears multiple times, all the shares for that color will be added together.</xs:documentation>
-            </xs:annotation>
-            <xs:element name="share" type="color-share" minOccurs="1" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-
-    <!--
-        Acceleration Distributions
-    -->
-    <xs:complexType name="acceleration-function-point">
-        <xs:attribute name="velocity" type="speed" use="required" />
-        <xs:attribute name="mean" type="xs:decimal" use="required" />
-        <xs:attribute name="standard-deviation" type="standard-deviation" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="acceleration-function">
-        <xs:annotation>
-            <xs:documentation>A relationship between a set of speeds and the acceleration at each of the speeds.</xs:documentation>
-            <xs:documentation>At each speed, the distribution of acceleration is given by a mean and a standard deviation.</xs:documentation>
-            <xs:documentation>In practice mean and standard deviation should be monotonic, but there is no way to enforce this.</xs:documentation>
-            <xs:documentation>Negative means are allowed because when combined with standard deviation the result could still be nonnegative.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="dp" type="acceleration-function-point" minOccurs="2" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="speed-unit" type="speed-unit-enum" use="required" />
-        <xs:attribute name="acceleration-unit" type="acceleration-unit-enum" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="occupancy-distribution">
-        <xs:annotation>
-            <xs:documentation>This is for non-transit vehicles.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:group ref="positive-integer-distribution-group" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="passenger-distribution">
-        <xs:annotation>
-            <xs:documentation>This is for transit and HOV vehicles. The driver is not included in the count.</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:group ref="non-negative-integer-distribution-group" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-
-    <!-- 
     The actual document!
     -->
     <xs:element name="distributions">
@@ -533,7 +331,55 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="connector-link-selection-behavior-distribution" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:element name="distribution" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:annotation>
+                                        <xs:documentation>A distribution of link selection behaviors. Every available behavior is not required to appear.</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:sequence>
+                                        <xs:annotation>
+                                            <xs:documentation>If an enumeration value is used, it should only appear once. If it appears multiple times, one of the supplied occurrences will be used, but which one is undefined.</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:element name="share" minOccurs="1" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:annotation>
+                                                    <xs:documentation>A relation of relative occurrence of a link selection behavior. </xs:documentation>
+                                                </xs:annotation>
+                                                <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Relative number of vehicles selecting this behavior.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="value" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>The selected behavior.</xs:documentation>
+                                                    </xs:annotation>
+                                                    <xs:simpleType>
+                                                        <xs:annotation>
+                                                            <xs:documentation>Behaviors that vehicles will observe when selecting a link in a connector.</xs:documentation>
+                                                            <xs:documentation>Background: connectors are driven by vehicles to move from one road to another. Connectors may have several links originating from one lane on the upstream road, with each link ending on a different lane of the downstream road. Vehicles generally have infinite knowledge of network topology, and so they can select connector links using several methods, enumerated here.</xs:documentation>
+                                                            <xs:documentation>NEAREST means that the vehicle will select the nearest lane on the downstream road. This is the subset of vehicles that are strictly law-abiding.</xs:documentation>
+                                                            <xs:documentation>FARTHEST means that the vehicle will select the farthest lane on the downstream road. This is the subset of vehicles that wants to maximize turnings speed.</xs:documentation>
+                                                            <xs:documentation>BEST means that the vehicle will select the link that minimizes downstream lane changes to continue on its route.</xs:documentation>
+                                                            <xs:documentation>RANDOM means that the vehicle will select a link at random.</xs:documentation>
+                                                        </xs:annotation>
+                                                        <xs:restriction base="xs:string">
+                                                            <xs:enumeration value="NEAREST" />
+                                                            <xs:enumeration value="FARTHEST" />
+                                                            <xs:enumeration value="BEST" />
+                                                            <xs:enumeration value="RANDOM" />
+                                                        </xs:restriction>
+                                                    </xs:simpleType>
+                                                </xs:attribute>
+                                                <xs:anyAttribute processContents="skip" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="connector-link-selection-behaviors" use="required" />
                     </xs:complexType>
@@ -563,7 +409,39 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="vehicle-model-distribution" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:element name="distribution" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:annotation>
+                                        <xs:documentation>A distribution of vehicle models.</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:sequence>
+                                        <xs:annotation>
+                                            <xs:documentation>If a vehicle model is used, it should only appear once. If it appears multiple times, all the shares for that vehicle model will be added together.</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:element name="share" minOccurs="1" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:annotation>
+                                                    <xs:documentation>A relation of relative occurrence of a vehicle model. </xs:documentation>
+                                                </xs:annotation>
+                                                <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Relative number occurrences of this vehicle model.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="value" type="uuid" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>UUID of the vehicle model in this share.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:anyAttribute processContents="skip" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="vehicle-models" use="required" />
                     </xs:complexType>
@@ -577,7 +455,47 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="color-distribution" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:element name="distribution" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:annotation>
+                                        <xs:documentation>A distribution of colors.</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:sequence>
+                                        <xs:annotation>
+                                            <xs:documentation>If a color appears multiple times, all the shares for that color will be added together.</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:element name="share" minOccurs="1" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:annotation>
+                                                    <xs:documentation>A relation of relative occurrence of a color. </xs:documentation>
+                                                </xs:annotation>
+                                                <xs:attribute name="occurrence" type="enum-share-occurrence" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Relative number occurrences of this color.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="value" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Color represented by this share.</xs:documentation>
+                                                    </xs:annotation>
+                                                    <xs:simpleType>
+                                                        <xs:annotation>
+                                                            <xs:documentation>Hex-encoded color.</xs:documentation>
+                                                        </xs:annotation>
+                                                        <xs:restriction base="xs:string">
+                                                            <xs:pattern value="#[a-fA-F0-9]{6}"/>
+                                                        </xs:restriction>
+                                                    </xs:simpleType>
+                                                </xs:attribute>
+                                                <xs:anyAttribute processContents="skip" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="colors" use="required" />
                     </xs:complexType>
@@ -592,7 +510,31 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="acceleration-function" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:element name="distribution" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:annotation>
+                                        <xs:documentation>A relationship between a set of speeds and the acceleration at each of the speeds.</xs:documentation>
+                                        <xs:documentation>At each speed, the distribution of acceleration is given by a mean and a standard deviation.</xs:documentation>
+                                        <xs:documentation>In practice mean and standard deviation should be monotonic, but there is no way to enforce this.</xs:documentation>
+                                        <xs:documentation>Negative means are allowed because when combined with standard deviation the result could still be nonnegative.</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:sequence>
+                                        <xs:element name="dp" minOccurs="2" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:attribute name="velocity" type="speed" use="required" />
+                                                <xs:attribute name="mean" type="xs:decimal" use="required" />
+                                                <xs:attribute name="standard-deviation" type="standard-deviation" use="required" />
+                                                <xs:anyAttribute processContents="skip" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:attribute name="speed-unit" type="speed-unit-enum" use="required" />
+                                    <xs:attribute name="acceleration-unit" type="acceleration-unit-enum" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="acceleration" use="required" />
                     </xs:complexType>
@@ -608,7 +550,16 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="acceleration-distribution" minOccurs="1" maxOccurs="unbounded" />
+                            <xs:element name="distribution" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:complexContent>
+                                        <xs:extension base="distribution-with-units">
+                                            <xs:attribute name="units" type="acceleration-unit-enum" use="required"/>
+                                            <xs:anyAttribute processContents="skip"/>
+                                        </xs:extension>
+                                    </xs:complexContent>
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="max-deceleration" use="required" />
                     </xs:complexType>
@@ -681,7 +632,22 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="occupancy-distribution" maxOccurs="unbounded" />
+                            <xs:element name="distribution" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:annotation>
+                                        <xs:documentation>This is for non-transit vehicles.</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:sequence>
+                                        <xs:choice>
+                                            <xs:element type="zero-truncated-poisson-distribution" name="positive-poisson-distribution" />
+                                            <!-- TODO add further whole number empirical distributions here -->
+                                        </xs:choice>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="non-transit-occupancy" use="required" />
                     </xs:complexType>
@@ -694,7 +660,33 @@
                     </xs:annotation>
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="distribution" type="passenger-distribution" minOccurs="0" maxOccurs="unbounded" />
+                            <xs:element name="distribution" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:annotation>
+                                        <xs:documentation>This is for transit and HOV vehicles. The driver is not included in the count.</xs:documentation>
+                                    </xs:annotation>
+                                    <xs:sequence>
+                                        <xs:choice>
+                                            <xs:element name="poisson-distribution">
+                                                <xs:complexType>
+                                                    <xs:annotation>
+                                                        <xs:documentation>A distribution that describes the number of events per time interval.</xs:documentation>
+                                                        <xs:documentation>Used here, we will generalize this to be a distribution of non-negative integers.</xs:documentation>
+                                                    </xs:annotation>
+                                                    <xs:sequence />
+                                                    <xs:attribute name="lambda" type="positive-real-number" use="required" />
+                                                    <xs:anyAttribute processContents="skip" />
+                                                </xs:complexType>
+                                            </xs:element>
+                                            <xs:element type="zero-truncated-poisson-distribution" name="positive-poisson-distribution" />
+                                            <!-- TODO add further whole number empirical distributions here -->
+                                        </xs:choice>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
                         </xs:sequence>
                         <xs:attribute name="type" type="xs:string" fixed="transit-passengers" use="required" />
                     </xs:complexType>

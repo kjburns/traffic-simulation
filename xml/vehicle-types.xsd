@@ -4,9 +4,6 @@
     <xs:annotation>
         <xs:documentation>Schema for vehicle types file. This file describes vehicle types and vehicle groups.</xs:documentation>
     </xs:annotation>
-    <!--
-    Very basic types
-    -->
     <xs:simpleType name="uuid">
         <xs:annotation>
             <xs:documentation>Universally unique identifier.</xs:documentation>
@@ -15,61 +12,60 @@
             <xs:pattern value="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" />
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="sharing-type">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="transit" />
-            <xs:enumeration value="hov" />
-            <xs:enumeration value="none" />
-        </xs:restriction>
-    </xs:simpleType>
-    <!--
-    Vehicle Types
-    -->
-    <xs:complexType name="vehicle-type">
-        <xs:sequence />
-        <xs:attribute name="name" type="xs:string" use="optional" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:attribute name="models" type="uuid" use="required" />
-        <xs:attribute name="colors" type="uuid" use="required" />
-        <xs:attribute name="acceleration" type="uuid" use="required" />
-        <xs:attribute name="deceleration" type="uuid" use="required" />
-        <xs:attribute name="occupancy" type="uuid" use="required" />
-        <xs:attribute name="sharing" type="sharing-type" default="none" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="vehicle-type-collection">
-        <xs:sequence>
-            <xs:element name="vehicle-type" type="vehicle-type" maxOccurs="unbounded" />
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="vehicle-group-entry">
-        <xs:sequence />
-        <xs:attribute name="type" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="vehicle-group">
-        <xs:sequence>
-            <xs:element name="vehicle" type="vehicle-group-entry" minOccurs="0" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" default="" />
-        <xs:attribute name="uuid" type="uuid" use="required" />
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-    <xs:complexType name="vehicle-group-collection">
-        <xs:sequence>
-            <xs:element name="group" type="vehicle-group" minOccurs="0" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:anyAttribute processContents="skip" />
-    </xs:complexType>
-
-    <!--
-    The actual document
-    -->
     <xs:element name="vehicle-types-and-groups">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="types" type="vehicle-type-collection" />
-                <xs:element name="groups" type="vehicle-group-collection" />
+                <xs:element name="types">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="vehicle-type" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence />
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:attribute name="models" type="uuid" use="required" />
+                                    <xs:attribute name="colors" type="uuid" use="required" />
+                                    <xs:attribute name="acceleration" type="uuid" use="required" />
+                                    <xs:attribute name="deceleration" type="uuid" use="required" />
+                                    <xs:attribute name="occupancy" type="uuid" use="required" />
+                                    <xs:attribute name="sharing" default="none">
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:string">
+                                                <xs:enumeration value="transit" />
+                                                <xs:enumeration value="hov" />
+                                                <xs:enumeration value="none" />
+                                            </xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="groups">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="group" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="vehicle" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence />
+                                                <xs:attribute name="type" type="uuid" use="required" />
+                                                <xs:anyAttribute processContents="skip" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" default="" />
+                                    <xs:attribute name="uuid" type="uuid" use="required" />
+                                    <xs:anyAttribute processContents="skip" />
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:anyAttribute processContents="skip" />
+                    </xs:complexType>
+                </xs:element>
             </xs:sequence>
             <xs:attribute name="version" type="xs:integer" use="required" />
             <xs:anyAttribute processContents="skip" />
