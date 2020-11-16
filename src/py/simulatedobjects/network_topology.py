@@ -1,10 +1,11 @@
 from typing import List
 
+
 class NetworkTopologyLink:
     class _ConnectionPoint:
         def __init__(self, *, connecting_road_id: str,
-                this_road_offset: float, connecting_road_offset: float,
-                this_road_ordinate: float, connecting_road_ordinate: float):
+                     this_road_offset: float, connecting_road_offset: float,
+                     this_road_ordinate: float, connecting_road_ordinate: float):
             super().__init__()
 
             self._connecting_road_id = connecting_road_id
@@ -15,7 +16,7 @@ class NetworkTopologyLink:
 
         def get_connecting_road_id(self) -> str:
             return self._connecting_road_id
-        
+
         def get_this_offset(self) -> float:
             return self._this_road_offset
 

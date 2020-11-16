@@ -1,5 +1,6 @@
 import unittest
-from py.simulatedobjects.vehicle_in_network import VehicleInNetwork
+from simulatedobjects.vehicle_in_network import VehicleInNetwork
+
 
 class TestVehicleInNetwork(unittest.TestCase):
     def test_that_ids_are_as_expected(self):
@@ -15,7 +16,7 @@ class TestVehicleInNetwork(unittest.TestCase):
 
         # each value must be unique
         self.assertEqual(len(set(map(lambda veh: veh.id, vehicles))), VEHICLE_COUNT)
-    pass
 
-if (__name__ == '__main__'):
+
+if __name__ == '__main__':
     unittest.main()
