@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<vehicle-models xsi:noNamespaceSchemaLocation="vehicle-models.xsd" 
-                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" units="metres" version="1">
-    <vehicle-model name="Ford Focus" uuid="cbc7d427-a5d6-4001-b8f4-bf13f05c8ca6" length="4.534" width="1.823" source="https://en.wikipedia.org/wiki/Ford_Focus_(third_generation)"/>
-    <vehicle-model name="Ford F-150 with trailer" uuid="eaf74e42-d357-4297-a78e-7802c62fef24" length="5.7887" width="2.029" articulation-point="5.78" source="https://en.wikipedia.org/wiki/Ford_F-Series_(thirteenth_generation)">
-        <trailer name="6x10 cargo trailer" length="4.2926" width="2.3622" towing-point="0.05" />
-    </vehicle-model>
-</vehicle-models>

@@ -59,7 +59,7 @@ class CleanVehicleModelsDocument:
                 RootElementConstants.UNITS_ATTRIBUTE: str(units),
                 RootElementConstants.VERSION_ATTRIBUTE: str(RootElementConstants.CURRENT_VERSION)}, 
             nsmap = NSMAP)
-        self.documentRoot.attrib['{http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation'] = '../distributions.xsd'
+        self.documentRoot.attrib['{http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation'] = '../vehicle-models.xsd'
 
         self.documentRoot.append(createVehicleModel('Ford Focus', 4.534, 1.823))
 

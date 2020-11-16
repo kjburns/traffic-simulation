@@ -4,3 +4,4 @@ xml/xs3p-master/
 .vscode/
 /bin/
 *.pyc
+.idea/

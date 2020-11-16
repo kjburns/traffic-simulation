@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type="text/xsl" href="./xs3p-master/xs3p.xsl" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:annotation>
+        <xs:documentation>Schema for simulation settings</xs:documentation>
+    </xs:annotation>
+    <xs:simpleType name="path">  <!-- for now -->
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="simulation-duration">
+        <xs:restriction base="xs:duration">
+            <xs:minExclusive value="PT0S" />
+            <xs:maxExclusive value="PT24H" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="simulation-settings">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:choice minOccurs="1" maxOccurs="1">
+                    <xs:element name="files">
+                        <xs:complexType>
+                            <xs:sequence />
+                            <xs:attribute name="network" type="path" use="prohibited" /> <!-- because it's not defined yet -->
+                            <xs:attribute name="vehicle-types" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="vehicle-models" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="distributions" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="lane-usage" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="behavior" type="path" /> <!-- if not specified, use system default -->
+                            <xs:attribute name="evaluation" type="path" use="prohibited" /> <!-- because it's not defined yet -->
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="archive">
+                        <xs:annotation>
+                            <xs:documentation>All file types represented by the attributes to 'files' above must appear in the archive exactly once.</xs:documentation>
+                            <xs:documentation>A file is deemed a particular type when the names above appear in the filename.</xs:documentation>
+                            <xs:documentation>For example, the network file could be called 'network.xml', 'my-scenario.network.xml', or simply 'network'.</xs:documentation>
+                            <xs:documentation>If these requirements are not met, the simulator stops in an error condition.</xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:sequence />
+                            <xs:attribute name="path" type="path" use="required"/>
+                            <xs:attribute name="type" use="required">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                        <xs:enumeration value="zip" />
+                                        <xs:enumeration value="gz" />
+                                        <xs:enumeration value="7z" />
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:attribute>
+                            <xs:anyAttribute processContents="skip" />
+                        </xs:complexType>
+                    </xs:element>
+                </xs:choice>
+                <xs:element name="simulation-times">
+                    <xs:complexType>
+                        <xs:sequence />
+                        <!-- timezone provided in 'utc-offset' overrides any timezone provided in 'simulation-start-time' -->
+                        <xs:attribute name="simulation-start-time" type="xs:time" use="required" />
+                        <xs:attribute name="utc-offset" default="0">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:decimal">
+                                    <xs:minExclusive value="-24" />
+                                    <xs:maxExclusive value="24" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="evaluation-length" type="simulation-duration" use="required" />
+                        <xs:attribute name="seed-length" type="simulation-duration" use="required" />
+                        <xs:attribute name="time-steps-per-second" type="xs:positiveInteger" default="10" />
+                        <xs:anyAttribute processContents="skip" />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="seeding">
+                    <xs:complexType>
+                        <xs:sequence />
+                        <xs:attribute name="random-seed-first-run" type="xs:nonNegativeInteger" default="73110" />
+                        <xs:attribute name="random-seed-increment" type="xs:integer" default="10"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="version" use="required" fixed="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="run-count" type="xs:positiveInteger" default="1" />
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
