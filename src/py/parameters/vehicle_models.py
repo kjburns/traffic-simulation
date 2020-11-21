@@ -20,7 +20,7 @@ class VehicleModelConstants:
     TRAILER_TOWING_POINT_ATTR = 'towing-point'
 
 
-class VehicleUnit(abc.ABC):
+class _VehicleUnit(abc.ABC):
     def __init__(self, from_element: etree.ElementBase, units: str):
         conversion: float = unit_factors_dict[units]
 
@@ -70,7 +70,7 @@ class VehicleUnit(abc.ABC):
         return self._trailer
 
 
-class Trailer(VehicleUnit):
+class Trailer(_VehicleUnit):
     def __init__(self, from_element: etree.ElementBase, units: str):
         super().__init__(from_element, units)
 
@@ -82,7 +82,7 @@ class Trailer(VehicleUnit):
         return self._towing_point
 
 
-class VehicleModel(VehicleUnit):
+class VehicleModel(_VehicleUnit):
     def __init__(self, from_element: etree.ElementBase, units: str):
         super().__init__(from_element, units)
 
@@ -95,7 +95,7 @@ class VehicleModel(VehicleUnit):
     @property
     def total_length(self) -> float:
         length: float = 0
-        active_unit: VehicleUnit = self
+        active_unit: _VehicleUnit = self
         while active_unit is not None:
             trailer_of_active_unit: Trailer = active_unit.trailer
             length += active_unit.length if trailer_of_active_unit is None \
@@ -107,7 +107,7 @@ class VehicleModel(VehicleUnit):
     @property
     def maximum_width(self) -> float:
         max_width: float = 0.0
-        active_unit: VehicleUnit = self
+        active_unit: _VehicleUnit = self
         while active_unit is not None:
             max_width = max(active_unit.width, max_width)
             active_unit = active_unit.trailer
