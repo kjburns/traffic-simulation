@@ -91,3 +91,25 @@ class VehicleModel(VehicleUnit):
     @property
     def uuid(self) -> str:
         return self._uuid
+
+    @property
+    def total_length(self) -> float:
+        length: float = 0
+        active_unit: VehicleUnit = self
+        while active_unit is not None:
+            trailer_of_active_unit: Trailer = active_unit.trailer
+            length += active_unit.length if trailer_of_active_unit is None \
+                else (active_unit.articulation_point - trailer_of_active_unit.towing_point)
+            active_unit = trailer_of_active_unit
+
+        return length
+
+    @property
+    def maximum_width(self) -> float:
+        max_width: float = 0.0
+        active_unit: VehicleUnit = self
+        while active_unit is not None:
+            max_width = max(active_unit.width, max_width)
+            active_unit = active_unit.trailer
+
+        return max_width
