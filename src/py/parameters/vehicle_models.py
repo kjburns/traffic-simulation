@@ -39,7 +39,7 @@ class VehicleUnit(abc.ABC):
 
         # optional trailer
         trailer_element = from_element.find(VehicleModelConstants.TRAILER_TAG)
-        self._trailer: Trailer = Trailer(trailer_element) \
+        self._trailer: Trailer = Trailer(trailer_element, units) \
             if trailer_element is not None \
             else None
 
