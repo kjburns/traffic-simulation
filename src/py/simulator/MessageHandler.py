@@ -1,13 +1,19 @@
+import sys
+
+
 class MessageHandler:
     class __MessageHandler:
+        def __init__(self, output_stream=sys.stderr):
+            self.__output_stream = output_stream
+
         def emit_error(self, message: str) -> None:
-            print('ERROR:', message)
+            self.__output_stream.write('ERROR: ' + message + '\n')
 
         def emit_warning(self, message: str) -> None:
-            print('Warning:', message)
+            self.__output_stream.write('Warning: ' + message + '\n')
 
         def emit_info(self, message: str) -> None:
-            print('info:', message)
+            self.__output_stream.write(('info: ' + message + '\n'))
 
     __instance: __MessageHandler = __MessageHandler()
 
