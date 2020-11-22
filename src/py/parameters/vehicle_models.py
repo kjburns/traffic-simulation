@@ -1,6 +1,6 @@
 from lxml import etree
 import abc
-from simulator.MessageHandler import MessageHandler
+from simulator.SimulatorLoggerWrapper import SimulatorLoggerWrapper
 
 unit_factors_dict: dict = {
     'meters': 1.0,
@@ -46,8 +46,9 @@ class _VehicleUnit(abc.ABC):
         # check that articulation point is supplied with trailer
         if (self._trailer is not None) and (self._articulation_point is None):
             self._articulation_point = self._length
-            MessageHandler.emit_warning('Vehicle has trailer but no articulation point was provided. '
-                                        'Articulation point assumed to be at back tip of vehicle.')
+            SimulatorLoggerWrapper.logger().warning(
+                'Vehicle has trailer but no articulation point was provided. '
+                'Articulation point assumed to be at back tip of vehicle.')
 
     @property
     def length(self) -> float:
