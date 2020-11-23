@@ -1,12 +1,7 @@
 from lxml import etree
 import abc
 from simulator.SimulatorLoggerWrapper import SimulatorLoggerWrapper
-
-unit_factors_dict: dict = {
-    'meters': 1.0,
-    'metres': 1.0,
-    'feet': 0.3048,
-}
+from parameters.units import Unit
 
 
 class VehicleModelConstants:
@@ -21,25 +16,26 @@ class VehicleModelConstants:
 
 
 class _VehicleUnit(abc.ABC):
-    def __init__(self, from_element: etree.ElementBase, units: str):
-        conversion: float = unit_factors_dict[units]
-
+    def __init__(self, from_element: etree.ElementBase, working_unit: Unit):
         # load the attributes common to all unit types--required attributes here
-        self._length: float = float(from_element.attrib[VehicleModelConstants.UNIT_LENGTH_ATTR]) / conversion
-        self._width: float = float(from_element.attrib[VehicleModelConstants.UNIT_WIDTH_ATTR]) / conversion
+        self._length: float = working_unit.convert_to_base_units(
+            float(from_element.attrib[VehicleModelConstants.UNIT_LENGTH_ATTR]))
+        self._width: float = working_unit.convert_to_base_units(
+            float(from_element.attrib[VehicleModelConstants.UNIT_WIDTH_ATTR]))
 
         # optional attributes
         self._name: str = from_element.attrib[VehicleModelConstants.UNIT_NAME_ATTR] \
             if VehicleModelConstants.UNIT_NAME_ATTR in from_element.attrib \
             else ''
         self._articulation_point: float = \
-            from_element.attrib[VehicleModelConstants.UNIT_ARTICULATION_POINT_ATTR] / conversion \
+            working_unit.convert_to_base_units(
+                float(from_element.attrib[VehicleModelConstants.UNIT_ARTICULATION_POINT_ATTR])) \
             if VehicleModelConstants.UNIT_ARTICULATION_POINT_ATTR in from_element.attrib \
             else None
 
         # optional trailer
         trailer_element = from_element.find(VehicleModelConstants.TRAILER_TAG)
-        self._trailer: Trailer = Trailer(trailer_element, units) \
+        self._trailer: Trailer = Trailer(trailer_element, working_unit) \
             if trailer_element is not None \
             else None
 
@@ -72,11 +68,11 @@ class _VehicleUnit(abc.ABC):
 
 
 class Trailer(_VehicleUnit):
-    def __init__(self, from_element: etree.ElementBase, units: str):
-        super().__init__(from_element, units)
+    def __init__(self, from_element: etree.ElementBase, working_units: Unit):
+        super().__init__(from_element, working_units)
 
-        self._towing_point = \
-            float(from_element.attrib[VehicleModelConstants.TRAILER_TOWING_POINT_ATTR]) / unit_factors_dict[units]
+        self._towing_point = working_units.convert_to_base_units(
+            float(from_element.attrib[VehicleModelConstants.TRAILER_TOWING_POINT_ATTR]))
 
     @property
     def towing_point(self) -> float:
@@ -84,8 +80,8 @@ class Trailer(_VehicleUnit):
 
 
 class VehicleModel(_VehicleUnit):
-    def __init__(self, from_element: etree.ElementBase, units: str):
-        super().__init__(from_element, units)
+    def __init__(self, from_element: etree.ElementBase, working_unit: Unit):
+        super().__init__(from_element, working_unit)
 
         self._uuid = from_element.attrib[VehicleModelConstants.MODEL_UUID_ATTR]
 

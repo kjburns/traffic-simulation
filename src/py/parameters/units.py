@@ -22,3 +22,38 @@ class Unit:
         # do assignments
         self._name: str = name
         self._factor: float = conversion_factor_to_base_units
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def convert_to_base_units(self, value_in_this_unit: float) -> float:
+        return value_in_this_unit * self._factor
+
+    def convert_to_this_unit(self, value_in_base_units: float) -> float:
+        return value_in_base_units / self._factor
+
+
+class LengthUnits:
+    METERS = Unit('meters', 1.0)
+    METRES = Unit('metres', 1.0)
+    FEET = Unit('feet', 0.3048)
+
+    DICTIONARY = {
+        METRES.name: METRES,
+        METERS.name: METERS,
+        FEET.name: FEET,
+    }
+
+
+class DistanceUnits(LengthUnits):
+    KILOMETERS = Unit('kilometers', 0.001)
+    MILES = Unit('miles', 1.0 / 1609.344)
+
+    DICTIONARY = {
+        LengthUnits.METRES.name: LengthUnits.METRES,
+        LengthUnits.METERS.name: LengthUnits.METERS,
+        LengthUnits.FEET.name: LengthUnits.FEET,
+        KILOMETERS.name: KILOMETERS,
+        MILES.name: MILES
+    }
