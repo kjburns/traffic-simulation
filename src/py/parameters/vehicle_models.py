@@ -2,6 +2,7 @@ from lxml import etree
 import abc
 from simulator.SimulatorLoggerWrapper import SimulatorLoggerWrapper
 from parameters.units import Unit
+from i18n_l10n.temporary_i18n_bridge import Localization
 
 
 class VehicleModelConstants:
@@ -42,9 +43,7 @@ class _VehicleUnit(abc.ABC):
         # check that articulation point is supplied with trailer
         if (self._trailer is not None) and (self._articulation_point is None):
             self._articulation_point = self._length
-            SimulatorLoggerWrapper.logger().warning(
-                'Vehicle has trailer but no articulation point was provided. '
-                'Articulation point assumed to be at back tip of vehicle.')
+            SimulatorLoggerWrapper.logger().warning(Localization.get_message('W0001'))
 
     @property
     def length(self) -> float:
