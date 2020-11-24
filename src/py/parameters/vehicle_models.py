@@ -1,11 +1,15 @@
 from lxml import etree
 import abc
 from simulator.SimulatorLoggerWrapper import SimulatorLoggerWrapper
-from parameters.units import Unit
+from parameters.units import Unit, LengthUnits
 from i18n_l10n.temporary_i18n_bridge import Localization
+from typing import Dict, List
+from simulator.xml_validation import XmlValidation
 
 
 class VehicleModelConstants:
+    COLLECTION_UNITS_ATTR = 'units'
+    COLLECTION_VERSION_ATTR = 'version'
     UNIT_NAME_ATTR = 'name'
     UNIT_LENGTH_ATTR = 'length'
     UNIT_WIDTH_ATTR = 'width'
@@ -109,3 +113,39 @@ class VehicleModel(_VehicleUnit):
             active_unit = active_unit.trailer
 
         return max_width
+
+
+class VehicleModelCollection:
+    _instance: Dict[str, VehicleModel] = dict()
+
+    @classmethod
+    def read_from_xml(cls, xml: etree.ElementBase) -> None:
+        version_number: int = int(xml.attrib[VehicleModelConstants.COLLECTION_VERSION_ATTR])
+        if version_number == 1:
+            units_text: str = xml.attrib[VehicleModelConstants.COLLECTION_UNITS_ATTR]
+            units: Unit = LengthUnits.DICTIONARY[units_text]
+
+            for model_element in xml.iter(VehicleModelConstants.MODEL_TAG):
+                model: VehicleModel = VehicleModel(model_element, units)
+                VehicleModelCollection._instance[model.uuid] = model
+
+    @classmethod
+    def __class_getitem__(cls, key: str) -> VehicleModel:
+        if key not in VehicleModelCollection._instance:
+            raise KeyError(Localization.get_message('E0001', key))
+
+        return VehicleModelCollection._instance[key]
+
+    @classmethod
+    def keys(cls) -> List[str]:
+        return list(VehicleModelCollection._instance.keys())
+
+
+def process_file(filename) -> None:
+    tree: etree.ElementTree = etree.parse(filename)
+    xsd_tree: etree.XMLSchema = etree.XMLSchema(etree.parse(XmlValidation.VEHICLE_MODELS_XSD))
+    if not xsd_tree.validate(tree):
+        # validation failed
+        raise RuntimeError(Localization.get_message('E0002', filename))
+
+    VehicleModelCollection.read_from_xml(tree.getroot())
