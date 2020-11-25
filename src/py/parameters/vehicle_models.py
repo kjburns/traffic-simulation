@@ -8,6 +8,7 @@ from simulator.xml_validation import XmlValidation
 
 
 class VehicleModelConstants:
+    ROOT_TAG = 'vehicle-models'
     COLLECTION_UNITS_ATTR = 'units'
     COLLECTION_VERSION_ATTR = 'version'
     UNIT_NAME_ATTR = 'name'
@@ -127,18 +128,28 @@ class VehicleModelCollection:
 
             for model_element in xml.iter(VehicleModelConstants.MODEL_TAG):
                 model: VehicleModel = VehicleModel(model_element, units)
-                VehicleModelCollection._instance[model.uuid] = model
+                cls._instance[model.uuid] = model
 
     @classmethod
     def __class_getitem__(cls, key: str) -> VehicleModel:
-        if key not in VehicleModelCollection._instance:
+        if key not in cls._instance:
             raise KeyError(Localization.get_message('E0001', key))
 
         return VehicleModelCollection._instance[key]
 
     @classmethod
     def keys(cls) -> List[str]:
-        return list(VehicleModelCollection._instance.keys())
+        return list(cls._instance.keys())
+
+    @classmethod
+    def reset(cls):
+        """
+        Removes all data from this collection. Generally intended for testing purposes.
+
+        Returns:
+            nothing
+        """
+        cls._instance.clear()
 
 
 def process_file(filename) -> None:
