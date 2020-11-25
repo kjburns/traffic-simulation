@@ -43,7 +43,6 @@
                                 <xs:simpleType>
                                     <xs:restriction base="xs:string">
                                         <xs:enumeration value="zip" />
-                                        <xs:enumeration value="gz" />
                                         <xs:enumeration value="7z" />
                                     </xs:restriction>
                                 </xs:simpleType>
@@ -55,9 +54,10 @@
                 <xs:element name="simulation-times">
                     <xs:complexType>
                         <xs:sequence />
-                        <!-- timezone provided in 'utc-offset' overrides any timezone provided in 'simulation-start-time' -->
                         <xs:attribute name="simulation-start-time" type="xs:time" use="required" />
                         <xs:attribute name="utc-offset" default="0">
+                            <!-- time zone for the network. this will be the time zone used for output.
+                            if it is preferred to not deal with time zones, don't specify them in any time input and leave this attribute as zero. -->
                             <xs:simpleType>
                                 <xs:restriction base="xs:decimal">
                                     <xs:minExclusive value="-24" />

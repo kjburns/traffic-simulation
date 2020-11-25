@@ -287,7 +287,7 @@ class TestsForArchiveVersion(unittest.TestCase):
     def test_type_values(self):
         test_tuples = [
             ('zip', True),
-            ('gz', True),
+            ('gz', False),
             ('7z', True),
             ('other', False)
         ]
