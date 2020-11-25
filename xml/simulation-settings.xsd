@@ -20,7 +20,7 @@
                     <xs:element name="files">
                         <xs:complexType>
                             <xs:sequence />
-                            <xs:attribute name="network" type="path" use="prohibited" /> <!-- because it's not defined yet -->
+                            <xs:attribute name="network" type="path" use="required" />
                             <xs:attribute name="vehicle-types" type="path" /> <!-- if not specified, use system default -->
                             <xs:attribute name="vehicle-models" type="path" /> <!-- if not specified, use system default -->
                             <xs:attribute name="distributions" type="path" /> <!-- if not specified, use system default -->

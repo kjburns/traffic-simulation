@@ -3,7 +3,7 @@ from typing import List, Tuple
 import unittest
 
 filename_list: List[Tuple[str, bool]] = [
-    ('network', False),
+    ('network', True),
     ('vehicle-types', True),
     ('vehicle-models', True),
     ('distributions', True),
@@ -318,8 +318,8 @@ class TestsForFilesVersion(unittest.TestCase):
         target_node.attrib.pop(attr_name)
         self.assertTrue(self._doc.validate())
 
-    def test_that_network_is_banned(self):
-        self.check_that_attribute_is_banned('network')
+    def test_that_network_is_required(self):
+        self.check_that_attribute_is_required('network')
 
     def test_that_vehicle_types_is_optional(self):
         self.check_that_attribute_is_optional('vehicle-types')
@@ -338,6 +338,10 @@ class TestsForFilesVersion(unittest.TestCase):
 
     def test_that_evaluation_is_banned(self):
         self.check_that_attribute_is_banned('evaluation')
+
+    def check_that_attribute_is_required(self, attr_name):
+        self._doc.get_input_choice_node().attrib.pop(attr_name)
+        self.assertFalse(self._doc.validate())
 
 
 if __name__ == '__main__':
