@@ -37,7 +37,7 @@ class Unit:
 class LengthUnits:
     METERS = Unit('meters', 1.0)
     METRES = Unit('metres', 1.0)
-    FEET = Unit('feet', 0.3048)
+    FEET = Unit('feet', 1.0 / 0.3048)
 
     DICTIONARY = {
         METRES.name: METRES,
@@ -47,8 +47,8 @@ class LengthUnits:
 
 
 class DistanceUnits(LengthUnits):
-    KILOMETERS = Unit('kilometers', 0.001)
-    MILES = Unit('miles', 1.0 / 1609.344)
+    KILOMETERS = Unit('kilometers', 1000.0)
+    MILES = Unit('miles', 1609.344)
 
     DICTIONARY = {
         LengthUnits.METRES.name: LengthUnits.METRES,
@@ -57,3 +57,26 @@ class DistanceUnits(LengthUnits):
         KILOMETERS.name: KILOMETERS,
         MILES.name: MILES
     }
+
+
+class TimeUnits(Unit):
+    SECONDS = Unit('seconds', 1.0)
+    MINUTES = Unit('minutes', 60.0)
+    HOURS = Unit('hours', 3600.0)
+
+    DICTIONARY = {
+        SECONDS.name: SECONDS,
+        MINUTES.name: MINUTES,
+        HOURS.name: HOURS,
+    }
+
+
+class SpeedUnits(Unit):
+    MILES_PER_HOUR = Unit('miles-per-hour',
+                          DistanceUnits.MILES.convert_to_base_units(1.0) /
+                          TimeUnits.HOURS.convert_to_base_units(1.0))
+    KILOMETERS_PER_HOUR = Unit('kilometers-per-hour',
+                               DistanceUnits.KILOMETERS.convert_to_base_units(1.0) /
+                               TimeUnits.HOURS.convert_to_base_units(1.0))
+    METERS_PER_SECOND = Unit('meters-per-second', 1.0)
+    FEET_PER_SECOND = Unit('feet-per-second', 1.0 / 0.3048)
