@@ -1,6 +1,6 @@
 from lxml import etree
 import abc
-from simulator.SimulatorLoggerWrapper import SimulatorLoggerWrapper
+from simulator.simulator_logger import SimulatorLoggerWrapper
 from parameters.units import Unit, LengthUnits
 from i18n_l10n.temporary_i18n_bridge import Localization
 from typing import Dict, List

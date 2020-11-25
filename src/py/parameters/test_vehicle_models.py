@@ -3,7 +3,7 @@ from lxml import etree
 from parameters.vehicle_models import VehicleModel, VehicleModelConstants, VehicleModelCollection, process_file
 from uuid import uuid4 as uuid
 from parameters.units import LengthUnits
-from simulator.SimulatorLoggerWrapper import SimulatorLoggerWrapper
+from simulator.simulator_logger import SimulatorLoggerWrapper
 import logging
 from typing import List
 from tempfile import NamedTemporaryFile
