@@ -1,14 +1,16 @@
 import unittest
 from lxml import etree
-from network.NetworkXml import NetworkXmlNames, RoadXmlNames
+from network.network_xml import NetworkXmlNames, RoadXmlNames
 from simulator.simulator_settings import SimulationSettingsXmlNames, SimulatorSettings, _ArchiveFormats
 from parameters.units import LengthUnits, SpeedUnits
+from parameters.vehicle_models import VehicleModelCollection
 from uuid import uuid4 as uuid
 import tempfile
 import os
 import zipfile
 import isodate
-from datetime import datetime, time, timezone
+from datetime import datetime
+from simulator.default_xml_files import DefaultXmlFiles
 
 
 def _create_network_file_data() -> etree.ElementBase:
@@ -98,6 +100,11 @@ def _create_archive_file(fmt: str) -> str:
             fp.close()
         zip_file: zipfile.ZipFile = zipfile.ZipFile(zip_path, 'w')
         zip_file.write(network_file_name)
+        zip_file.write(DefaultXmlFiles.VEHICLE_MODELS_FILE)
+        zip_file.write(DefaultXmlFiles.DISTRIBUTIONS_FILE)
+        zip_file.write(DefaultXmlFiles.VEHICLE_TYPES_FILE)
+        zip_file.write(DefaultXmlFiles.BEHAVIOR_FILE)
+        zip_file.write(DefaultXmlFiles.LANE_USAGE_FILE)
         os.remove(network_file_name)
 
         return zip_path
@@ -105,7 +112,7 @@ def _create_archive_file(fmt: str) -> str:
         pass
     else:
         os.remove(network_file_name)
-        return None
+        return ''
 
 
 def _create_archive_node(filename: str, archive_format: str) -> etree.ElementBase:
@@ -123,7 +130,7 @@ def _write_temporary_file(data: str) -> str:
         return fp.name
 
 
-class TestsForSimulatorSettings(unittest.TestCase):
+class _ArchiveTestBase(unittest.TestCase):
     def setUp(self) -> None:
         self._temp_zip_location: str = _create_archive_file(_ArchiveFormats.ZIP)
         self._temp_ss_default_location: str = _write_temporary_file(
@@ -140,12 +147,15 @@ class TestsForSimulatorSettings(unittest.TestCase):
                 )
             )
         )
+        VehicleModelCollection.reset()
 
     def tearDown(self) -> None:
         os.remove(self._temp_zip_location)
         os.remove(self._temp_ss_custom_location)
         os.remove(self._temp_ss_default_location)
 
+
+class TestsForSimulatorSettings(_ArchiveTestBase):
     def test_that_default_values_load(self):
         # making sure the default values defined in the xsd are properly applied where appropriate
         SimulatorSettings.process_file(self._temp_ss_default_location)
@@ -156,6 +166,7 @@ class TestsForSimulatorSettings(unittest.TestCase):
         self.assertEqual(SimulatorSettings.seed_for_run_number(10), 73200)
 
     def test_that_coded_values_load(self):
+        # making sure that values specified in the test files are properly applied
         SimulatorSettings.process_file(self._temp_ss_custom_location)
         self.assertEqual(SimulatorSettings.run_count(), 10)
         self.assertEqual(SimulatorSettings.time_zone().utcoffset(None).seconds, 86400 - 5 * 3600)
@@ -187,10 +198,12 @@ class TestsForSimulatorSettings(unittest.TestCase):
         self.assertEqual(local_time.time(), isodate.parse_time('22:00:00'))
 
 
-class TestsForSimulatorSettingsWithFiles(unittest.TestCase):
+class TestsForSimulatorSettingsWithArchive(_ArchiveTestBase):
     def test_that_default_vehicle_types_load(self): pass
 
-    def test_that_default_vehicle_models_load(self): pass
+    def test_that_default_vehicle_models_load(self):
+        SimulatorSettings.process_file(self._temp_ss_default_location)
+        self.assertTrue('57fa86d0-beec-4341-a564-2fdac619791e' in VehicleModelCollection.keys())
 
     def test_that_default_distributions_load(self): pass
 
@@ -199,10 +212,13 @@ class TestsForSimulatorSettingsWithFiles(unittest.TestCase):
     def test_that_default_lane_behavior_loads(self): pass
 
 
-class TestsForSimulatorSettingsWithArchive(unittest.TestCase):
+class TestsForSimulatorSettingsWithFiles(unittest.TestCase):
+    # needs setup and tear down akin to _ArchiveTestBase
     def test_that_default_vehicle_types_load(self): pass
 
-    def test_that_default_vehicle_models_load(self): pass
+    def test_that_default_vehicle_models_load(self):
+        # self.assertTrue('57fa86d0-beec-4341-a564-2fdac619791e' in VehicleModelCollection.keys())
+        pass
 
     def test_that_default_distributions_load(self): pass
 
