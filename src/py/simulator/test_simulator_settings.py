@@ -81,7 +81,7 @@ def _create_simulation_settings_data_with_custom_values(file_element: etree.Elem
     return root_node
 
 
-def _create_archive_file(fmt: str) -> str:
+def _create_archive_file(fmt: str, *, complete: bool = True) -> str:
     """
     Creates a temporary archive file for use in testing. The file must be deleted manually when finished with it.
     Returns:
@@ -100,7 +100,8 @@ def _create_archive_file(fmt: str) -> str:
             fp.close()
         zip_file: zipfile.ZipFile = zipfile.ZipFile(zip_path, 'w')
         zip_file.write(network_file_name)
-        zip_file.write(DefaultXmlFiles.VEHICLE_MODELS_FILE)
+        if complete:
+            zip_file.write(DefaultXmlFiles.VEHICLE_MODELS_FILE)
         zip_file.write(DefaultXmlFiles.DISTRIBUTIONS_FILE)
         zip_file.write(DefaultXmlFiles.VEHICLE_TYPES_FILE)
         zip_file.write(DefaultXmlFiles.BEHAVIOR_FILE)
@@ -199,6 +200,28 @@ class TestsForSimulatorSettings(_ArchiveTestBase):
 
 
 class TestsForSimulatorSettingsWithArchive(_ArchiveTestBase):
+    def test_that_exception_raised_on_missing_files(self):
+        archive_file: str = ''
+        settings_path: str = ''
+        try:
+            archive_file = _create_archive_file(_ArchiveFormats.ZIP, complete=False)
+            archive_node: etree.ElementBase = _create_archive_node(archive_file, _ArchiveFormats.ZIP)
+            settings_node: etree.ElementBase = _create_simulation_settings_data_with_defaults(archive_node)
+            with tempfile.NamedTemporaryFile(delete=False) as fp:
+                settings_path = fp.name
+                fp.write(etree.tostring(settings_node))
+                fp.close()
+
+            def thrower():
+                SimulatorSettings.process_file(settings_path)
+
+            self.assertRaises(ValueError, thrower)
+        finally:
+            if archive_file != '':
+                os.remove(archive_file)
+            if settings_path != '':
+                os.remove(settings_path)
+
     def test_that_default_vehicle_types_load(self): pass
 
     def test_that_default_vehicle_models_load(self):
@@ -210,6 +233,8 @@ class TestsForSimulatorSettingsWithArchive(_ArchiveTestBase):
     def test_that_default_lane_usage_loads(self): pass
 
     def test_that_default_lane_behavior_loads(self): pass
+
+    def test_that_network_loads(self): pass
 
 
 class TestsForSimulatorSettingsWithFiles(unittest.TestCase):
