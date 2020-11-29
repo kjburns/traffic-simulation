@@ -238,12 +238,43 @@ class TestsForSimulatorSettingsWithArchive(_ArchiveTestBase):
 
 
 class TestsForSimulatorSettingsWithFiles(unittest.TestCase):
-    # needs setup and tear down akin to _ArchiveTestBase
+    def setUp(self) -> None:
+        VehicleModelCollection.reset()
+        # TODO reset other things here
+
+        self._network_filename: str = ''
+        self._settings_filename: str = ''
+
+        with tempfile.NamedTemporaryFile(delete=False) as fp:
+            self._network_filename = fp.name
+
+            network_data: etree.ElementBase = _create_network_file_data()
+            fp.write(etree.tostring(network_data))
+            fp.close()
+
+        with tempfile.NamedTemporaryFile(delete=False) as fp:
+            self._settings_filename = fp.name
+
+            files_element: etree.ElementBase = etree.Element(SimulationSettingsXmlNames.FILES_TAG, {
+                'network': self._network_filename,
+            })
+            settings_doc_root: etree.ElementBase = _create_simulation_settings_data_with_defaults(files_element)
+            fp.write(etree.tostring(settings_doc_root))
+            fp.close()
+
+        SimulatorSettings.process_file(self._settings_filename)
+
+    def tearDown(self) -> None:
+        if self._network_filename != '':
+            os.remove(self._network_filename)
+
+        if self._settings_filename != '':
+            os.remove(self._settings_filename)
+
     def test_that_default_vehicle_types_load(self): pass
 
     def test_that_default_vehicle_models_load(self):
-        # self.assertTrue('57fa86d0-beec-4341-a564-2fdac619791e' in VehicleModelCollection.keys())
-        pass
+        self.assertTrue('57fa86d0-beec-4341-a564-2fdac619791e' in VehicleModelCollection.keys())
 
     def test_that_default_distributions_load(self): pass
 
