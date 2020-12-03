@@ -5,7 +5,8 @@ from simulator import xml_validation
 from simulator.default_xml_files import DefaultXmlFiles
 from i18n_l10n.temporary_i18n_bridge import Localization
 from parameters.vehicle_models import VehicleModelCollection
-from typing import Callable, Tuple, List, Type, final
+from parameters.distributions import Distributions
+from typing import Callable, Tuple, List, Type, Union
 from zipfile import ZipFile
 from py7zr import py7zr
 from abc import ABC, abstractmethod
@@ -32,7 +33,7 @@ class ArchiveProcessor(ABC):
 
 
 class ZipProcessor(ArchiveProcessor):
-    _zipfile: ZipFile = None
+    _zipfile: Union[ZipFile, None] = None
 
     @classmethod
     def open_archive(cls, path: str) -> None:
@@ -54,7 +55,7 @@ class ZipProcessor(ArchiveProcessor):
 
 
 class SevenZipProcessor(ArchiveProcessor):
-    _temp_directory: TemporaryDirectory = None
+    _temp_directory: Union[TemporaryDirectory, None] = None
     _file_list: List[str] = []
 
     @classmethod
@@ -221,6 +222,7 @@ class SimulatorSettings:
 
         fragment_processor_tuples: List[Tuple[str, Callable[[etree.ElementBase], None]]] = [
             ('vehicle-models', VehicleModelCollection.read_from_xml),
+            ('distributions', Distributions.process_file),
             # TODO fill these in
         ]
         try:
@@ -253,7 +255,7 @@ class SimulatorSettings:
         else:
             distributions_path = DefaultXmlFiles.DISTRIBUTIONS_FILE
         distributions_node: etree.ElementBase = etree.parse(distributions_path).getroot()
-        # TODO process distributions file
+        Distributions.process_file(distributions_node)
 
         vehicle_types_attr: str = 'vehicle-types'
         vehicle_types_path: str
