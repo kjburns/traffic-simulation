@@ -1,7 +1,8 @@
 from lxml import etree
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Dict, final, List, Callable, Iterable
+from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple
 from i18n_l10n.temporary_i18n_bridge import Localization
+from functools import reduce
 
 
 class DistributionXmlNames:
@@ -172,11 +173,11 @@ class StringDistribution(Distribution[str], ABC):
                 share: StringDistribution.ShareCollection.Share = StringDistribution.ShareCollection.Share(value, 0.0)
                 self._data.append(share)
 
-        def add_share(self, share_value: str, share_amount: float):
+        def add_share(self, share_value: str, share_amount: float, *, distribution_name: str = 'String Distribution'):
             add_to_element_candidates = list(filter(lambda x: x.value == share_value, self._data))
             if len(add_to_element_candidates) == 0:
                 # Illegal Value (not in acceptable list)
-                raise ValueError()  # TODO i18n for error message
+                raise ValueError(Localization.get_message('E0005', distribution_name, share_value))
 
             add_to_element_candidates[0].occurrence += share_amount
 
@@ -190,14 +191,47 @@ class StringDistribution(Distribution[str], ABC):
         for element in node.iterfind(DistributionXmlNames.EnumShares.SHARE_TAG):
             occurrence: float = float(element.attrib[DistributionXmlNames.EnumShares.SHARE_OCCURRENCE_ATTR])
             value: str = element.attrib[DistributionXmlNames.EnumShares.SHARE_VALUE_ATTR]
-            self._data.add_share(value, occurrence)
+            self._data.add_share(value, occurrence, distribution_name=self.get_distribution_type_name())
 
         # Check that the total of shares is not zero
+        shares_total: float = sum(map(lambda item: item.occurrence, self._data.get_all_shares()))
+        if shares_total == 0.0:
+            raise ValueError(Localization.get_message('E0006', self.name))
 
+        def accumulator(so_far: List[Tuple[float, float, str]],
+                        this_one: StringDistribution.ShareCollection.ShareViewer
+                        ) -> List[Tuple[float, float, str]]:
+            total_so_far: float = so_far[-1][1] if len(so_far) > 0 else 0.0
+            so_far.append((total_so_far, total_so_far + this_one.occurrence, this_one.value))
+
+            return so_far
+
+        self._start_end_value_tuples: List[Tuple[float, float, str]] = reduce(
+            accumulator, self.get_share_collection().get_all_shares(), []
+        )
 
     def get_value(self, parameter: float) -> str:
-        # TODO calculates the value based on the parameter
-        pass
+        # check parameter
+        self.check_parameter(parameter)
+
+        # scale parameter to range of shares
+        scale: float = self._start_end_value_tuples[-1][1]
+        scaled_parameter: float = parameter * scale
+
+        # The parameter x is in the range [a, b] if (a - x)(b - x) <= 0.
+        # Given that the probability of a random continuous variable
+        #  being equal to any particular value is zero, we can say that
+        #  being in the range [a, b] is the same as [a, b), which is what
+        #  we actually want (since the parameter should never equal one).
+        # Given this, we will use the filter operation to make quick work,
+        #  and if more than one range is returned, we will just pick the
+        #  first one.
+        value: str = list(filter(
+            lambda share_tuple: (scaled_parameter - share_tuple[0]) * (scaled_parameter - share_tuple[1]) < 0,
+            self._start_end_value_tuples
+        ))[0][2]
+
+        return value
 
     @classmethod
     @abstractmethod
@@ -207,6 +241,10 @@ class StringDistribution(Distribution[str], ABC):
     @final
     def get_share_collection(self) -> ShareCollection:
         return self._data
+
+    @classmethod
+    @abstractmethod
+    def get_distribution_type_name(cls) -> str: pass
 
 
 class ConnectorLinkSelectionBehaviorDistribution(StringDistribution):
@@ -221,6 +259,10 @@ class ConnectorLinkSelectionBehaviorDistribution(StringDistribution):
 
     def __init__(self, node: etree.ElementBase):
         super().__init__(node, ConnectorLinkSelectionBehaviorDistribution.get_allowable_values)
+
+    @classmethod
+    def get_distribution_type_name(cls) -> str:
+        return 'Connector_Link_Selection_Behavior'
 
 
 class Distributions:
