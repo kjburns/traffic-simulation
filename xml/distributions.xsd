@@ -338,8 +338,7 @@
                                     </xs:annotation>
                                     <xs:sequence>
                                         <xs:annotation>
-                                            <!-- TODO this behavior is inconsistent with what happens elsewhere. Change documentation and check tests for this distribution to ensure consistency. -->
-                                            <xs:documentation>If an enumeration value is used, it should only appear once. If it appears multiple times, one of the supplied occurrences will be used, but which one is undefined.</xs:documentation>
+                                            <xs:documentation>If multiple shares of the same value occur, they are added together. If the total share occurrence adds to zero the simulator will stop in an error condition.</xs:documentation>
                                         </xs:annotation>
                                         <xs:element name="share" minOccurs="1" maxOccurs="unbounded">
                                             <xs:complexType>
