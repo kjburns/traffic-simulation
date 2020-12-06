@@ -254,8 +254,7 @@ class SimulatorSettings:
             distributions_path = files_element.attrib[distributions_attr]
         else:
             distributions_path = DefaultXmlFiles.DISTRIBUTIONS_FILE
-        distributions_node: etree.ElementBase = etree.parse(distributions_path).getroot()
-        Distributions.process_file(distributions_node)
+        Distributions.process_file(distributions_path)
 
         vehicle_types_attr: str = 'vehicle-types'
         vehicle_types_path: str

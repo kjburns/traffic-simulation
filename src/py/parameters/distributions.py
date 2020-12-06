@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple
 from i18n_l10n.temporary_i18n_bridge import Localization
 from functools import reduce
+from simulator.xml_validation import XmlValidation
+from i18n_l10n.temporary_i18n_bridge import Localization
 
 
 class DistributionXmlNames:
@@ -280,14 +282,18 @@ class Distributions:
         return cls._connector_link_selection_behaviors
 
     @classmethod
-    def process_file(cls, distributions_doc_root: etree.ElementBase) -> None:
+    def process_file(cls, filename: str) -> None:
         def get_distribution_set_node(distribution_set_name: str) -> etree.ElementBase:
+            print(etree.tostring(_doc_root))
             candidates: List[etree.ElementBase] = list(filter(
                 lambda e: e.attrib[DistributionXmlNames.DistributionSets.TYPE_ATTR] == distribution_set_name,
                 _doc_root))
             return candidates[0] if len(candidates) != 0 else None
 
-        _doc_root = distributions_doc_root
+        _doc_root = etree.parse(filename).getroot()
+        schema: etree.XMLSchema = etree.XMLSchema(etree.parse(XmlValidation.DISTRIBUTIONS_XSD))
+        if not schema.validate(_doc_root):
+            raise RuntimeError('E0002', filename)
 
         cls._connector_link_selection_behaviors = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.ConnectorLinkSelectionBehaviors.TYPE),
