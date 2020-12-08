@@ -37,7 +37,7 @@ class Unit:
 class LengthUnits:
     METERS = Unit('meters', 1.0)
     METRES = Unit('metres', 1.0)
-    FEET = Unit('feet', 1.0 / 0.3048)
+    FEET = Unit('feet', 0.3048)
 
     DICTIONARY = {
         METRES.name: METRES,
@@ -79,4 +79,10 @@ class SpeedUnits(Unit):
                                DistanceUnits.KILOMETERS.convert_to_base_units(1.0) /
                                TimeUnits.HOURS.convert_to_base_units(1.0))
     METERS_PER_SECOND = Unit('meters-per-second', 1.0)
-    FEET_PER_SECOND = Unit('feet-per-second', 1.0 / 0.3048)
+    FEET_PER_SECOND = Unit('feet-per-second', 0.3048)
+
+
+class AccelerationUnits(Unit):
+    METERS_PER_SECOND_SQUARED = Unit('meters-per-second-squared', 1.0)
+    FEET_PER_SECOND_SQUARED = Unit('feet-per-second-squared', 0.3048)
+    G = Unit('g\'s', 9.80665)

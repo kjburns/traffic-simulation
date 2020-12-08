@@ -8,6 +8,8 @@ from i18n_l10n.temporary_i18n_bridge import Localization
 
 
 class DistributionXmlNames:
+    ROOT_TAG = 'distributions'
+
     class DistributionSets:
         TAG = 'distribution-set'
         TYPE_ATTR = 'type'
@@ -26,7 +28,10 @@ class DistributionXmlNames:
         TAG = 'distribution'
 
     class VehicleModels(GenericNames, Shares):
-        pass
+        TYPE = 'vehicle-models'
+
+    class Colors(GenericNames, Shares):
+        TYPE = 'colors'
 
     class ConnectorLinkSelectionBehaviors(GenericNames):
         TYPE = 'connector-link-selection-behaviors'
@@ -73,6 +78,24 @@ class DistributionXmlNames:
 
     class DistanceDistributions(_DistributionsWithUnits):
         pass
+
+    class AccelerationDistributions(_DistributionsWithUnits):
+        pass
+
+    class ConnectorMaximumPositioningDistances(DistanceDistributions):
+        TYPE: str = 'connector-max-positioning-distance'
+
+    class AccelerationFunctions(GenericNames):
+        TYPE = 'acceleration'
+        SPEED_UNIT_ATTR = 'speed-unit'
+        ACCELERATION_UNIT_ATTR = 'acceleration-unit'
+        DP_TAG = 'dp'
+        DP_VELOCITY_ATTR = 'velocity'
+        DP_MEAN_ATTR = 'mean'
+        DP_STANDARD_DEVIATION_ATTR = 'standard-deviation'
+
+    class DecelerationDistributions(AccelerationDistributions):
+        TYPE = 'max-deceleration'
 
 
 T = TypeVar('T')
