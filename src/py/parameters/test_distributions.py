@@ -335,5 +335,17 @@ class TestsForSpecifiedValues(TestOnDocument):
         self.assertEqual(distribution.name, dummy_string_value)
 
 
+class TestsForMessages(TestOnDocument):
+    def tests_for_connector_link_selection_behaviors(self):
+        for share in self.default_doc_root[0][0]:
+            share.attrib[DistributionXmlNames.Shares.SHARE_OCCURRENCE_ATTR] = '0'
+        Distributions.reset()
+
+        def thrower():
+            Distributions.read_from_xml(self.default_doc_root, 'test synthesized document')
+
+        self.assertRaises(ValueError, thrower)
+
+
 if __name__ == '__main__':
     unittest.main()
