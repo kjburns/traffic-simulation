@@ -323,14 +323,27 @@ class TestsForSpecifiedValues(TestOnDocument):
         distribution: StringDistribution = Distributions.connector_link_selection_behaviors()[guid]
         all_shares: List[StringDistribution.ShareCollection.ShareViewer] = \
             distribution.get_share_collection().get_all_shares()
-        expected_values: List[Tuple[str, float]] = [
+        expected_shares: List[Tuple[str, float]] = [
             (DistributionXmlNames.ConnectorLinkSelectionBehaviors.NEAREST, 10),
             (DistributionXmlNames.ConnectorLinkSelectionBehaviors.FARTHEST, 20),
             (DistributionXmlNames.ConnectorLinkSelectionBehaviors.RANDOM, 30),
             (DistributionXmlNames.ConnectorLinkSelectionBehaviors.BEST, 40),
         ]
-        for (value, occurrence) in expected_values:
+        for (value, occurrence) in expected_shares:
             self.assertEqual(occurrence, list(filter(lambda share: share.value == value, all_shares))[0].occurrence)
+
+        expected_values: List[Tuple[float, str]] = [
+            (0.0000, DistributionXmlNames.ConnectorLinkSelectionBehaviors.BEST),
+            (0.3999, DistributionXmlNames.ConnectorLinkSelectionBehaviors.BEST),
+            (0.4001, DistributionXmlNames.ConnectorLinkSelectionBehaviors.FARTHEST),
+            (0.5999, DistributionXmlNames.ConnectorLinkSelectionBehaviors.FARTHEST),
+            (0.6001, DistributionXmlNames.ConnectorLinkSelectionBehaviors.NEAREST),
+            (0.6999, DistributionXmlNames.ConnectorLinkSelectionBehaviors.NEAREST),
+            (0.7001, DistributionXmlNames.ConnectorLinkSelectionBehaviors.RANDOM),
+            (1.0000, DistributionXmlNames.ConnectorLinkSelectionBehaviors.RANDOM),
+        ]
+        for (parameter, value) in expected_values:
+            self.assertEqual(Distributions.connector_link_selection_behaviors()[guid].get_value(parameter), value)
 
         self.assertEqual(distribution.name, dummy_string_value)
 

@@ -239,7 +239,10 @@ class StringDistribution(Distribution[str], ABC):
             add_to_element_candidates[0].occurrence += share_amount
 
         def get_all_shares(self) -> List[ShareViewer]:
-            return [StringDistribution.ShareCollection.ShareViewerImpl(share) for share in self._data]
+            return list(sorted(
+                [StringDistribution.ShareCollection.ShareViewerImpl(share) for share in self._data],
+                key=lambda share: share.value
+            ))
 
     def __init__(self, node: etree.ElementBase, allowable_values_getter: Callable[[], List[str]]):
         super(StringDistribution, self).__init__(node)
@@ -284,7 +287,7 @@ class StringDistribution(Distribution[str], ABC):
         #  and if more than one range is returned, we will just pick the
         #  first one.
         value: str = list(filter(
-            lambda share_tuple: (scaled_parameter - share_tuple[0]) * (scaled_parameter - share_tuple[1]) < 0,
+            lambda share_tuple: (scaled_parameter - share_tuple[0]) * (scaled_parameter - share_tuple[1]) <= 0,
             self._start_end_value_tuples
         ))[0][2]
 
