@@ -329,7 +329,8 @@ class Distributions:
     @classmethod
     def reset(cls):
         # just for testing
-        cls._connector_link_selection_behaviors.clear()
+        if cls._connector_link_selection_behaviors is not None:
+            cls._connector_link_selection_behaviors.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -337,7 +338,7 @@ class Distributions:
         return cls._connector_link_selection_behaviors
 
     @classmethod
-    def read_from_xml(cls, root_node: etree.ElementBase, filename: str) -> None:
+    def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
         def get_distribution_set_node(distribution_set_name: str) -> etree.ElementBase:
             candidates: List[etree.ElementBase] = list(filter(
                 lambda e: e.attrib[DistributionXmlNames.DistributionSets.TYPE_ATTR] == distribution_set_name,
@@ -355,4 +356,4 @@ class Distributions:
     @classmethod
     def process_file(cls, filename: str) -> None:
         _doc_root = etree.parse(filename).getroot()
-        cls.read_from_xml(_doc_root, filename)
+        cls.read_from_xml(_doc_root, filename=filename)

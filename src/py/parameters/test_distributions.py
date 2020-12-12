@@ -302,7 +302,7 @@ class TestOnDocument(unittest.TestCase):
 
 class TestsForDefaultValues(TestOnDocument):
     def setUp(self) -> None:
-        Distributions.read_from_xml(self.default_doc_root, 'testing generated file')
+        Distributions.read_from_xml(self.default_doc_root, filename='testing generated file')
 
     def tests_for_connector_link_selection_behaviors(self):
         guid: str = self.default_doc_root[0][0].attrib[DistributionXmlNames.ConnectorLinkSelectionBehaviors.UUID_ATTR]
@@ -311,7 +311,7 @@ class TestsForDefaultValues(TestOnDocument):
 
 class TestsForSpecifiedValues(TestOnDocument):
     def setUp(self) -> None:
-        Distributions.read_from_xml(self.custom_doc_root, 'testing generated file')
+        Distributions.read_from_xml(self.custom_doc_root, filename='testing generated file')
 
     def check_uuid_is_correct(self, collection_getter: Callable[[], DistributionSet[T]], collection_index: int) -> str:
         guid: str = self.custom_doc_root[collection_index][0].attrib[DistributionXmlNames.GenericNames.UUID_ATTR]
@@ -339,10 +339,9 @@ class TestsForMessages(TestOnDocument):
     def tests_for_connector_link_selection_behaviors(self):
         for share in self.default_doc_root[0][0]:
             share.attrib[DistributionXmlNames.Shares.SHARE_OCCURRENCE_ATTR] = '0'
-        Distributions.reset()
 
         def thrower():
-            Distributions.read_from_xml(self.default_doc_root, 'test synthesized document')
+            Distributions.read_from_xml(self.default_doc_root, filename='test synthesized document')
 
         self.assertRaises(ValueError, thrower)
 

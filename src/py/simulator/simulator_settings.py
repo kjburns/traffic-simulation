@@ -222,7 +222,7 @@ class SimulatorSettings:
 
         fragment_processor_tuples: List[Tuple[str, Callable[[etree.ElementBase], None]]] = [
             ('vehicle-models', VehicleModelCollection.read_from_xml),
-            ('distributions', Distributions.process_file),
+            ('distributions', Distributions.read_from_xml),
             # TODO fill these in
         ]
         try:
