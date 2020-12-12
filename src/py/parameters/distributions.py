@@ -104,7 +104,7 @@ class DistributionXmlNames:
         pass
 
     class DesiredAccelerationDistributions(FractionalDistributions):
-        TYPE = 'desired-deceleration-fractions'
+        TYPE = 'desired-acceleration-fractions'
 
     class DesiredDecelerationDistributions(FractionalDistributions):
         TYPE = 'desired-deceleration-fractions'
@@ -114,6 +114,17 @@ class DistributionXmlNames:
 
     class PostedSpeedDeviationDistributions(SpeedDistributions):
         TYPE = 'posted-speed-deviations'
+
+    class PoissonDistributions:
+        POISSON_TAG = 'poisson-distribution'
+        ZERO_TRUNCATED_TAG = 'positive-poisson-distribution'
+        LAMBDA_ATTR = 'lambda'
+
+    class NonTransitOccupancyDistributions(GenericNames):
+        TYPE = 'non-transit-occupancy'
+
+    class TransitPassengerDistributions(GenericNames):
+        TYPE = 'transit-passengers'
 
 
 T = TypeVar('T')

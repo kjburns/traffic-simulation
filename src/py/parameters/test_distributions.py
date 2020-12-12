@@ -6,6 +6,7 @@ from parameters.distributions import Distributions, DistributionXmlNames
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
+from simulator.xml_validation import XmlValidation
 
 
 def create_test_document_with_default_values() -> etree.ElementBase:
@@ -43,9 +44,13 @@ def create_test_document_with_default_values() -> etree.ElementBase:
                 DistributionXmlNames.ConnectorMaximumPositioningDistances.TYPE,
         })
     # item [1][0]
-    etree.SubElement(connector_max_positioning_distances_node, DistributionXmlNames.NormalDistributions.TAG, {
-        DistributionXmlNames.DistanceDistributions.UUID_ATTR: str(uuid()),
-        DistributionXmlNames.DistanceDistributions.UNITS_ATTR: DistanceUnits.METERS.name,
+    distribution_node = etree.SubElement(
+        connector_max_positioning_distances_node, DistributionXmlNames.ConnectorMaximumPositioningDistances.TAG, {
+            DistributionXmlNames.DistanceDistributions.UUID_ATTR: str(uuid()),
+            DistributionXmlNames.DistanceDistributions.UNITS_ATTR: DistanceUnits.METERS.name,
+        })
+    # item [1][0][0]
+    etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
         DistributionXmlNames.NormalDistributions.MEAN_ATTR: '500.0',
         DistributionXmlNames.NormalDistributions.SD_ATTR: '100.0',
     })
@@ -144,9 +149,10 @@ def create_test_document_with_default_values() -> etree.ElementBase:
         DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.DesiredAccelerationDistributions.TYPE,
     })
     # item [6][0]
-    distribution_node = etree.SubElement(desired_accelerations_node, DistributionXmlNames.DesiredAccelerationDistributions.TAG, {
-        DistributionXmlNames.DesiredAccelerationDistributions.UUID_ATTR: str(uuid()),
-    })
+    distribution_node = \
+        etree.SubElement(desired_accelerations_node, DistributionXmlNames.DesiredAccelerationDistributions.TAG, {
+            DistributionXmlNames.DesiredAccelerationDistributions.UUID_ATTR: str(uuid()),
+        })
     # item [6][0][0]
     etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
         DistributionXmlNames.NormalDistributions.MEAN_ATTR: '0.80',
@@ -209,8 +215,35 @@ def create_test_document_with_default_values() -> etree.ElementBase:
         DistributionXmlNames.NormalDistributions.SD_ATTR: '4',
     })
 
-    for line in etree.tostring(document, pretty_print=True).split(b'\n'):
-        print(line)
+    # item [10]
+    non_transit_occupancy_node: etree.ElementBase = \
+        etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
+            DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.NonTransitOccupancyDistributions.TYPE,
+        })
+    # item [10][0]
+    distribution_node = \
+        etree.SubElement(non_transit_occupancy_node, DistributionXmlNames.NonTransitOccupancyDistributions.TAG, {
+            DistributionXmlNames.NonTransitOccupancyDistributions.UUID_ATTR: str(uuid()),
+        })
+    # item [10][0][0]
+    etree.SubElement(distribution_node, DistributionXmlNames.PoissonDistributions.ZERO_TRUNCATED_TAG, {
+        DistributionXmlNames.PoissonDistributions.LAMBDA_ATTR: '0.5',
+    })
+
+    # item [11]
+    transit_passengers_node: etree.ElementBase = \
+        etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
+            DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.TransitPassengerDistributions.TYPE,
+        })
+    # item [11][0]
+    distribution_node = \
+        etree.SubElement(transit_passengers_node, DistributionXmlNames.TransitPassengerDistributions.TAG, {
+            DistributionXmlNames.TransitPassengerDistributions.UUID_ATTR: str(uuid()),
+        })
+    # item [11][0][0]
+    etree.SubElement(distribution_node, DistributionXmlNames.PoissonDistributions.POISSON_TAG, {
+        DistributionXmlNames.PoissonDistributions.LAMBDA_ATTR: '10',
+    })
 
     return document
 
@@ -218,7 +251,8 @@ def create_test_document_with_default_values() -> etree.ElementBase:
 def create_test_document_with_custom_values() -> etree.ElementBase:
     # start with default values, then make more specific
     document: etree.ElementBase = create_test_document_with_default_values()
-    pass
+
+    return document
 
 
 class TestsForDistributions(unittest.TestCase):
@@ -241,10 +275,17 @@ class TestsForDistributions(unittest.TestCase):
         finally:
             os.remove(temp_file_path)
 
+    def test_that_mock_documents_validate(self):
+        default_doc: etree.ElementBase = create_test_document_with_default_values()
+        custom_doc: etree.ElementBase = create_test_document_with_custom_values()
+        schema: etree.XMLSchema = etree.XMLSchema(etree.parse(XmlValidation.DISTRIBUTIONS_XSD))
+
+        self.assertTrue(schema.validate(default_doc))
+        self.assertTrue(schema.validate(custom_doc))
+
 
 class TestsForConnectorLinkSelectionBehavior(unittest.TestCase):
     def test_default_values(self):
-        create_test_document_with_default_values()
         pass
 
     def test_specified_values(self):

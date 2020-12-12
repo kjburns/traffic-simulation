@@ -85,4 +85,4 @@ class SpeedUnits(Unit):
 class AccelerationUnits(Unit):
     METERS_PER_SECOND_SQUARED = Unit('meters-per-second-squared', 1.0)
     FEET_PER_SECOND_SQUARED = Unit('feet-per-second-squared', 0.3048)
-    G = Unit('g\'s', 9.80665)
+    G = Unit('g', 9.80665)
