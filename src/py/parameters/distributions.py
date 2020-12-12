@@ -79,6 +79,9 @@ class DistributionXmlNames:
     class DistanceDistributions(_DistributionsWithUnits):
         pass
 
+    class SpeedDistributions(_DistributionsWithUnits):
+        pass
+
     class AccelerationDistributions(_DistributionsWithUnits):
         pass
 
@@ -96,6 +99,21 @@ class DistributionXmlNames:
 
     class DecelerationDistributions(AccelerationDistributions):
         TYPE = 'max-deceleration'
+
+    class FractionalDistributions(GenericNames):
+        pass
+
+    class DesiredAccelerationDistributions(FractionalDistributions):
+        TYPE = 'desired-deceleration-fractions'
+
+    class DesiredDecelerationDistributions(FractionalDistributions):
+        TYPE = 'desired-deceleration-fractions'
+
+    class TargetSpeedDistributions(SpeedDistributions):
+        TYPE = 'speed-distributions'
+
+    class PostedSpeedDeviationDistributions(SpeedDistributions):
+        TYPE = 'posted-speed-deviations'
 
 
 T = TypeVar('T')

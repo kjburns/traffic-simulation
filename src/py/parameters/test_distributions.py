@@ -139,6 +139,76 @@ def create_test_document_with_default_values() -> etree.ElementBase:
             DistributionXmlNames.EmpiricalDistributions.DATA_POINT_PROBABILITY_ATTR: str(probability),
         })
 
+    # item [6]
+    desired_accelerations_node = etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
+        DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.DesiredAccelerationDistributions.TYPE,
+    })
+    # item [6][0]
+    distribution_node = etree.SubElement(desired_accelerations_node, DistributionXmlNames.DesiredAccelerationDistributions.TAG, {
+        DistributionXmlNames.DesiredAccelerationDistributions.UUID_ATTR: str(uuid()),
+    })
+    # item [6][0][0]
+    etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
+        DistributionXmlNames.NormalDistributions.MEAN_ATTR: '0.80',
+        DistributionXmlNames.NormalDistributions.SD_ATTR: '0.10',
+        DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR: '0',
+        DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR: '1',
+    })
+
+    # item [7]
+    desired_decelerations_node = etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
+        DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.DesiredDecelerationDistributions.TYPE,
+    })
+    # item [7][0]
+    distribution_node = \
+        etree.SubElement(desired_decelerations_node, DistributionXmlNames.DesiredDecelerationDistributions.TAG, {
+            DistributionXmlNames.DesiredDecelerationDistributions.UUID_ATTR: str(uuid()),
+        })
+    # item [7][0][0]
+    empirical_node = etree.SubElement(distribution_node, DistributionXmlNames.EmpiricalDistributions.TAG, {})
+    # items [7][0][0][0..3]
+    for (prob, val) in [
+        (0, 0.5),
+        (0.15, 0.65),
+        (0.85, 0.85),
+        (1, 1.0)
+    ]:
+        etree.SubElement(empirical_node, DistributionXmlNames.EmpiricalDistributions.DATA_POINT_TAG, {
+            DistributionXmlNames.EmpiricalDistributions.DATA_POINT_PROBABILITY_ATTR: str(prob),
+            DistributionXmlNames.EmpiricalDistributions.DATA_POINT_VALUE_ATTR: str(val),
+        })
+
+    # item [8]
+    target_speeds_node: etree.ElementBase = etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
+        DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.TargetSpeedDistributions.TYPE,
+    })
+    # item [8][0]
+    distribution_node = etree.SubElement(target_speeds_node, DistributionXmlNames.TargetSpeedDistributions.TAG, {
+        DistributionXmlNames.TargetSpeedDistributions.UUID_ATTR: str(uuid()),
+        DistributionXmlNames.TargetSpeedDistributions.UNITS_ATTR: SpeedUnits.MILES_PER_HOUR.name,
+    })
+    # item [8][0][0]
+    etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
+        DistributionXmlNames.NormalDistributions.MEAN_ATTR: '50',
+        DistributionXmlNames.NormalDistributions.SD_ATTR: '10',
+    })
+
+    # item [9]
+    speed_deviations_node: etree.ElementBase = etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
+        DistributionXmlNames.DistributionSets.TYPE_ATTR: DistributionXmlNames.PostedSpeedDeviationDistributions.TYPE,
+    })
+    # item [9][0]
+    distribution_node = \
+        etree.SubElement(speed_deviations_node, DistributionXmlNames.PostedSpeedDeviationDistributions.TAG, {
+            DistributionXmlNames.PostedSpeedDeviationDistributions.UUID_ATTR: str(uuid()),
+            DistributionXmlNames.PostedSpeedDeviationDistributions.UNITS_ATTR: SpeedUnits.KILOMETERS_PER_HOUR.name,
+        })
+    # item [9][0][0]
+    etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
+        DistributionXmlNames.NormalDistributions.MEAN_ATTR: '5',
+        DistributionXmlNames.NormalDistributions.SD_ATTR: '4',
+    })
+
     for line in etree.tostring(document, pretty_print=True).split(b'\n'):
         print(line)
 
@@ -174,6 +244,7 @@ class TestsForDistributions(unittest.TestCase):
 
 class TestsForConnectorLinkSelectionBehavior(unittest.TestCase):
     def test_default_values(self):
+        create_test_document_with_default_values()
         pass
 
     def test_specified_values(self):
