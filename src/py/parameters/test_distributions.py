@@ -2,11 +2,12 @@ import unittest
 from tempfile import NamedTemporaryFile
 from lxml import etree
 from simulator.default_xml_files import DefaultXmlFiles
-from parameters.distributions import Distributions, DistributionXmlNames
+from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
 from simulator.xml_validation import XmlValidation
+from typing import Callable, List, Tuple
 
 
 def create_test_document_with_default_values() -> etree.ElementBase:
@@ -248,9 +249,14 @@ def create_test_document_with_default_values() -> etree.ElementBase:
     return document
 
 
+dummy_string_value: str = 'a string to fill the blank'
+
+
 def create_test_document_with_custom_values() -> etree.ElementBase:
     # start with default values, then make more specific
     document: etree.ElementBase = create_test_document_with_default_values()
+
+    document[0][0].attrib[DistributionXmlNames.ConnectorLinkSelectionBehaviors.NAME_ATTR] = dummy_string_value
 
     return document
 
@@ -284,12 +290,49 @@ class TestsForDistributions(unittest.TestCase):
         self.assertTrue(schema.validate(custom_doc))
 
 
-class TestsForConnectorLinkSelectionBehavior(unittest.TestCase):
-    def test_default_values(self):
-        pass
+class TestOnDocument(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.default_doc_root: etree.ElementBase = create_test_document_with_default_values()
+        cls.custom_doc_root: etree.ElementBase = create_test_document_with_custom_values()
 
-    def test_specified_values(self):
-        pass
+    def tearDown(self) -> None:
+        Distributions.reset()
+
+
+class TestsForDefaultValues(TestOnDocument):
+    def setUp(self) -> None:
+        Distributions.read_from_xml(self.default_doc_root, 'testing generated file')
+
+    def tests_for_connector_link_selection_behaviors(self):
+        guid: str = self.default_doc_root[0][0].attrib[DistributionXmlNames.ConnectorLinkSelectionBehaviors.UUID_ATTR]
+        self.assertEqual(Distributions.connector_link_selection_behaviors()[guid].name, '')
+
+
+class TestsForSpecifiedValues(TestOnDocument):
+    def setUp(self) -> None:
+        Distributions.read_from_xml(self.custom_doc_root, 'testing generated file')
+
+    def check_uuid_is_correct(self, collection_getter: Callable[[], DistributionSet[T]], collection_index: int) -> str:
+        guid: str = self.custom_doc_root[collection_index][0].attrib[DistributionXmlNames.GenericNames.UUID_ATTR]
+        self.assertEqual(collection_getter()[guid].uuid, guid)
+        return guid
+
+    def tests_for_connector_link_selection_behaviors(self):
+        guid: str = self.check_uuid_is_correct(Distributions.connector_link_selection_behaviors, 0)
+        distribution: StringDistribution = Distributions.connector_link_selection_behaviors()[guid]
+        all_shares: List[StringDistribution.ShareCollection.ShareViewer] = \
+            distribution.get_share_collection().get_all_shares()
+        expected_values: List[Tuple[str, float]] = [
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.NEAREST, 10),
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.FARTHEST, 20),
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.RANDOM, 30),
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.BEST, 40),
+        ]
+        for (value, occurrence) in expected_values:
+            self.assertEqual(occurrence, list(filter(lambda share: share.value == value, all_shares))[0].occurrence)
+
+        self.assertEqual(distribution.name, dummy_string_value)
 
 
 if __name__ == '__main__':

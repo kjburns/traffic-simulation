@@ -1,10 +1,11 @@
-from lxml import etree
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple
-from i18n_l10n.temporary_i18n_bridge import Localization
 from functools import reduce
-from simulator.xml_validation import XmlValidation
+from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple
+
+from lxml import etree
+
 from i18n_l10n.temporary_i18n_bridge import Localization
+from simulator.xml_validation import XmlValidation
 
 
 class DistributionXmlNames:
@@ -142,7 +143,9 @@ class Distribution(ABC, Generic[T]):
 
     @abstractmethod
     def __init__(self, node: etree.ElementBase):
-        self._name: str = node.attrib[DistributionXmlNames.GenericNames.NAME_ATTR]
+        self._name: str = node.attrib[DistributionXmlNames.GenericNames.NAME_ATTR] \
+            if DistributionXmlNames.GenericNames.NAME_ATTR in node.attrib \
+            else ''
         self._uuid: str = node.attrib[DistributionXmlNames.GenericNames.UUID_ATTR]
 
     @final
@@ -334,19 +337,22 @@ class Distributions:
         return cls._connector_link_selection_behaviors
 
     @classmethod
-    def process_file(cls, filename: str) -> None:
+    def read_from_xml(cls, root_node: etree.ElementBase, filename: str) -> None:
         def get_distribution_set_node(distribution_set_name: str) -> etree.ElementBase:
-            print(etree.tostring(_doc_root))
             candidates: List[etree.ElementBase] = list(filter(
                 lambda e: e.attrib[DistributionXmlNames.DistributionSets.TYPE_ATTR] == distribution_set_name,
-                _doc_root))
+                root_node))
             return candidates[0] if len(candidates) != 0 else None
 
-        _doc_root = etree.parse(filename).getroot()
         schema: etree.XMLSchema = etree.XMLSchema(etree.parse(XmlValidation.DISTRIBUTIONS_XSD))
-        if not schema.validate(_doc_root):
+        if not schema.validate(root_node):
             raise RuntimeError('E0002', filename)
 
         cls._connector_link_selection_behaviors = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.ConnectorLinkSelectionBehaviors.TYPE),
             ConnectorLinkSelectionBehaviorDistribution)
+
+    @classmethod
+    def process_file(cls, filename: str) -> None:
+        _doc_root = etree.parse(filename).getroot()
+        cls.read_from_xml(_doc_root, filename)
