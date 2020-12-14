@@ -2,12 +2,15 @@ import unittest
 from tempfile import NamedTemporaryFile
 from lxml import etree
 from simulator.default_xml_files import DefaultXmlFiles
-from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution
+from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution, \
+    DistanceDistribution
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
 from simulator.xml_validation import XmlValidation
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Union
+from simulator.simulator_logger import SimulatorLoggerWrapper
+from logging import WARN, DEBUG
 
 
 def create_test_document_with_default_values() -> etree.ElementBase:
@@ -48,7 +51,7 @@ def create_test_document_with_default_values() -> etree.ElementBase:
     distribution_node = etree.SubElement(
         connector_max_positioning_distances_node, DistributionXmlNames.ConnectorMaximumPositioningDistances.TAG, {
             DistributionXmlNames.DistanceDistributions.UUID_ATTR: str(uuid()),
-            DistributionXmlNames.DistanceDistributions.UNITS_ATTR: DistanceUnits.METERS.name,
+            DistributionXmlNames.DistanceDistributions.UNITS_ATTR: DistanceUnits.FEET.name,
         })
     # item [1][0][0]
     etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
@@ -257,6 +260,7 @@ def create_test_document_with_custom_values() -> etree.ElementBase:
     document: etree.ElementBase = create_test_document_with_default_values()
 
     document[0][0].attrib[DistributionXmlNames.ConnectorLinkSelectionBehaviors.NAME_ATTR] = dummy_string_value
+    document[1][0].attrib[DistributionXmlNames.ConnectorMaximumPositioningDistances.NAME_ATTR] = dummy_string_value
 
     return document
 
@@ -308,6 +312,12 @@ class TestsForDefaultValues(TestOnDocument):
         guid: str = self.default_doc_root[0][0].attrib[DistributionXmlNames.ConnectorLinkSelectionBehaviors.UUID_ATTR]
         self.assertEqual(Distributions.connector_link_selection_behaviors()[guid].name, '')
 
+    def tests_for_connector_max_positioning_distances(self):
+        guid: str = self.default_doc_root[1][0].attrib[
+            DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+        ]
+        self.assertEqual(Distributions.connector_max_positioning_distances()[guid].name, '')
+
 
 class TestsForSpecifiedValues(TestOnDocument):
     def setUp(self) -> None:
@@ -347,6 +357,14 @@ class TestsForSpecifiedValues(TestOnDocument):
 
         self.assertEqual(distribution.name, dummy_string_value)
 
+    def get_CMPD_uuid(self) -> str:
+        return self.custom_doc_root[1][0].attrib[DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR]
+
+    def test_that_CMPD_units_are_correct(self) -> None:
+        guid: str = self.get_CMPD_uuid()
+        dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
+        self.assertEqual(dist.units, DistanceUnits.FEET)
+
 
 class TestsForMessages(TestOnDocument):
     def tests_for_connector_link_selection_behaviors(self):
@@ -357,6 +375,160 @@ class TestsForMessages(TestOnDocument):
             Distributions.read_from_xml(self.default_doc_root, filename='test synthesized document')
 
         self.assertRaises(ValueError, thrower)
+
+    def test_that_CMPD_illogical_extrema_raises_error(self):
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR] = '400'
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR] = '300'
+
+        def thrower():
+            Distributions.read_from_xml(self.default_doc_root, filename='test synthesized document')
+
+        self.assertRaises(ValueError, thrower)
+
+    def test_that_CMPD_emits_warning(self):
+        def set_and_test_extrema(min_value: Union[float, None],
+                                 max_value: Union[float, None],
+                                 logging_expected: bool):
+            def remove_attribute(attr_name: str) -> None:
+                if attr_name in distribution_under_test.attrib:
+                    distribution_under_test.attrib.pop(attr_name)
+
+            def set_attribute(attr_name: str, value: float) -> None:
+                distribution_under_test.attrib[attr_name] = str(value)
+
+            if min_value is None:
+                remove_attribute(DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR)
+            else:
+                set_attribute(DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR, min_value)
+
+            if max_value is None:
+                remove_attribute(DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR)
+            else:
+                set_attribute(DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR, max_value)
+
+            if logging_expected:
+                with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
+                    Distributions.read_from_xml(self.default_doc_root)
+            else:
+                with self.assertLogs(SimulatorLoggerWrapper.logger(), DEBUG) as cm:
+                    Distributions.read_from_xml(self.default_doc_root)
+                    # if this is not true, we can't just assume item 0 below
+                    self.assertEqual(len(cm.records), 1)
+                    # if it's warn we have a problem
+                    self.assertEqual(cm.records[0].levelno, DEBUG)
+
+        distribution_under_test: etree.ElementBase = self.default_doc_root[1][0][0]
+
+        # for when min_value is specified, max_value is not specified, and
+        # the resulting restrictions eliminate more a quarter of the distribution
+        set_and_test_extrema(432.865, None, True)
+        set_and_test_extrema(432.5, None, False)
+
+        # for when min_value is not specified, max_value is specified, and
+        # the resulting restrictions eliminate more a quarter of the distribution
+        set_and_test_extrema(None, 567.4, True)
+        set_and_test_extrema(None, 567.5, False)
+
+        # for when both min_value and max_value are specified, and
+        # the resulting restrictions eliminate more half of the distribution
+        set_and_test_extrema(432.865, 567.4, True)
+        set_and_test_extrema(432.5, 567.5, False)
+        set_and_test_extrema(294.63, 505.01, True)
+        set_and_test_extrema(294.62, 505.02, False)
+
+
+class TestsForNormalDistributions(TestOnDocument):
+    def test_that_CMPD_values_are_correct(self) -> None:
+        Distributions.read_from_xml(self.custom_doc_root, filename='testing generated file')
+        guid: str = self.custom_doc_root[1][0].attrib[
+            DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+        ]
+        dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
+        test_tuples = [
+            (0.10, DistanceUnits.FEET.convert_to_base_units(371.85)),
+            (0.50, DistanceUnits.FEET.convert_to_base_units(500)),
+            (0.80, DistanceUnits.FEET.convert_to_base_units(584.15)),
+        ]
+        for (probability, value) in test_tuples:
+            self.assertAlmostEqual(dist.get_value(probability), value, 2)
+
+    def _reset_CMPD_extrema(self):
+        to_modify: etree.ElementBase = self.default_doc_root[1][0][0]
+        if DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR in to_modify.attrib:
+            to_modify.attrib.pop(DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR)
+        if DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR in to_modify.attrib:
+            to_modify.attrib.pop(DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR)
+        if DistributionXmlNames.NormalDistributions.REVERSE_ATTR in to_modify.attrib:
+            to_modify.attrib.pop(DistributionXmlNames.NormalDistributions.REVERSE_ATTR)
+
+    def test_that_CMPD_truncated_min_values_are_correct(self) -> None:
+        self._reset_CMPD_extrema()
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR] = '400'
+        Distributions.read_from_xml(self.default_doc_root)
+
+        guid: str = self.default_doc_root[1][0].attrib[
+            DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+        ]
+        dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
+        test_tuples = [
+            (0.10, DistanceUnits.FEET.convert_to_base_units(400)),
+            (0.50, DistanceUnits.FEET.convert_to_base_units(500)),
+            (0.80, DistanceUnits.FEET.convert_to_base_units(584.15)),
+        ]
+        for (probability, value) in test_tuples:
+            self.assertAlmostEqual(dist.get_value(probability), value, 2)
+
+    def test_that_CMPD_truncated_max_values_are_correct(self):
+        self._reset_CMPD_extrema()
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR] = '575'
+        Distributions.read_from_xml(self.default_doc_root)
+
+        guid: str = self.default_doc_root[1][0].attrib[
+            DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+        ]
+        dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
+        test_tuples = [
+            (0.10, DistanceUnits.FEET.convert_to_base_units(371.85)),
+            (0.50, DistanceUnits.FEET.convert_to_base_units(500)),
+            (0.80, DistanceUnits.FEET.convert_to_base_units(575)),
+        ]
+        for (probability, value) in test_tuples:
+            self.assertAlmostEqual(dist.get_value(probability), value, 2)
+
+    def test_that_CMPD_two_way_truncation_values_are_correct(self):
+        self._reset_CMPD_extrema()
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR] = '400'
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR] = '575'
+        Distributions.read_from_xml(self.default_doc_root)
+
+        guid: str = self.default_doc_root[1][0].attrib[
+            DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+        ]
+        dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
+        test_tuples = [
+            (0.10, DistanceUnits.FEET.convert_to_base_units(400)),
+            (0.50, DistanceUnits.FEET.convert_to_base_units(500)),
+            (0.80, DistanceUnits.FEET.convert_to_base_units(575)),
+        ]
+        for (probability, value) in test_tuples:
+            self.assertAlmostEqual(dist.get_value(probability), value, 2)
+
+    def test_that_reversed_normal_distribution_works(self):
+        self._reset_CMPD_extrema()
+        self.default_doc_root[1][0][0].attrib[DistributionXmlNames.NormalDistributions.REVERSE_ATTR] = 'true'
+        Distributions.read_from_xml(self.default_doc_root)
+
+        guid: str = self.default_doc_root[1][0].attrib[
+            DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+        ]
+        dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
+        test_tuples = [
+            (0.10, DistanceUnits.FEET.convert_to_base_units(628.16)),
+            (0.50, DistanceUnits.FEET.convert_to_base_units(500)),
+            (0.80, DistanceUnits.FEET.convert_to_base_units(415.84)),
+        ]
+        for (probability, value) in test_tuples:
+            self.assertAlmostEqual(dist.get_value(probability), value, 2)
 
 
 if __name__ == '__main__':

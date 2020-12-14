@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple
+from scipy import stats
 
 from lxml import etree
 
 from i18n_l10n.temporary_i18n_bridge import Localization
 from simulator.xml_validation import XmlValidation
+from simulator.simulator_logger import SimulatorLoggerWrapper as Logger
+from parameters.units import Unit, DistanceUnits
 
 
 class DistributionXmlNames:
@@ -146,7 +149,9 @@ class Distribution(ABC, Generic[T]):
         self._name: str = node.attrib[DistributionXmlNames.GenericNames.NAME_ATTR] \
             if DistributionXmlNames.GenericNames.NAME_ATTR in node.attrib \
             else ''
-        self._uuid: str = node.attrib[DistributionXmlNames.GenericNames.UUID_ATTR]
+        self._uuid: str = node.attrib[DistributionXmlNames.GenericNames.UUID_ATTR] \
+            if DistributionXmlNames.GenericNames.UUID_ATTR in node.attrib \
+            else ''
 
     @final
     @property
@@ -325,20 +330,145 @@ class ConnectorLinkSelectionBehaviorDistribution(StringDistribution):
         return 'Connector_Link_Selection_Behavior'
 
 
+class RealNumberDistribution(Distribution[float], ABC):
+    pass
+
+
+class NormalDistribution(RealNumberDistribution):
+    def get_value(self, parameter: float) -> float:
+        value_candidate: float = self._distribution.ppf(
+            1 - parameter if self._reverse else parameter
+        )
+
+        if self._min_value is not None:
+            value_candidate = max(value_candidate, self._min_value)
+
+        if self._max_value is not None:
+            value_candidate = min(value_candidate, self._max_value)
+
+        return value_candidate
+
+    def __init__(self, node: etree.ElementBase, *, guid: str = None):
+        def check_extreme_values():
+            if self._min_value is not None and self._max_value is not None:
+                if self._min_value > self._max_value:
+                    raise ValueError(Localization.get_message('E0007', guid if guid is not None else '<unknown uuid>'))
+
+                if self._distribution.cdf(self._max_value) - self._distribution.cdf(self._min_value) < 0.50:
+                    Logger.logger().warning(
+                        msg=Localization.get_message('W0003', str(self._mean), str(self._sd))
+                    )
+                    return
+
+            if self._min_value is not None and self._max_value is None:
+                if self._distribution.cdf(self._min_value) > 0.25:
+                    Logger.logger().warning(
+                        msg=Localization.get_message('W0002', str(self._mean), str(self._sd))
+                    )
+                    return
+
+            if self._min_value is None and self._max_value is not None:
+                if self._distribution.cdf(self._max_value) < 0.75:
+                    Logger.logger().warning(
+                        msg=Localization.get_message('W0002', str(self._mean), str(self._sd))
+                    )
+                    return
+
+            Logger.logger().debug(msg='Truncated normal distribution extreme value check passes.')
+
+        super().__init__(node)
+        self._mean: float = float(node.attrib[DistributionXmlNames.NormalDistributions.MEAN_ATTR])
+        self._sd: float = float(node.attrib[DistributionXmlNames.NormalDistributions.SD_ATTR])
+        self._reverse: bool = bool(node.attrib[DistributionXmlNames.NormalDistributions.REVERSE_ATTR]) \
+            if DistributionXmlNames.NormalDistributions.REVERSE_ATTR in node.attrib \
+            else False
+        self._min_value: float = float(node.attrib[DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR]) \
+            if DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR in node.attrib \
+            else None
+        self._max_value: float = float(node.attrib[DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR]) \
+            if DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR in node.attrib \
+            else None
+
+        self._distribution: stats.norm_gen = stats.norm(self._mean, self._sd)
+
+        check_extreme_values()
+
+
+class EmpiricalDistribution(RealNumberDistribution):
+    def get_value(self, parameter: float) -> T:
+        pass
+
+    def __init__(self, node: etree.ElementBase):
+        super().__init__(node)
+
+
+class RawEmpiricalDistribution(RealNumberDistribution):
+    def __init__(self, node: etree.ElementBase):
+        super().__init__(node)
+
+    def get_value(self, parameter: float) -> T:
+        pass
+
+
+class BinnedDistribution(RealNumberDistribution):
+    def get_value(self, parameter: float) -> T:
+        pass
+
+    def __init__(self, node: etree.ElementBase):
+        super().__init__(node)
+
+
+class RealNumberDistributionFactory:
+    @staticmethod
+    def from_xml(xml: etree.ElementBase, *, guid: str = None) -> RealNumberDistribution:
+        if xml.tag == DistributionXmlNames.NormalDistributions.TAG:
+            return NormalDistribution(xml, guid=guid)
+        elif xml.tag == DistributionXmlNames.EmpiricalDistributions.TAG:
+            return EmpiricalDistribution(xml)
+        elif xml.tag == DistributionXmlNames.RawEmpiricalDistributions.TAG:
+            return RawEmpiricalDistribution(xml)
+        elif xml.tag == DistributionXmlNames.BinnedDistributions.TAG:
+            return BinnedDistribution(xml)
+        pass
+
+
+class DistanceDistribution(Distribution[float]):
+    def __init__(self, xml: etree.ElementBase, guid: str = None):
+        super().__init__(xml)
+        self._units: Unit = DistanceUnits.DICTIONARY[
+            xml.attrib[DistributionXmlNames.ConnectorMaximumPositioningDistances.UNITS_ATTR]
+        ]
+        self._distribution: RealNumberDistribution = RealNumberDistributionFactory.from_xml(xml[0], guid=guid)
+
+    def get_value(self, parameter: float) -> T:
+        return self._units.convert_to_base_units(self._distribution.get_value(parameter))
+
+    @property
+    def units(self) -> Unit:
+        return self._units
+
+
 class Distributions:
     _doc_root: etree.ElementBase = None
     _connector_link_selection_behaviors: DistributionSet[ConnectorLinkSelectionBehaviorDistribution] = None
+    _connector_max_positioning_distances: DistributionSet[DistanceDistribution] = None
 
     @classmethod
     def reset(cls):
         # just for testing
         if cls._connector_link_selection_behaviors is not None:
             cls._connector_link_selection_behaviors.clear()
+        if cls._connector_max_positioning_distances is not None:
+            cls._connector_max_positioning_distances.clear()
         # TODO add more here as collections are added
 
     @classmethod
-    def connector_link_selection_behaviors(cls):
+    def connector_link_selection_behaviors(cls) -> DistributionSet[ConnectorLinkSelectionBehaviorDistribution]:
         return cls._connector_link_selection_behaviors
+
+    @classmethod
+    def connector_max_positioning_distances(cls) -> DistributionSet[DistanceDistribution]:
+        return cls._connector_max_positioning_distances
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -354,7 +484,13 @@ class Distributions:
 
         cls._connector_link_selection_behaviors = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.ConnectorLinkSelectionBehaviors.TYPE),
-            ConnectorLinkSelectionBehaviorDistribution)
+            ConnectorLinkSelectionBehaviorDistribution
+        )
+
+        cls._connector_max_positioning_distances = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.ConnectorMaximumPositioningDistances.TYPE),
+            DistanceDistribution
+        )
 
     @classmethod
     def process_file(cls, filename: str) -> None:
