@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple
+from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple, Iterable
 from scipy import stats
 
 from lxml import etree
@@ -344,6 +344,49 @@ class VehicleModelDistribution(StringDistribution):
         return 'vehicle-models'
 
 
+class ColorDistribution(Distribution[str]):
+    def __init__(self, node: etree.ElementBase):
+        super().__init__(node)
+
+        def reducer(so_far: List[Tuple[float, float, str]], current: etree.ElementBase) -> List[Tuple[float, float, str]]:
+            total_so_far: float = so_far[-1][1] if len(so_far) > 0 else 0.0
+            so_far.append((
+                total_so_far,
+                total_so_far + float(current.attrib[DistributionXmlNames.Shares.SHARE_OCCURRENCE_ATTR]),
+                current.attrib[DistributionXmlNames.Shares.SHARE_VALUE_ATTR],
+            ))
+            return so_far
+
+        empty_list: List[Tuple[float, float, str]] = []
+        colors_in_file_order: Iterable[etree.ElementBase] = node.iterfind(DistributionXmlNames.Shares.SHARE_TAG)
+        colors_sorted: Iterable[etree.ElementBase] = sorted(
+            colors_in_file_order,
+            key=lambda share_node: share_node.attrib[DistributionXmlNames.Shares.SHARE_VALUE_ATTR]
+        )
+
+        self._ranges: List[Tuple[float, float, str]] = reduce(
+            reducer,
+            colors_sorted,
+            empty_list,
+        )
+
+        if self._ranges[-1][1] == 0.0:
+            raise ValueError(Localization.get_message('E0006', self.uuid))
+
+        self._ranges = list(sorted(self._ranges, key=lambda rng: rng[2]))
+
+    def get_value(self, parameter: float) -> str:
+        self.check_parameter(parameter)
+
+        weighted_parameter: float = parameter * self._ranges[-1][1]
+        first_matching_value: str = list(filter(
+            lambda value_range: (value_range[0] - weighted_parameter) * (value_range[1] - weighted_parameter) <= 0,
+            self._ranges
+        ))[0][2]
+
+        return first_matching_value
+
+
 class RealNumberDistribution(Distribution[float], ABC):
     pass
 
@@ -467,6 +510,7 @@ class Distributions:
     _connector_link_selection_behaviors: DistributionSet[ConnectorLinkSelectionBehaviorDistribution] = None
     _connector_max_positioning_distances: DistributionSet[DistanceDistribution] = None
     _vehicle_models: DistributionSet[VehicleModel] = None
+    _colors: DistributionSet[str] = None
 
     @classmethod
     def reset(cls):
@@ -477,6 +521,8 @@ class Distributions:
             cls._connector_max_positioning_distances.clear()
         if cls._vehicle_models is not None:
             cls._vehicle_models.clear()
+        if cls._colors is not None:
+            cls._colors.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -490,6 +536,10 @@ class Distributions:
     @classmethod
     def vehicle_models(cls) -> DistributionSet[VehicleModel]:
         return cls._vehicle_models
+
+    @classmethod
+    def colors(cls) -> DistributionSet[str]:
+        return cls._colors
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -516,6 +566,11 @@ class Distributions:
         cls._vehicle_models = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.VehicleModels.TYPE),
             VehicleModelDistribution
+        )
+
+        cls._colors = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.Colors.TYPE),
+            ColorDistribution
         )
 
     @classmethod

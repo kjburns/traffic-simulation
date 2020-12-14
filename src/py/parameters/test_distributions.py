@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 from lxml import etree
 from simulator.default_xml_files import DefaultXmlFiles
 from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution, \
-    DistanceDistribution
+    DistanceDistribution, ColorDistribution
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
@@ -328,6 +328,12 @@ class TestsForDefaultValues(TestOnDocument):
         self.assertEqual(vehicle_model.uuid, guid)
         self.assertEqual(vehicle_model.name, '')
 
+    def tests_for_color_distributions(self):
+        guid: str = self.default_doc_root[3][0].attrib[DistributionXmlNames.Colors.UUID_ATTR]
+        color_distribution = Distributions.colors()[guid]
+        self.assertEqual(color_distribution.uuid, guid)
+        self.assertEqual(color_distribution.name, '')
+
 
 class TestsForSpecifiedValues(TestOnDocument):
     def setUp(self) -> None:
@@ -398,13 +404,20 @@ class TestsForSpecifiedValues(TestOnDocument):
         for (parameter, expected_value) in test_tuples:
             self.assertEqual(Distributions.vehicle_models()[guid].get_value(parameter), expected_value)
 
-    def test_that_empty_vehicle_model_distribution_raises_exception(self):
-        distribution_original: etree.ElementBase = self.custom_doc_root[2][0]
+    def add_distribution_with_all_zero_shares(self,
+                                              distribution_set_index: int,
+                                              template_index: int) -> etree.ElementBase:
+        distribution_original: etree.ElementBase = self.custom_doc_root[distribution_set_index][template_index]
         distribution_copy: etree.ElementBase = etree.fromstring(etree.tostring(distribution_original))
         for share in distribution_copy.iterfind(DistributionXmlNames.EnumShares.SHARE_TAG):
             share.attrib[DistributionXmlNames.EnumShares.SHARE_OCCURRENCE_ATTR] = '0'
 
-        self.custom_doc_root[2].append(distribution_copy)
+        self.custom_doc_root[distribution_set_index].append(distribution_copy)
+
+        return distribution_copy
+
+    def test_that_empty_vehicle_model_distribution_raises_exception(self):
+        distribution_copy: etree.ElementBase = self.add_distribution_with_all_zero_shares(2, 0)
 
         def thrower():
             Distributions.read_from_xml(self.custom_doc_root)
@@ -412,7 +425,35 @@ class TestsForSpecifiedValues(TestOnDocument):
         try:
             self.assertRaises(ValueError, thrower)
         finally:
-            self.custom_doc_root[2].remove(self.custom_doc_root[2][1])
+            self.custom_doc_root[2].remove(distribution_copy)
+
+    def test_color_name(self):
+        self.custom_doc_root[3][0].attrib[DistributionXmlNames.Colors.NAME_ATTR] = dummy_string_value
+        Distributions.read_from_xml(self.custom_doc_root)
+        guid: str = self.get_color_guid()
+        self.assertEqual(Distributions.colors()[guid].name, dummy_string_value)
+
+    def test_that_empty_color_distribution_raises_exception(self):
+        distribution_copy: etree.ElementBase = self.add_distribution_with_all_zero_shares(3, 0)
+
+        def thrower():
+            Distributions.read_from_xml(self.custom_doc_root)
+
+        try:
+            self.assertRaises(ValueError, thrower)
+        finally:
+            self.custom_doc_root[3].remove(distribution_copy)
+
+    def get_color_guid(self) -> str:
+        return self.custom_doc_root[3][0].attrib[DistributionXmlNames.Colors.UUID_ATTR]
+
+    def test_color_values(self):
+        colors: List[str] = ['#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff8000', '#ffff00']  # equally weighted
+        distribution: ColorDistribution = Distributions.colors()[self.get_color_guid()]
+        for (index, color) in enumerate(colors):
+            bin_middle_point: float = (2.0 * index + 1.0) / 12.0
+            self.assertEqual(distribution.get_value(bin_middle_point - 0.08), color)
+            self.assertEqual(distribution.get_value(bin_middle_point + 0.08), color)
 
 
 class TestsForMessages(TestOnDocument):
