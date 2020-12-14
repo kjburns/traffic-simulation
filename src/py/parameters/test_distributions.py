@@ -11,6 +11,7 @@ from simulator.xml_validation import XmlValidation
 from typing import Callable, List, Tuple, Union
 from simulator.simulator_logger import SimulatorLoggerWrapper
 from logging import WARN, DEBUG
+from parameters.vehicle_models import VehicleModelCollection
 
 
 def create_test_document_with_default_values() -> etree.ElementBase:
@@ -299,6 +300,7 @@ class TestOnDocument(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.default_doc_root: etree.ElementBase = create_test_document_with_default_values()
         cls.custom_doc_root: etree.ElementBase = create_test_document_with_custom_values()
+        VehicleModelCollection.read_from_xml(etree.parse(DefaultXmlFiles.VEHICLE_MODELS_FILE).getroot())
 
     def tearDown(self) -> None:
         Distributions.reset()
@@ -317,6 +319,14 @@ class TestsForDefaultValues(TestOnDocument):
             DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
         ]
         self.assertEqual(Distributions.connector_max_positioning_distances()[guid].name, '')
+
+    def tests_for_vehicle_model_distributions(self):
+        guid: str = self.default_doc_root[2][0].attrib[
+            DistributionXmlNames.VehicleModels.UUID_ATTR
+        ]
+        vehicle_model = Distributions.vehicle_models()[guid]
+        self.assertEqual(vehicle_model.uuid, guid)
+        self.assertEqual(vehicle_model.name, '')
 
 
 class TestsForSpecifiedValues(TestOnDocument):
@@ -364,6 +374,45 @@ class TestsForSpecifiedValues(TestOnDocument):
         guid: str = self.get_CMPD_uuid()
         dist: DistanceDistribution = Distributions.connector_max_positioning_distances()[guid]
         self.assertEqual(dist.units, DistanceUnits.FEET)
+
+    def test_that_vehicle_model_name_is_correct(self):
+        guid: str = self.custom_doc_root[2][0].attrib[DistributionXmlNames.VehicleModels.UUID_ATTR]
+        self.custom_doc_root[2][0].attrib[DistributionXmlNames.VehicleModels.NAME_ATTR] = dummy_string_value
+        Distributions.read_from_xml(self.custom_doc_root)
+        self.assertEqual(Distributions.vehicle_models()[guid].name, dummy_string_value)
+
+    def test_that_vehicle_model_value_is_correct(self):
+        guid: str = self.custom_doc_root[2][0].attrib[DistributionXmlNames.VehicleModels.UUID_ATTR]
+
+        # 76450f0b-6b9f-413c-a7f1-adfc467e7c3f: 300 = [0.0, 0.5]
+        # 7c9f0966-ac84-4f34-8583-bb88aea0fa03: 200 = [0.5, 0.8333]
+        # d0a99208-5a31-4744-a08d-ca47af7eabaa: 100 = [0.8333, 1.0]
+        test_tuples = [
+            (0.1, '76450f0b-6b9f-413c-a7f1-adfc467e7c3f'),
+            (0.4999, '76450f0b-6b9f-413c-a7f1-adfc467e7c3f'),
+            (0.5001, '7c9f0966-ac84-4f34-8583-bb88aea0fa03'),
+            (0.8333, '7c9f0966-ac84-4f34-8583-bb88aea0fa03'),
+            (0.8334, 'd0a99208-5a31-4744-a08d-ca47af7eabaa'),
+            (0.99, 'd0a99208-5a31-4744-a08d-ca47af7eabaa'),
+        ]
+        for (parameter, expected_value) in test_tuples:
+            self.assertEqual(Distributions.vehicle_models()[guid].get_value(parameter), expected_value)
+
+    def test_that_empty_vehicle_model_distribution_raises_exception(self):
+        distribution_original: etree.ElementBase = self.custom_doc_root[2][0]
+        distribution_copy: etree.ElementBase = etree.fromstring(etree.tostring(distribution_original))
+        for share in distribution_copy.iterfind(DistributionXmlNames.EnumShares.SHARE_TAG):
+            share.attrib[DistributionXmlNames.EnumShares.SHARE_OCCURRENCE_ATTR] = '0'
+
+        self.custom_doc_root[2].append(distribution_copy)
+
+        def thrower():
+            Distributions.read_from_xml(self.custom_doc_root)
+
+        try:
+            self.assertRaises(ValueError, thrower)
+        finally:
+            self.custom_doc_root[2].remove(self.custom_doc_root[2][1])
 
 
 class TestsForMessages(TestOnDocument):

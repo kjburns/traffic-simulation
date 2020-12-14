@@ -9,6 +9,7 @@ from i18n_l10n.temporary_i18n_bridge import Localization
 from simulator.xml_validation import XmlValidation
 from simulator.simulator_logger import SimulatorLoggerWrapper as Logger
 from parameters.units import Unit, DistanceUnits
+from parameters.vehicle_models import VehicleModelCollection, VehicleModel
 
 
 class DistributionXmlNames:
@@ -330,6 +331,19 @@ class ConnectorLinkSelectionBehaviorDistribution(StringDistribution):
         return 'Connector_Link_Selection_Behavior'
 
 
+class VehicleModelDistribution(StringDistribution):
+    def __init__(self, node: etree.ElementBase):
+        super().__init__(node, VehicleModelDistribution.get_allowable_values)
+
+    @classmethod
+    def get_allowable_values(cls) -> List[str]:
+        return VehicleModelCollection.keys()
+
+    @classmethod
+    def get_distribution_type_name(cls) -> str:
+        return 'vehicle-models'
+
+
 class RealNumberDistribution(Distribution[float], ABC):
     pass
 
@@ -452,6 +466,7 @@ class Distributions:
     _doc_root: etree.ElementBase = None
     _connector_link_selection_behaviors: DistributionSet[ConnectorLinkSelectionBehaviorDistribution] = None
     _connector_max_positioning_distances: DistributionSet[DistanceDistribution] = None
+    _vehicle_models: DistributionSet[VehicleModel] = None
 
     @classmethod
     def reset(cls):
@@ -460,6 +475,8 @@ class Distributions:
             cls._connector_link_selection_behaviors.clear()
         if cls._connector_max_positioning_distances is not None:
             cls._connector_max_positioning_distances.clear()
+        if cls._vehicle_models is not None:
+            cls._vehicle_models.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -469,6 +486,10 @@ class Distributions:
     @classmethod
     def connector_max_positioning_distances(cls) -> DistributionSet[DistanceDistribution]:
         return cls._connector_max_positioning_distances
+
+    @classmethod
+    def vehicle_models(cls) -> DistributionSet[VehicleModel]:
+        return cls._vehicle_models
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -490,6 +511,11 @@ class Distributions:
         cls._connector_max_positioning_distances = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.ConnectorMaximumPositioningDistances.TYPE),
             DistanceDistribution
+        )
+
+        cls._vehicle_models = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.VehicleModels.TYPE),
+            VehicleModelDistribution
         )
 
     @classmethod
