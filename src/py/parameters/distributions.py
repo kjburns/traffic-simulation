@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple, Iterable
+from typing import Generic, TypeVar, Dict, final, List, Callable, Tuple, Iterable, Union
 from scipy import stats
 
 from lxml import etree
+from lxml.etree import ElementBase
 
 from i18n_l10n.temporary_i18n_bridge import Localization
 from simulator.xml_validation import XmlValidation
 from simulator.simulator_logger import SimulatorLoggerWrapper as Logger
-from parameters.units import Unit, DistanceUnits
-from parameters.vehicle_models import VehicleModelCollection, VehicleModel
+from parameters.units import Unit, DistanceUnits, SpeedUnits, AccelerationUnits
+from parameters.vehicle_models import VehicleModelCollection
 
 
 class DistributionXmlNames:
@@ -135,7 +136,19 @@ class DistributionXmlNames:
 T = TypeVar('T')
 
 
-class Distribution(ABC, Generic[T]):
+class HasUuid(Generic[T]):
+    def __init__(self, node: etree.ElementBase):
+        self._uuid: str = node.attrib[DistributionXmlNames.GenericNames.UUID_ATTR] \
+            if node is not None and DistributionXmlNames.GenericNames.UUID_ATTR in node.attrib \
+            else ''
+
+    @final
+    @property
+    def uuid(self) -> str:
+        return self._uuid
+
+
+class Distribution(ABC, HasUuid, Generic[T]):
     @final
     def check_parameter(self, parameter: float) -> None:
         if parameter < 0 or parameter > 1:
@@ -146,12 +159,10 @@ class Distribution(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def __init__(self, node: etree.ElementBase):
+    def __init__(self, node: Union[etree.ElementBase, None]):
+        super().__init__(node)
         self._name: str = node.attrib[DistributionXmlNames.GenericNames.NAME_ATTR] \
-            if DistributionXmlNames.GenericNames.NAME_ATTR in node.attrib \
-            else ''
-        self._uuid: str = node.attrib[DistributionXmlNames.GenericNames.UUID_ATTR] \
-            if DistributionXmlNames.GenericNames.UUID_ATTR in node.attrib \
+            if node is not None and DistributionXmlNames.GenericNames.NAME_ATTR in node.attrib \
             else ''
 
     @final
@@ -159,23 +170,18 @@ class Distribution(ABC, Generic[T]):
     def name(self) -> str:
         return self._name
 
-    @final
-    @property
-    def uuid(self) -> str:
-        return self._uuid
-
 
 class DistributionSet(Generic[T]):
     def __init__(self,
                  collection_node: etree.ElementBase,
-                 node_handler: Callable[[etree.ElementBase], Distribution[T]]):
-        self._distributions: Dict[str, Distribution[T]] = dict()
+                 node_handler: Callable[[etree.ElementBase], HasUuid]):
+        self._distributions: Dict[str, HasUuid] = dict()
         for child_node in collection_node.iterchildren():
-            distribution: Distribution[T] = node_handler(child_node)
+            distribution: HasUuid = node_handler(child_node)
             self.add_distribution(distribution)
 
     @final
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> T:
         return self._distributions[key]
 
     @final
@@ -183,7 +189,7 @@ class DistributionSet(Generic[T]):
         self._distributions.clear()
 
     @final
-    def add_distribution(self, distribution: Distribution[T]) -> None:
+    def add_distribution(self, distribution: HasUuid) -> None:
         self._distributions[distribution.uuid] = distribution
 
 
@@ -348,7 +354,8 @@ class ColorDistribution(Distribution[str]):
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)
 
-        def reducer(so_far: List[Tuple[float, float, str]], current: etree.ElementBase) -> List[Tuple[float, float, str]]:
+        def reducer(so_far: List[Tuple[float, float, str]], current: etree.ElementBase) -> \
+                List[Tuple[float, float, str]]:
             total_so_far: float = so_far[-1][1] if len(so_far) > 0 else 0.0
             so_far.append((
                 total_so_far,
@@ -452,11 +459,39 @@ class NormalDistribution(RealNumberDistribution):
 
 
 class EmpiricalDistribution(RealNumberDistribution):
-    def get_value(self, parameter: float) -> T:
-        pass
+    def get_value(self, parameter: float) -> float:
+        self.check_parameter(parameter)
 
-    def __init__(self, node: etree.ElementBase):
-        super().__init__(node)
+        bin_containing_parameter: Tuple[float, float, float, float] = list(filter(
+            lambda b: (b[0] - parameter) * (b[1] - parameter) <= 0,
+            self._bins
+        ))[0]
+        bin_parameter: float = (parameter - bin_containing_parameter[0]) / \
+                               (bin_containing_parameter[1] - bin_containing_parameter[0])
+        return bin_containing_parameter[2] + bin_parameter * (bin_containing_parameter[3] - bin_containing_parameter[2])
+
+    @staticmethod
+    def from_xml(node: etree.ElementBase) -> RealNumberDistribution:
+        tuples: List[Tuple[float, float]] = [
+            (float(dp_node.attrib[DistributionXmlNames.EmpiricalDistributions.DATA_POINT_PROBABILITY_ATTR]),
+             float(dp_node.attrib[DistributionXmlNames.EmpiricalDistributions.DATA_POINT_VALUE_ATTR]))
+            for dp_node in node.iterfind(DistributionXmlNames.EmpiricalDistributions.DATA_POINT_TAG)
+        ]
+
+        return EmpiricalDistribution(tuples)
+
+    def __init__(self, tuples: List[Tuple[float, float]]):
+        super().__init__(None)
+        sorted_tuples: List[Tuple[float, float]] = list(sorted(tuples, key=lambda tup: tup[0]))
+        self._bins: List[Tuple[float, float, float, float]] = [
+            (
+                sorted_tuples[left_dp_index][0],
+                sorted_tuples[left_dp_index + 1][0],
+                sorted_tuples[left_dp_index][1],
+                sorted_tuples[left_dp_index + 1][1],
+            )
+            for left_dp_index in range(len(sorted_tuples) - 1)
+        ]
 
 
 class RawEmpiricalDistribution(RealNumberDistribution):
@@ -481,7 +516,7 @@ class RealNumberDistributionFactory:
         if xml.tag == DistributionXmlNames.NormalDistributions.TAG:
             return NormalDistribution(xml, guid=guid)
         elif xml.tag == DistributionXmlNames.EmpiricalDistributions.TAG:
-            return EmpiricalDistribution(xml)
+            return EmpiricalDistribution.from_xml(xml)
         elif xml.tag == DistributionXmlNames.RawEmpiricalDistributions.TAG:
             return RawEmpiricalDistribution(xml)
         elif xml.tag == DistributionXmlNames.BinnedDistributions.TAG:
@@ -505,12 +540,66 @@ class DistanceDistribution(Distribution[float]):
         return self._units
 
 
+class AccelerationFunction(HasUuid):
+    def __init__(self, xml: etree.ElementBase):
+        self._speed_parameter_factor: float = 1.0
+
+        def create_empirical_distribution(getter: Callable[[ElementBase], float]) -> RealNumberDistribution:
+            self._speed_parameter_factor = self._speed_units.convert_to_base_units(max(map(
+                lambda node: float(node.attrib[DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR]),
+                xml.iterfind(DistributionXmlNames.AccelerationFunctions.DP_TAG)
+            )))
+            data_point_tuples: List[Tuple[float, float]] = list(sorted([
+                (
+                    self._speed_units.convert_to_base_units(
+                        float(node.attrib[DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR])
+                    ) / self._speed_parameter_factor,
+                    self._acceleration_units.convert_to_base_units(
+                        float(getter(node))
+                    ),
+                )
+                for node in xml.iterfind(DistributionXmlNames.AccelerationFunctions.DP_TAG)
+            ], key=lambda node: node[0]))
+
+            return EmpiricalDistribution(data_point_tuples)
+
+        super().__init__(xml)
+        self._name = xml.attrib[DistributionXmlNames.AccelerationFunctions.NAME_ATTR] \
+            if DistributionXmlNames.AccelerationFunctions.NAME_ATTR in xml.attrib \
+            else ''
+        self._speed_units: Unit = SpeedUnits.DICTIONARY[xml.attrib[
+            DistributionXmlNames.AccelerationFunctions.SPEED_UNIT_ATTR
+        ]]
+        self._acceleration_units: Unit = AccelerationUnits.DICTIONARY[xml.attrib[
+            DistributionXmlNames.AccelerationFunctions.ACCELERATION_UNIT_ATTR
+        ]]
+        self._mean_distribution: RealNumberDistribution = create_empirical_distribution(
+            lambda node: node.attrib[DistributionXmlNames.AccelerationFunctions.DP_MEAN_ATTR]
+        )
+        self._std_deviation_distribution: RealNumberDistribution = create_empirical_distribution(
+            lambda node: node.attrib[DistributionXmlNames.AccelerationFunctions.DP_STANDARD_DEVIATION_ATTR]
+        )
+
+    def get_value(self, parameter: float, speed_in_base_units: float) -> float:
+        speed_parameter: float = speed_in_base_units / self._speed_parameter_factor
+        nd: stats.norm_gen = stats.norm(
+            self._mean_distribution.get_value(speed_parameter),
+            self._std_deviation_distribution.get_value(speed_parameter)
+        )
+        return nd.ppf(parameter)
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+
 class Distributions:
     _doc_root: etree.ElementBase = None
     _connector_link_selection_behaviors: DistributionSet[ConnectorLinkSelectionBehaviorDistribution] = None
     _connector_max_positioning_distances: DistributionSet[DistanceDistribution] = None
-    _vehicle_models: DistributionSet[VehicleModel] = None
-    _colors: DistributionSet[str] = None
+    _vehicle_models: DistributionSet[VehicleModelDistribution] = None
+    _colors: DistributionSet[ColorDistribution] = None
+    _accelerations: DistributionSet[AccelerationFunction] = None
 
     @classmethod
     def reset(cls):
@@ -523,6 +612,8 @@ class Distributions:
             cls._vehicle_models.clear()
         if cls._colors is not None:
             cls._colors.clear()
+        if cls._accelerations is not None:
+            cls._accelerations.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -534,12 +625,16 @@ class Distributions:
         return cls._connector_max_positioning_distances
 
     @classmethod
-    def vehicle_models(cls) -> DistributionSet[VehicleModel]:
+    def vehicle_models(cls) -> DistributionSet[VehicleModelDistribution]:
         return cls._vehicle_models
 
     @classmethod
-    def colors(cls) -> DistributionSet[str]:
+    def colors(cls) -> DistributionSet[ColorDistribution]:
         return cls._colors
+
+    @classmethod
+    def max_acceleration_functions(cls) -> DistributionSet[AccelerationFunction]:
+        return cls._accelerations
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -571,6 +666,11 @@ class Distributions:
         cls._colors = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.Colors.TYPE),
             ColorDistribution
+        )
+
+        cls._accelerations = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.AccelerationFunctions.TYPE),
+            AccelerationFunction
         )
 
     @classmethod

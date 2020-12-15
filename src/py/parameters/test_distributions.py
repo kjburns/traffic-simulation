@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 from lxml import etree
 from simulator.default_xml_files import DefaultXmlFiles
 from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution, \
-    DistanceDistribution, ColorDistribution
+    DistanceDistribution, ColorDistribution, AccelerationFunction
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
@@ -334,6 +334,12 @@ class TestsForDefaultValues(TestOnDocument):
         self.assertEqual(color_distribution.uuid, guid)
         self.assertEqual(color_distribution.name, '')
 
+    def tests_for_acceleration_functions(self):
+        guid: str = self.default_doc_root[4][0].attrib[DistributionXmlNames.AccelerationFunctions.UUID_ATTR]
+        acceleration_function = Distributions.max_acceleration_functions()[guid]
+        self.assertEqual(acceleration_function.uuid, guid)
+        self.assertEqual(acceleration_function.name, '')
+
 
 class TestsForSpecifiedValues(TestOnDocument):
     def setUp(self) -> None:
@@ -454,6 +460,44 @@ class TestsForSpecifiedValues(TestOnDocument):
             bin_middle_point: float = (2.0 * index + 1.0) / 12.0
             self.assertEqual(distribution.get_value(bin_middle_point - 0.08), color)
             self.assertEqual(distribution.get_value(bin_middle_point + 0.08), color)
+
+    def get_max_acceleration_guid(self) -> str:
+        return self.custom_doc_root[4][0].attrib[DistributionXmlNames.AccelerationFunctions.UUID_ATTR]
+
+    def test_max_acceleration_name_reads_correctly(self):
+        try:
+            self.custom_doc_root[4][0].attrib[DistributionXmlNames.AccelerationFunctions.NAME_ATTR] = dummy_string_value
+            Distributions.read_from_xml(self.custom_doc_root)
+            guid: str = self.get_max_acceleration_guid()
+            self.assertEqual(Distributions.max_acceleration_functions()[guid].name, dummy_string_value)
+        finally:
+            self.custom_doc_root[4][0].attrib.pop(DistributionXmlNames.AccelerationFunctions.NAME_ATTR)
+
+    def test_max_acceleration_values(self):
+        guid: str = self.get_max_acceleration_guid()
+        distribution: AccelerationFunction = Distributions.max_acceleration_functions()[guid]
+        test_tuples: List[Tuple[float, float, float]] = [
+            (0.10, 0.0, 7.44),  # (pure, mph, ft/s^2)
+            (0.80, 0.0, 11.68),
+            (0.22, 20.0, 6.76),
+            (0.91, 40.0, 7.61),
+            (0.69, 80.0, 2.20)
+        ]
+        for (parameter, speed, expected_result) in test_tuples:
+            self.assertAlmostEqual(
+                AccelerationUnits.FEET_PER_SECOND_SQUARED.convert_to_this_unit(
+                    distribution.get_value(
+                        parameter,
+                        SpeedUnits.MILES_PER_HOUR.convert_to_base_units(speed)
+                    )
+                ),
+                expected_result,
+                2
+            )
+
+    def test_that_non_monotonic_decreasing_max_acceleration_warns(self): pass
+
+    def test_that_unequal_domains_of_mean_and_sd_parameters_raises_error(self): pass
 
 
 class TestsForMessages(TestOnDocument):

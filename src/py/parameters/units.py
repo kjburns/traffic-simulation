@@ -81,8 +81,21 @@ class SpeedUnits(Unit):
     METERS_PER_SECOND = Unit('meters-per-second', 1.0)
     FEET_PER_SECOND = Unit('feet-per-second', 0.3048)
 
+    DICTIONARY = {
+        MILES_PER_HOUR.name: MILES_PER_HOUR,
+        KILOMETERS_PER_HOUR.name: KILOMETERS_PER_HOUR,
+        METERS_PER_SECOND.name: METERS_PER_SECOND,
+        FEET_PER_SECOND.name: FEET_PER_SECOND
+    }
+
 
 class AccelerationUnits(Unit):
     METERS_PER_SECOND_SQUARED = Unit('meters-per-second-squared', 1.0)
     FEET_PER_SECOND_SQUARED = Unit('feet-per-second-squared', 0.3048)
     G = Unit('g', 9.80665)
+
+    DICTIONARY = {
+        METERS_PER_SECOND_SQUARED.name: METERS_PER_SECOND_SQUARED,
+        FEET_PER_SECOND_SQUARED.name: FEET_PER_SECOND_SQUARED,
+        G.name: G
+    }
