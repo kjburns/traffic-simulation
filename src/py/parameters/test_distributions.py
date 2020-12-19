@@ -523,8 +523,6 @@ class TestsForSpecifiedValues(TestOnDocument):
         with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
             Distributions.read_from_xml(test_doc)
 
-    def test_that_unequal_domains_of_mean_and_sd_parameters_raises_error(self): pass
-
 
 class TestsForMessages(TestOnDocument):
     def tests_for_connector_link_selection_behaviors(self):
