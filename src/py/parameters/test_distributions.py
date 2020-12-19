@@ -495,7 +495,7 @@ class TestsForSpecifiedValues(TestOnDocument):
                 2
             )
 
-    def test_that_non_monotonic_decreasing_max_acceleration_warns(self):
+    def test_that_non_weakly_monotonic_decreasing_max_acceleration_warns(self):
         test_doc: etree.ElementBase = create_test_document_with_custom_values()
         distribution_element: etree.ElementBase = etree.SubElement(
             test_doc[4],
@@ -509,7 +509,8 @@ class TestsForSpecifiedValues(TestOnDocument):
         data_points: List[Tuple[float, float, float]] = [
             (0, 10, 2),
             (30, 7, 2),
-            (40, 8, 2),
+            (35, 7, 1.5),  # here, the mean does not change, which is ok, hence the "weak" monotonicity requirement
+            (40, 8, 2),    # see https://en.wikipedia.org/wiki/Monotonic_function for more info
             (100, 0, 0),
         ]
         for (speed, mean_acceleration, sd_acceleration) in data_points:
