@@ -495,7 +495,32 @@ class TestsForSpecifiedValues(TestOnDocument):
                 2
             )
 
-    def test_that_non_monotonic_decreasing_max_acceleration_warns(self): pass
+    def test_that_non_monotonic_decreasing_max_acceleration_warns(self):
+        test_doc: etree.ElementBase = create_test_document_with_custom_values()
+        distribution_element: etree.ElementBase = etree.SubElement(
+            test_doc[4],
+            DistributionXmlNames.AccelerationFunctions.TAG, {
+                DistributionXmlNames.AccelerationFunctions.ACCELERATION_UNIT_ATTR:
+                    AccelerationUnits.FEET_PER_SECOND_SQUARED.name,
+                DistributionXmlNames.AccelerationFunctions.UUID_ATTR: str(uuid()),
+                DistributionXmlNames.AccelerationFunctions.SPEED_UNIT_ATTR: SpeedUnits.MILES_PER_HOUR.name,
+            }
+        )
+        data_points: List[Tuple[float, float, float]] = [
+            (0, 10, 2),
+            (30, 7, 2),
+            (40, 8, 2),
+            (100, 0, 0),
+        ]
+        for (speed, mean_acceleration, sd_acceleration) in data_points:
+            etree.SubElement(distribution_element, DistributionXmlNames.AccelerationFunctions.DP_TAG, {
+                DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR: str(speed),
+                DistributionXmlNames.AccelerationFunctions.DP_MEAN_ATTR: str(mean_acceleration),
+                DistributionXmlNames.AccelerationFunctions.DP_STANDARD_DEVIATION_ATTR: str(sd_acceleration)
+            })
+
+        with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
+            Distributions.read_from_xml(test_doc)
 
     def test_that_unequal_domains_of_mean_and_sd_parameters_raises_error(self): pass
 

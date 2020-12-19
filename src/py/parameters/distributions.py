@@ -580,6 +580,20 @@ class AccelerationFunction(HasUuid):
             lambda node: node.attrib[DistributionXmlNames.AccelerationFunctions.DP_STANDARD_DEVIATION_ATTR]
         )
 
+        # check for decreasing monotonicity
+        mean_acceleration_values: List[float] = list(map(
+            lambda node: float(node.attrib[DistributionXmlNames.AccelerationFunctions.DP_MEAN_ATTR]),
+            sorted(
+                xml.iterfind(DistributionXmlNames.AccelerationFunctions.DP_TAG),
+                key=lambda node: float(node.attrib[DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR])
+            )
+        ))
+        diffs: List[float] = [
+            mean_acceleration_values[i] - mean_acceleration_values[i - 1] for i in range(1, len(mean_acceleration_values))
+        ]
+        if any(map(lambda diff: diff > 0, diffs)):
+            Logger.logger().warning(Localization.get_message('W0004', self.uuid))
+
     def get_value(self, parameter: float, speed_in_base_units: float) -> float:
         speed_parameter: float = speed_in_base_units / self._speed_parameter_factor
         nd: stats.norm_gen = stats.norm(
