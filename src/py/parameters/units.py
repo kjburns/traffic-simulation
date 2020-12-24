@@ -1,4 +1,6 @@
 from i18n_l10n.temporary_i18n_bridge import Localization
+from abc import ABC, abstractmethod
+from typing import Dict
 
 
 class Unit:
@@ -34,44 +36,57 @@ class Unit:
         return value_in_base_units / self._factor
 
 
-class LengthUnits:
+class DimensionUnits(ABC):
+    @classmethod
+    @abstractmethod
+    def DICTIONARY(cls) -> Dict[str, Unit]:
+        pass
+
+
+class LengthUnits(DimensionUnits):
     METERS = Unit('meters', 1.0)
     METRES = Unit('metres', 1.0)
     FEET = Unit('feet', 0.3048)
 
-    DICTIONARY = {
-        METRES.name: METRES,
-        METERS.name: METERS,
-        FEET.name: FEET,
-    }
+    @classmethod
+    def DICTIONARY(cls) -> Dict[str, Unit]:
+        return {
+            cls.METRES.name: cls.METRES,
+            cls.METERS.name: cls.METERS,
+            cls.FEET.name: cls.FEET,
+        }
 
 
 class DistanceUnits(LengthUnits):
     KILOMETERS = Unit('kilometers', 1000.0)
     MILES = Unit('miles', 1609.344)
 
-    DICTIONARY = {
-        LengthUnits.METRES.name: LengthUnits.METRES,
-        LengthUnits.METERS.name: LengthUnits.METERS,
-        LengthUnits.FEET.name: LengthUnits.FEET,
-        KILOMETERS.name: KILOMETERS,
-        MILES.name: MILES
-    }
+    @classmethod
+    def DICTIONARY(cls) -> Dict[str, Unit]:
+        return {
+            cls.METRES.name: cls.METRES,
+            cls.METERS.name: cls.METERS,
+            cls.FEET.name: cls.FEET,
+            cls.KILOMETERS.name: cls.KILOMETERS,
+            cls.MILES.name: cls.MILES
+        }
 
 
-class TimeUnits(Unit):
+class TimeUnits(DimensionUnits):
     SECONDS = Unit('seconds', 1.0)
     MINUTES = Unit('minutes', 60.0)
     HOURS = Unit('hours', 3600.0)
 
-    DICTIONARY = {
-        SECONDS.name: SECONDS,
-        MINUTES.name: MINUTES,
-        HOURS.name: HOURS,
-    }
+    @classmethod
+    def DICTIONARY(cls) -> Dict[str, Unit]:
+        return {
+            cls.SECONDS.name: cls.SECONDS,
+            cls.MINUTES.name: cls.MINUTES,
+            cls.HOURS.name: cls.HOURS,
+        }
 
 
-class SpeedUnits(Unit):
+class SpeedUnits(DimensionUnits):
     MILES_PER_HOUR = Unit('miles-per-hour',
                           DistanceUnits.MILES.convert_to_base_units(1.0) /
                           TimeUnits.HOURS.convert_to_base_units(1.0))
@@ -81,21 +96,25 @@ class SpeedUnits(Unit):
     METERS_PER_SECOND = Unit('meters-per-second', 1.0)
     FEET_PER_SECOND = Unit('feet-per-second', 0.3048)
 
-    DICTIONARY = {
-        MILES_PER_HOUR.name: MILES_PER_HOUR,
-        KILOMETERS_PER_HOUR.name: KILOMETERS_PER_HOUR,
-        METERS_PER_SECOND.name: METERS_PER_SECOND,
-        FEET_PER_SECOND.name: FEET_PER_SECOND
-    }
+    @classmethod
+    def DICTIONARY(cls) -> Dict[str, Unit]:
+        return {
+            cls.MILES_PER_HOUR.name: cls.MILES_PER_HOUR,
+            cls.KILOMETERS_PER_HOUR.name: cls.KILOMETERS_PER_HOUR,
+            cls.METERS_PER_SECOND.name: cls.METERS_PER_SECOND,
+            cls.FEET_PER_SECOND.name: cls.FEET_PER_SECOND
+        }
 
 
-class AccelerationUnits(Unit):
+class AccelerationUnits(DimensionUnits):
     METERS_PER_SECOND_SQUARED = Unit('meters-per-second-squared', 1.0)
     FEET_PER_SECOND_SQUARED = Unit('feet-per-second-squared', 0.3048)
     G = Unit('g', 9.80665)
 
-    DICTIONARY = {
-        METERS_PER_SECOND_SQUARED.name: METERS_PER_SECOND_SQUARED,
-        FEET_PER_SECOND_SQUARED.name: FEET_PER_SECOND_SQUARED,
-        G.name: G
-    }
+    @classmethod
+    def DICTIONARY(cls) -> Dict[str, Unit]:
+        return {
+            cls.METERS_PER_SECOND_SQUARED.name: cls.METERS_PER_SECOND_SQUARED,
+            cls.FEET_PER_SECOND_SQUARED.name: cls.FEET_PER_SECOND_SQUARED,
+            cls.G.name: cls.G
+        }

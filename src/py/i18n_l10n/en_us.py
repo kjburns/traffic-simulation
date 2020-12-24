@@ -11,6 +11,7 @@ class LocalizationDictionaryEnUS:
             'W0003': 'Two-sided truncation of normal distribution with mean of %%0 and standard deviation of %%1'
                      ' eliminates more than one half of the distribution.',
             'W0004': 'Acceleration function %%0 is not monotonic decreasing as a function of speed.',
+            'W0005': 'Probability of max deceleration < 1 m/s^2 is greater than 0.01. (%%0)',
             'E0001': 'Vehicle model %%0 requested but not found in VehicleModelsCollection.',
             'E0002': 'XML File validation failed. File is not usable: %%0',
             'E0003': 'The archive must contain exactly one file with the following name fragment: %%0',

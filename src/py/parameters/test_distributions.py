@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 from lxml import etree
 from simulator.default_xml_files import DefaultXmlFiles
 from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution, \
-    DistanceDistribution, ColorDistribution, AccelerationFunction
+    DistanceDistribution, ColorDistribution, AccelerationFunction, DecelerationDistribution
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
@@ -340,6 +340,12 @@ class TestsForDefaultValues(TestOnDocument):
         self.assertEqual(acceleration_function.uuid, guid)
         self.assertEqual(acceleration_function.name, '')
 
+    def tests_for_max_deceleration_distributions(self):
+        guid: str = self.default_doc_root[5][0].attrib[DistributionXmlNames.DecelerationDistributions.UUID_ATTR]
+        deceleration_distribution = Distributions.max_decelerations()[guid]
+        self.assertEqual(deceleration_distribution.name, '')
+        self.assertEqual(deceleration_distribution.uuid, guid)
+
 
 class TestsForSpecifiedValues(TestOnDocument):
     def setUp(self) -> None:
@@ -495,33 +501,40 @@ class TestsForSpecifiedValues(TestOnDocument):
                 2
             )
 
-    def test_that_non_weakly_monotonic_decreasing_max_acceleration_warns(self):
-        test_doc: etree.ElementBase = create_test_document_with_custom_values()
-        distribution_element: etree.ElementBase = etree.SubElement(
-            test_doc[4],
-            DistributionXmlNames.AccelerationFunctions.TAG, {
-                DistributionXmlNames.AccelerationFunctions.ACCELERATION_UNIT_ATTR:
-                    AccelerationUnits.FEET_PER_SECOND_SQUARED.name,
-                DistributionXmlNames.AccelerationFunctions.UUID_ATTR: str(uuid()),
-                DistributionXmlNames.AccelerationFunctions.SPEED_UNIT_ATTR: SpeedUnits.MILES_PER_HOUR.name,
-            }
-        )
-        data_points: List[Tuple[float, float, float]] = [
-            (0, 10, 2),
-            (30, 7, 2),
-            (35, 7, 1.5),  # here, the mean does not change, which is ok, hence the "weak" monotonicity requirement
-            (40, 8, 2),    # see https://en.wikipedia.org/wiki/Monotonic_function for more info
-            (100, 0, 0),
-        ]
-        for (speed, mean_acceleration, sd_acceleration) in data_points:
-            etree.SubElement(distribution_element, DistributionXmlNames.AccelerationFunctions.DP_TAG, {
-                DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR: str(speed),
-                DistributionXmlNames.AccelerationFunctions.DP_MEAN_ATTR: str(mean_acceleration),
-                DistributionXmlNames.AccelerationFunctions.DP_STANDARD_DEVIATION_ATTR: str(sd_acceleration)
-            })
+    def get_max_deceleration_guid(self):
+        return self.custom_doc_root[5][0].attrib[DistributionXmlNames.DecelerationDistributions.UUID_ATTR]
 
-        with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
-            Distributions.read_from_xml(test_doc)
+    def test_that_max_deceleration_name_reads_correctly(self):
+        try:
+            self.custom_doc_root[5][0].attrib[
+                DistributionXmlNames.DecelerationDistributions.NAME_ATTR] = dummy_string_value
+
+            Distributions.read_from_xml(self.custom_doc_root)
+            self.assertEqual(
+                Distributions.max_decelerations()[
+                    self.get_max_deceleration_guid()
+                ].name,
+                dummy_string_value)
+        finally:
+            self.custom_doc_root[5][0].attrib.pop(DistributionXmlNames.DecelerationDistributions.NAME_ATTR)
+
+    def test_max_deceleration_values(self):
+        test_tuples: List[Tuple[float, float]] = [
+            (0.10, 0.86667),
+            (0.15, 0.9),
+            (0.25, 0.91429),
+            (0.50, 0.95),
+            (0.85, 1.0),
+            (0.95, 1.06667),
+        ]
+
+        distribution: DecelerationDistribution = Distributions.max_decelerations()[self.get_max_deceleration_guid()]
+        for (parameter, expected_result) in test_tuples:
+            self.assertAlmostEqual(
+                distribution.get_value(parameter),
+                distribution.units.convert_to_base_units(expected_result),
+                3
+            )
 
 
 class TestsForMessages(TestOnDocument):
@@ -593,6 +606,52 @@ class TestsForMessages(TestOnDocument):
         set_and_test_extrema(432.5, 567.5, False)
         set_and_test_extrema(294.63, 505.01, True)
         set_and_test_extrema(294.62, 505.02, False)
+
+    def test_that_non_weakly_monotonic_decreasing_max_acceleration_warns(self):
+        test_doc: etree.ElementBase = create_test_document_with_custom_values()
+        distribution_element: etree.ElementBase = etree.SubElement(
+            test_doc[4],
+            DistributionXmlNames.AccelerationFunctions.TAG, {
+                DistributionXmlNames.AccelerationFunctions.ACCELERATION_UNIT_ATTR:
+                    AccelerationUnits.FEET_PER_SECOND_SQUARED.name,
+                DistributionXmlNames.AccelerationFunctions.UUID_ATTR: str(uuid()),
+                DistributionXmlNames.AccelerationFunctions.SPEED_UNIT_ATTR: SpeedUnits.MILES_PER_HOUR.name,
+            }
+        )
+        data_points: List[Tuple[float, float, float]] = [
+            (0, 10, 2),
+            (30, 7, 2),
+            (35, 7, 1.5),  # here, the mean does not change, which is ok, hence the "weak" monotonicity requirement
+            (40, 8, 2),    # see https://en.wikipedia.org/wiki/Monotonic_function for more info
+            (100, 0, 0),
+        ]
+        for (speed, mean_acceleration, sd_acceleration) in data_points:
+            etree.SubElement(distribution_element, DistributionXmlNames.AccelerationFunctions.DP_TAG, {
+                DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR: str(speed),
+                DistributionXmlNames.AccelerationFunctions.DP_MEAN_ATTR: str(mean_acceleration),
+                DistributionXmlNames.AccelerationFunctions.DP_STANDARD_DEVIATION_ATTR: str(sd_acceleration)
+            })
+
+        with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
+            Distributions.read_from_xml(test_doc)
+
+    def test_that_illogical_max_deceleration_distributions_warn(self):
+        test_doc: etree.ElementBase = create_test_document_with_custom_values()
+        distribution_element: etree.ElementBase = etree.SubElement(
+            test_doc[5],
+            DistributionXmlNames.DecelerationDistributions.TAG, {
+                DistributionXmlNames.DecelerationDistributions.UNITS_ATTR:
+                    AccelerationUnits.METERS_PER_SECOND_SQUARED.name,
+                DistributionXmlNames.DecelerationDistributions.UUID_ATTR: str(uuid()),
+            }
+        )
+        etree.SubElement(distribution_element, DistributionXmlNames.NormalDistributions.TAG, {
+            DistributionXmlNames.NormalDistributions.MEAN_ATTR: '3.0',
+            DistributionXmlNames.NormalDistributions.SD_ATTR: '1.0',
+        })
+
+        with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
+            Distributions.read_from_xml(test_doc)
 
 
 class TestsForNormalDistributions(TestOnDocument):
@@ -687,6 +746,51 @@ class TestsForNormalDistributions(TestOnDocument):
         ]
         for (probability, value) in test_tuples:
             self.assertAlmostEqual(dist.get_value(probability), value, 2)
+
+    def test_that_parameter_search_works(self):
+        def prepare_document(min_value: float = None, max_value: float = None):
+            self._reset_CMPD_extrema()
+            write_into: etree.ElementBase = self.default_doc_root[1][0][0]
+            if DistributionXmlNames.NormalDistributions.REVERSE_ATTR in write_into.attrib:
+                write_into.attrib.pop(DistributionXmlNames.NormalDistributions.REVERSE_ATTR)
+
+            if min_value is not None:
+                write_into.attrib[DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR] = str(min_value)
+
+            if max_value is not None:
+                write_into.attrib[DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR] = str(max_value)
+
+            Distributions.read_from_xml(self.default_doc_root)
+
+            guid: str = self.default_doc_root[1][0].attrib[
+                DistributionXmlNames.ConnectorMaximumPositioningDistances.UUID_ATTR
+            ]
+            return Distributions.connector_max_positioning_distances()[guid]
+
+        dist: DistanceDistribution = prepare_document()
+
+        test_tuples = [
+            (0.90, 628.16),
+            (0.50, 500),
+            (0.20, 415.84),
+        ]
+        for (probability, value) in test_tuples:
+            self.assertAlmostEqual(dist.get_parameter(dist.units.convert_to_base_units(value)), probability, 2)
+
+        dist = prepare_document(min_value=400, max_value=700)
+        test_tuples = [
+            (350, None),
+            (400, 0),
+            (400.001, 0.16),
+            (699.999, 0.98),
+            (700, 0.98),
+            (750, None),
+        ]
+        for (value, probability) in test_tuples:
+            if isinstance(value, (float, int)):
+                self.assertAlmostEqual(dist.get_parameter(dist.units.convert_to_base_units(value)), probability, 2)
+            else:
+                self.assertEqual(dist.get_parameter(value), probability)
 
 
 if __name__ == '__main__':

@@ -159,6 +159,20 @@ class Distribution(ABC, HasUuid, Generic[T]):
         pass
 
     @abstractmethod
+    def get_parameter(self, value: T) -> Union[None, float]:
+        """
+        Gets a parameter that, when supplied to get_value as the parameter, would return 'value'.
+        Args:
+            value: the value whose parameter is being sought
+
+        Returns:
+            If the value exists within the distribution, returns:
+                * a parameter that would provide that value if value is numeric.
+                * the parameter in the middle of a bin if value is not numeric.
+        """
+        pass
+
+    @abstractmethod
     def __init__(self, node: Union[etree.ElementBase, None]):
         super().__init__(node)
         self._name: str = node.attrib[DistributionXmlNames.GenericNames.NAME_ATTR] \
@@ -194,6 +208,9 @@ class DistributionSet(Generic[T]):
 
 
 class StringDistribution(Distribution[str], ABC):
+    @final
+    def get_parameter(self, value: T) -> Union[None, float]: pass
+
     class ShareCollection:
         class ShareViewer(ABC):
             @property
@@ -351,6 +368,9 @@ class VehicleModelDistribution(StringDistribution):
 
 
 class ColorDistribution(Distribution[str]):
+    def get_parameter(self, value: T) -> Union[None, float]:
+        pass
+
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)
 
@@ -399,6 +419,22 @@ class RealNumberDistribution(Distribution[float], ABC):
 
 
 class NormalDistribution(RealNumberDistribution):
+    def get_parameter(self, value: float) -> Union[None, float]:
+        if self._min_value is not None:
+            if value < self._min_value:
+                return None
+            elif value == self._min_value:
+                return 0.0
+
+        if self._max_value is not None:
+            if value > self._max_value:
+                return None
+            elif value == self._max_value:
+                # Nothing Special to do here, will be handled below.
+                pass
+
+        return float(self._distribution.cdf(value))
+
     def get_value(self, parameter: float) -> float:
         value_candidate: float = self._distribution.ppf(
             1 - parameter if self._reverse else parameter
@@ -459,6 +495,27 @@ class NormalDistribution(RealNumberDistribution):
 
 
 class EmpiricalDistribution(RealNumberDistribution):
+    def get_parameter(self, value: float) -> Union[None, float]:
+        maximum_value: float = max(map(lambda bin_info: max(bin_info[2:]), self._bins))
+        minimum_value: float = min(map(lambda bin_info: min(bin_info[2:]), self._bins))
+
+        if value < minimum_value or value > maximum_value:
+            return None
+
+        # the distribution is a locus of data points whose maximum value is 'maximum_value' and
+        # whose minimum value is 'minimum_value'. Because 'value' has been established to be between
+        # these extrema at this point, there must be at least one bin containing 'value'.
+        # We will use the first such bin found. If the distribution is monotonic, there will be only
+        # one such bin.
+
+        bin_containing_value: Tuple[float, float, float, float] = list(filter(
+            lambda bin_info: (bin_info[2] - value) * (bin_info[3] - value) <= 0,
+            self._bins
+        ))[0]
+        bin_parameter: float = (value - bin_containing_value[2]) / \
+                               (bin_containing_value[3] - bin_containing_value[2])
+        return bin_containing_value[0] + bin_parameter * (bin_containing_value[1] - bin_containing_value[0])
+
     def get_value(self, parameter: float) -> float:
         self.check_parameter(parameter)
 
@@ -495,6 +552,9 @@ class EmpiricalDistribution(RealNumberDistribution):
 
 
 class RawEmpiricalDistribution(RealNumberDistribution):
+    def get_parameter(self, value: T) -> Union[None, float]:
+        pass
+
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)
 
@@ -508,6 +568,9 @@ class BinnedDistribution(RealNumberDistribution):
 
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)
+
+    def get_parameter(self, value: T) -> Union[None, float]:
+        pass
 
 
 class RealNumberDistributionFactory:
@@ -524,20 +587,80 @@ class RealNumberDistributionFactory:
         pass
 
 
-class DistanceDistribution(Distribution[float]):
+class RealNumberDistributionWrapper(Distribution[float]):
+    @property
+    @abstractmethod
+    def wrapped_distribution(self) -> Distribution[float]:
+        pass
+
+    @final
+    def get_value(self, parameter: float) -> T:
+        """
+
+        Args:
+            parameter: A number in the range [0, 1]
+
+        Returns:
+            The value of the distribution, in base units, at the supplied parameter.
+        """
+        return self.units.convert_to_base_units(self.wrapped_distribution.get_value(parameter))
+
+    @property
+    @abstractmethod
+    def units(self) -> Unit:
+        pass
+
+    @final
+    def get_parameter(self, value: T) -> Union[None, float]:
+        """
+
+        Args:
+            value: The value of the distribution, in base units.
+
+        Returns:
+            The parameter of the distribution, if any, matching the supplied value; if the parameter
+            does not exist, returns None.
+        """
+        return self.wrapped_distribution.get_parameter(self.units.convert_to_this_unit(value))
+
+
+class DistanceDistribution(RealNumberDistributionWrapper):
     def __init__(self, xml: etree.ElementBase, guid: str = None):
         super().__init__(xml)
-        self._units: Unit = DistanceUnits.DICTIONARY[
+        self._units: Unit = DistanceUnits.DICTIONARY()[
             xml.attrib[DistributionXmlNames.ConnectorMaximumPositioningDistances.UNITS_ATTR]
         ]
         self._distribution: RealNumberDistribution = RealNumberDistributionFactory.from_xml(xml[0], guid=guid)
 
-    def get_value(self, parameter: float) -> T:
-        return self._units.convert_to_base_units(self._distribution.get_value(parameter))
+    @property
+    def units(self) -> Unit:
+        return self._units
+
+    @property
+    def wrapped_distribution(self) -> Distribution[float]:
+        return self._distribution
+
+
+class DecelerationDistribution(RealNumberDistributionWrapper):
+    def __init__(self, xml: etree.ElementBase, guid: str = None):
+        super().__init__(xml)
+        self._units: Unit = AccelerationUnits.DICTIONARY()[
+            xml.attrib[DistributionXmlNames.DecelerationDistributions.UNITS_ATTR]
+        ]
+        self._distribution: RealNumberDistribution = RealNumberDistributionFactory.from_xml(xml[0], guid=guid)
+
+        probability_of_illogical_value: float = \
+            self._distribution.get_parameter(self.units.convert_to_this_unit(1.0))  # 1.0 m/s^2
+        if probability_of_illogical_value is not None and probability_of_illogical_value > 0.01:
+            Logger.logger().warning(Localization.get_message('W0005', self.uuid))
 
     @property
     def units(self) -> Unit:
         return self._units
+
+    @property
+    def wrapped_distribution(self) -> Distribution[float]:
+        return self._distribution
 
 
 class AccelerationFunction(HasUuid):
@@ -567,10 +690,10 @@ class AccelerationFunction(HasUuid):
         self._name = xml.attrib[DistributionXmlNames.AccelerationFunctions.NAME_ATTR] \
             if DistributionXmlNames.AccelerationFunctions.NAME_ATTR in xml.attrib \
             else ''
-        self._speed_units: Unit = SpeedUnits.DICTIONARY[xml.attrib[
+        self._speed_units: Unit = SpeedUnits.DICTIONARY()[xml.attrib[
             DistributionXmlNames.AccelerationFunctions.SPEED_UNIT_ATTR
         ]]
-        self._acceleration_units: Unit = AccelerationUnits.DICTIONARY[xml.attrib[
+        self._acceleration_units: Unit = AccelerationUnits.DICTIONARY()[xml.attrib[
             DistributionXmlNames.AccelerationFunctions.ACCELERATION_UNIT_ATTR
         ]]
         self._mean_distribution: RealNumberDistribution = create_empirical_distribution(
@@ -589,7 +712,8 @@ class AccelerationFunction(HasUuid):
             )
         ))
         diffs: List[float] = [
-            mean_acceleration_values[i] - mean_acceleration_values[i - 1] for i in range(1, len(mean_acceleration_values))
+            mean_acceleration_values[i] - mean_acceleration_values[i - 1]
+            for i in range(1, len(mean_acceleration_values))
         ]
         if any(map(lambda diff: diff > 0, diffs)):
             Logger.logger().warning(Localization.get_message('W0004', self.uuid))
@@ -614,6 +738,7 @@ class Distributions:
     _vehicle_models: DistributionSet[VehicleModelDistribution] = None
     _colors: DistributionSet[ColorDistribution] = None
     _accelerations: DistributionSet[AccelerationFunction] = None
+    _max_decelerations: DistributionSet[DecelerationDistribution] = None
 
     @classmethod
     def reset(cls):
@@ -628,6 +753,8 @@ class Distributions:
             cls._colors.clear()
         if cls._accelerations is not None:
             cls._accelerations.clear()
+        if cls._max_decelerations is not None:
+            cls._max_decelerations.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -649,6 +776,10 @@ class Distributions:
     @classmethod
     def max_acceleration_functions(cls) -> DistributionSet[AccelerationFunction]:
         return cls._accelerations
+
+    @classmethod
+    def max_decelerations(cls) -> DistributionSet[DecelerationDistribution]:
+        return cls._max_decelerations
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -685,6 +816,11 @@ class Distributions:
         cls._accelerations = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.AccelerationFunctions.TYPE),
             AccelerationFunction
+        )
+
+        cls._max_decelerations = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.DecelerationDistributions.TYPE),
+            DecelerationDistribution
         )
 
     @classmethod

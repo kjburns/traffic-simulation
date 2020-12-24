@@ -124,7 +124,7 @@ class VehicleModelCollection:
         version_number: int = int(xml.attrib[VehicleModelConstants.COLLECTION_VERSION_ATTR])
         if version_number == 1:
             units_text: str = xml.attrib[VehicleModelConstants.COLLECTION_UNITS_ATTR]
-            units: Unit = LengthUnits.DICTIONARY[units_text]
+            units: Unit = LengthUnits.DICTIONARY()[units_text]
 
             for model_element in xml.iter(VehicleModelConstants.MODEL_TAG):
                 model: VehicleModel = VehicleModel(model_element, units)
