@@ -209,7 +209,16 @@ class DistributionSet(Generic[T]):
 
 class StringDistribution(Distribution[str], ABC):
     @final
-    def get_parameter(self, value: T) -> Union[None, float]: pass
+    def get_parameter(self, value: T) -> Union[None, float]:
+        candidate_list: List[Tuple[float, float, str]] = list(filter(
+            lambda t: t[2] == value,
+            self._start_end_value_tuples
+        ))
+        if len(candidate_list) == 0:
+            return None
+        else:
+            factor: float = 1.0 / self._start_end_value_tuples[-1][1]
+            return candidate_list[0][0] * factor
 
     class ShareCollection:
         class ShareViewer(ABC):

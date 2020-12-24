@@ -793,5 +793,31 @@ class TestsForNormalDistributions(TestOnDocument):
                 self.assertEqual(dist.get_parameter(value), probability)
 
 
+class TestsForStringDistributions(TestOnDocument):
+    def setUp(self) -> None:
+        Distributions.read_from_xml(self.custom_doc_root)
+
+    def test_that_get_parameter_works(self):
+        test_tuples: List[Tuple[str, float]] = [
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.BEST, 0.0),
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.FARTHEST, 0.4),
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.NEAREST, 0.6),
+            (DistributionXmlNames.ConnectorLinkSelectionBehaviors.RANDOM, 0.7),
+            ('invalid value', None),
+        ]
+        guid: str = self.custom_doc_root[0][0].attrib[DistributionXmlNames.ConnectorLinkSelectionBehaviors.UUID_ATTR]
+        for (value, parameter) in test_tuples:
+            if parameter is not None:
+                self.assertAlmostEqual(
+                    Distributions.connector_link_selection_behaviors()[guid].get_parameter(value),
+                    parameter
+                )
+            else:
+                self.assertEqual(
+                    Distributions.connector_link_selection_behaviors()[guid].get_parameter(value),
+                    parameter
+                )
+
+
 if __name__ == '__main__':
     unittest.main()
