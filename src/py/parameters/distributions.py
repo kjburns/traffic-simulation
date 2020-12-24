@@ -377,8 +377,16 @@ class VehicleModelDistribution(StringDistribution):
 
 
 class ColorDistribution(Distribution[str]):
-    def get_parameter(self, value: T) -> Union[None, float]:
-        pass
+    def get_parameter(self, value: str) -> Union[None, float]:
+        factor: float = self._ranges[-1][1]
+        candidate_list: List[Tuple[float, float, str]] = list(filter(
+            lambda t: t[2] == value,
+            self._ranges
+        ))
+        if len(candidate_list) == 0:
+            return None
+        else:
+            return candidate_list[0][0] / factor
 
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)

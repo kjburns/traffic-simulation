@@ -819,5 +819,33 @@ class TestsForStringDistributions(TestOnDocument):
                 )
 
 
+class TestsForColorDistributions(TestOnDocument):
+    def setUp(self) -> None:
+        Distributions.read_from_xml(self.custom_doc_root)
+
+    def test_that_get_parameter_works(self):
+        test_tuples: List[Tuple[str, float]] = [
+            ('#0000ff', 0.0),
+            ('#00ff00', 0.166666667),
+            ('#00ffff', 0.333333333),
+            ('#ff0000', 0.5),
+            ('#ff8000', 0.666666667),
+            ('#ffff00', 0.833333333),
+            ('#000000', None),
+        ]
+        guid: str = self.custom_doc_root[3][0].attrib[DistributionXmlNames.Colors.UUID_ATTR]
+        for (value, parameter) in test_tuples:
+            if parameter is not None:
+                self.assertAlmostEqual(
+                    Distributions.colors()[guid].get_parameter(value),
+                    parameter
+                )
+            else:
+                self.assertEqual(
+                    Distributions.colors()[guid].get_parameter(value),
+                    parameter
+                )
+
+
 if __name__ == '__main__':
     unittest.main()
