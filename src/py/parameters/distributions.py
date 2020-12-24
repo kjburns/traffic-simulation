@@ -9,7 +9,7 @@ from lxml.etree import ElementBase
 from i18n_l10n.temporary_i18n_bridge import Localization
 from simulator.xml_validation import XmlValidation
 from simulator.simulator_logger import SimulatorLoggerWrapper as Logger
-from parameters.units import Unit, DistanceUnits, SpeedUnits, AccelerationUnits
+from parameters.units import Unit, DistanceUnits, SpeedUnits, AccelerationUnits, PURE
 from parameters.vehicle_models import VehicleModelCollection
 
 
@@ -432,10 +432,28 @@ class ColorDistribution(Distribution[str]):
 
 
 class RealNumberDistribution(Distribution[float], ABC):
-    pass
+    class Monotonicity:
+        STRICT_POSITIVE = 20
+        WEAK_POSITIVE = 10
+        CONSTANT = 0
+        WEAK_NEGATIVE = -10
+        STRICT_NEGATIVE = -20
+        NOT_MONOTONIC = None
+
+    @abstractmethod
+    def get_monotonicity(self):
+        pass
 
 
 class NormalDistribution(RealNumberDistribution):
+    def get_monotonicity(self):
+        if self._sd == 0:
+            return RealNumberDistribution.Monotonicity.CONSTANT
+        if self._reverse:
+            return RealNumberDistribution.Monotonicity.STRICT_NEGATIVE
+        else:
+            return RealNumberDistribution.Monotonicity.STRICT_POSITIVE
+
     def get_parameter(self, value: float) -> Union[None, float]:
         if self._min_value is not None:
             if value < self._min_value:
@@ -512,6 +530,24 @@ class NormalDistribution(RealNumberDistribution):
 
 
 class EmpiricalDistribution(RealNumberDistribution):
+    def get_monotonicity(self):
+        if all(map(lambda bin_info: bin_info[3] > bin_info[2], self._bins)):
+            return RealNumberDistribution.Monotonicity.STRICT_POSITIVE
+
+        if all(map(lambda bin_info: bin_info[3] < bin_info[2], self._bins)):
+            return RealNumberDistribution.Monotonicity.STRICT_NEGATIVE
+
+        if all(map(lambda bin_info: bin_info[3] == bin_info[2], self._bins)):
+            return RealNumberDistribution.Monotonicity.CONSTANT
+
+        if all(map(lambda bin_info: bin_info[3] >= bin_info[2], self._bins)):
+            return RealNumberDistribution.Monotonicity.WEAK_POSITIVE
+
+        if all(map(lambda bin_info: bin_info[3] <= bin_info[2], self._bins)):
+            return RealNumberDistribution.Monotonicity.WEAK_NEGATIVE
+
+        return RealNumberDistribution.Monotonicity.NOT_MONOTONIC
+
     def get_parameter(self, value: float) -> Union[None, float]:
         maximum_value: float = max(map(lambda bin_info: max(bin_info[2:]), self._bins))
         minimum_value: float = min(map(lambda bin_info: min(bin_info[2:]), self._bins))
@@ -569,6 +605,9 @@ class EmpiricalDistribution(RealNumberDistribution):
 
 
 class RawEmpiricalDistribution(RealNumberDistribution):
+    def get_monotonicity(self):
+        pass
+
     def get_parameter(self, value: T) -> Union[None, float]:
         pass
 
@@ -580,6 +619,9 @@ class RawEmpiricalDistribution(RealNumberDistribution):
 
 
 class BinnedDistribution(RealNumberDistribution):
+    def get_monotonicity(self):
+        pass
+
     def get_value(self, parameter: float) -> T:
         pass
 
@@ -604,10 +646,20 @@ class RealNumberDistributionFactory:
         pass
 
 
+class FractionalDistributionFactory:
+    @staticmethod
+    def from_xml(xml: etree.ElementBase, *, guid: str = None) -> RealNumberDistribution:
+        if xml.tag == DistributionXmlNames.NormalDistributions.TAG:
+            return NormalDistribution(xml, guid=guid)
+        elif xml.tag == DistributionXmlNames.EmpiricalDistributions.TAG:
+            return EmpiricalDistribution.from_xml(xml)
+        pass
+
+
 class RealNumberDistributionWrapper(Distribution[float]):
     @property
     @abstractmethod
-    def wrapped_distribution(self) -> Distribution[float]:
+    def wrapped_distribution(self) -> RealNumberDistribution:
         pass
 
     @final
@@ -654,7 +706,7 @@ class DistanceDistribution(RealNumberDistributionWrapper):
         return self._units
 
     @property
-    def wrapped_distribution(self) -> Distribution[float]:
+    def wrapped_distribution(self) -> RealNumberDistribution:
         return self._distribution
 
 
@@ -676,7 +728,7 @@ class DecelerationDistribution(RealNumberDistributionWrapper):
         return self._units
 
     @property
-    def wrapped_distribution(self) -> Distribution[float]:
+    def wrapped_distribution(self) -> RealNumberDistribution:
         return self._distribution
 
 
@@ -721,18 +773,8 @@ class AccelerationFunction(HasUuid):
         )
 
         # check for decreasing monotonicity
-        mean_acceleration_values: List[float] = list(map(
-            lambda node: float(node.attrib[DistributionXmlNames.AccelerationFunctions.DP_MEAN_ATTR]),
-            sorted(
-                xml.iterfind(DistributionXmlNames.AccelerationFunctions.DP_TAG),
-                key=lambda node: float(node.attrib[DistributionXmlNames.AccelerationFunctions.DP_VELOCITY_ATTR])
-            )
-        ))
-        diffs: List[float] = [
-            mean_acceleration_values[i] - mean_acceleration_values[i - 1]
-            for i in range(1, len(mean_acceleration_values))
-        ]
-        if any(map(lambda diff: diff > 0, diffs)):
+        monotonicity: Union[float, None] = self._mean_distribution.get_monotonicity()
+        if monotonicity is None or monotonicity > RealNumberDistribution.Monotonicity.WEAK_NEGATIVE:
             Logger.logger().warning(Localization.get_message('W0004', self.uuid))
 
     def get_value(self, parameter: float, speed_in_base_units: float) -> float:
@@ -748,6 +790,26 @@ class AccelerationFunction(HasUuid):
         return self._name
 
 
+class AccelerationFractionDistribution(RealNumberDistributionWrapper):
+    def __init__(self, xml: etree.ElementBase, *, guid: str = None):
+        super().__init__(xml)
+
+        distribution_element: etree.ElementBase = xml[0]
+        self._distribution: RealNumberDistribution = FractionalDistributionFactory.from_xml(distribution_element)
+
+        monotonicity: Union[None, float] = self._distribution.get_monotonicity()
+        if monotonicity is None or monotonicity < RealNumberDistribution.Monotonicity.WEAK_POSITIVE:
+            Logger.logger().warning(Localization.get_message('W0006', guid))
+
+    @property
+    def wrapped_distribution(self) -> RealNumberDistribution:
+        return self._distribution
+
+    @property
+    def units(self) -> Unit:
+        return PURE
+
+
 class Distributions:
     _doc_root: etree.ElementBase = None
     _connector_link_selection_behaviors: DistributionSet[ConnectorLinkSelectionBehaviorDistribution] = None
@@ -756,6 +818,7 @@ class Distributions:
     _colors: DistributionSet[ColorDistribution] = None
     _accelerations: DistributionSet[AccelerationFunction] = None
     _max_decelerations: DistributionSet[DecelerationDistribution] = None
+    _desired_acceleration_fractions: DistributionSet[AccelerationFractionDistribution] = None
 
     @classmethod
     def reset(cls):
@@ -772,6 +835,8 @@ class Distributions:
             cls._accelerations.clear()
         if cls._max_decelerations is not None:
             cls._max_decelerations.clear()
+        if cls._desired_acceleration_fractions is not None:
+            cls._desired_acceleration_fractions.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -797,6 +862,10 @@ class Distributions:
     @classmethod
     def max_decelerations(cls) -> DistributionSet[DecelerationDistribution]:
         return cls._max_decelerations
+
+    @classmethod
+    def desired_acceleration_fractions(cls) -> DistributionSet[AccelerationFractionDistribution]:
+        return cls._desired_acceleration_fractions
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -838,6 +907,11 @@ class Distributions:
         cls._max_decelerations = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.DecelerationDistributions.TYPE),
             DecelerationDistribution
+        )
+
+        cls._desired_acceleration_fractions = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.DesiredAccelerationDistributions.TYPE),
+            AccelerationFractionDistribution
         )
 
     @classmethod

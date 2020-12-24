@@ -36,6 +36,9 @@ class Unit:
         return value_in_base_units / self._factor
 
 
+PURE: Unit = Unit('Pure', 1.0)
+
+
 class DimensionUnits(ABC):
     @classmethod
     @abstractmethod

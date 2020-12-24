@@ -45,7 +45,7 @@ class Localization:
 
                 return ''.join([
                     match.group(0)[0:match.pos],
-                    param_value,
+                    '' if param_value is None else param_value,
                     match.group(0)[match.endpos:-1]
                 ])
 
