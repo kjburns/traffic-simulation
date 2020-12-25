@@ -791,7 +791,7 @@ class AccelerationFunction(HasUuid):
 
 
 class AccelerationFractionDistribution(RealNumberDistributionWrapper):
-    def __init__(self, xml: etree.ElementBase, *, guid: str = None):
+    def __init__(self, xml: etree.ElementBase):
         super().__init__(xml)
 
         distribution_element: etree.ElementBase = xml[0]
@@ -799,7 +799,7 @@ class AccelerationFractionDistribution(RealNumberDistributionWrapper):
 
         monotonicity: Union[None, float] = self._distribution.get_monotonicity()
         if monotonicity is None or monotonicity < RealNumberDistribution.Monotonicity.WEAK_POSITIVE:
-            Logger.logger().warning(Localization.get_message('W0006', guid))
+            Logger.logger().warning(Localization.get_message('W0006', self.uuid))
 
     @property
     def wrapped_distribution(self) -> RealNumberDistribution:
@@ -819,6 +819,7 @@ class Distributions:
     _accelerations: DistributionSet[AccelerationFunction] = None
     _max_decelerations: DistributionSet[DecelerationDistribution] = None
     _desired_acceleration_fractions: DistributionSet[AccelerationFractionDistribution] = None
+    _desired_deceleration_fractions: DistributionSet[AccelerationFractionDistribution] = None
 
     @classmethod
     def reset(cls):
@@ -837,6 +838,8 @@ class Distributions:
             cls._max_decelerations.clear()
         if cls._desired_acceleration_fractions is not None:
             cls._desired_acceleration_fractions.clear()
+        if cls._desired_deceleration_fractions is not None:
+            cls._desired_deceleration_fractions.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -866,6 +869,10 @@ class Distributions:
     @classmethod
     def desired_acceleration_fractions(cls) -> DistributionSet[AccelerationFractionDistribution]:
         return cls._desired_acceleration_fractions
+
+    @classmethod
+    def desired_deceleration_fractions(cls) -> DistributionSet[AccelerationFractionDistribution]:
+        return cls._desired_deceleration_fractions
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -911,6 +918,11 @@ class Distributions:
 
         cls._desired_acceleration_fractions = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.DesiredAccelerationDistributions.TYPE),
+            AccelerationFractionDistribution
+        )
+
+        cls._desired_deceleration_fractions = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.DesiredDecelerationDistributions.TYPE),
             AccelerationFractionDistribution
         )
 

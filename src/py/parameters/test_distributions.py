@@ -572,6 +572,36 @@ class TestsForSpecifiedValues(TestOnDocument):
                 4
             )
 
+    def get_desired_deceleration_guid(self) -> str:
+        return self.custom_doc_root[7][0].attrib[DistributionXmlNames.DesiredDecelerationDistributions.UUID_ATTR]
+
+    def test_that_desired_deceleration_name_reads_correctly(self):
+        guid: str = self.get_desired_deceleration_guid()
+
+        try:
+            self.custom_doc_root[7][0].attrib[
+                DistributionXmlNames.DesiredDecelerationDistributions.NAME_ATTR
+            ] = dummy_string_value
+            Distributions.read_from_xml(self.custom_doc_root)
+            self.assertEqual(Distributions.desired_deceleration_fractions()[guid].name, dummy_string_value)
+        finally:
+            self.custom_doc_root[7][0].attrib.pop(DistributionXmlNames.DesiredDecelerationDistributions.NAME_ATTR)
+
+    def test_desired_deceleration_values(self):
+        guid: str = self.get_desired_deceleration_guid()
+        test_tuples: List[Tuple[float, float]] = [
+            (0, 0.5),
+            (0.10, 0.60),
+            (0.50, 0.75),
+            (0.95, 0.95),
+        ]
+        for (parameter, expected_value) in test_tuples:
+            self.assertAlmostEqual(
+                Distributions.desired_deceleration_fractions()[guid].get_value(parameter),
+                expected_value,
+                2
+            )
+
 
 class TestsForMessages(TestOnDocument):
     def tests_for_connector_link_selection_behaviors(self):
@@ -692,6 +722,24 @@ class TestsForMessages(TestOnDocument):
             test_doc[6],
             DistributionXmlNames.DesiredAccelerationDistributions.TAG, {
                 DistributionXmlNames.DesiredAccelerationDistributions.UUID_ATTR: str(uuid()),
+            }
+        )
+        etree.SubElement(distribution_element, DistributionXmlNames.NormalDistributions.TAG, {
+            DistributionXmlNames.NormalDistributions.MEAN_ATTR: '0.8',
+            DistributionXmlNames.NormalDistributions.SD_ATTR: '0.1',
+            DistributionXmlNames.NormalDistributions.MIN_VALUE_ATTR: '0.0',
+            DistributionXmlNames.NormalDistributions.MAX_VALUE_ATTR: '1.0',
+            DistributionXmlNames.NormalDistributions.REVERSE_ATTR: 'true',
+        })
+        with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
+            Distributions.read_from_xml(test_doc)
+
+    def test_that_non_weakly_monotonic_increasing_deceleration_fractions_warns(self):
+        test_doc: etree.ElementBase = create_test_document_with_custom_values()
+        distribution_element: etree.ElementBase = etree.SubElement(
+            test_doc[7],
+            DistributionXmlNames.DesiredDecelerationDistributions.TAG, {
+                DistributionXmlNames.DesiredDecelerationDistributions.UUID_ATTR: str(uuid()),
             }
         )
         etree.SubElement(distribution_element, DistributionXmlNames.NormalDistributions.TAG, {
