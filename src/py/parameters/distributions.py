@@ -619,6 +619,44 @@ class RawEmpiricalDistribution(RealNumberDistribution):
 
 
 class BinnedDistribution(RealNumberDistribution):
+    class BinInfo:
+        def __init__(self, *args: Union[float, int]):
+            self._start_value: float = args[0]
+            self._end_value: float = args[1]
+            self._observation_count: int = args[2]
+            self._total_before_this_bin: int = args[3]
+            self._start_parameter: float = float(self._total_before_this_bin)
+            self._end_parameter: float = float(self._start_parameter + self._observation_count)
+        pass
+
+        @property
+        def start_value(self):
+            return self._start_value
+
+        @property
+        def end_value(self):
+            return self._end_value
+
+        @property
+        def observation_count(self):
+            return self._observation_count
+        
+        @property
+        def total_observations_before_this_bin(self):
+            return self._total_before_this_bin
+        
+        @property
+        def start_parameter(self):
+            return self._start_parameter
+        
+        @property
+        def end_parameter(self):
+            return self._end_parameter
+
+        def normalize(self, total: int) -> None:
+            self._start_parameter /= total
+            self._end_parameter /= total
+
     def get_monotonicity(self):
         if self._aggression < 0:
             return RealNumberDistribution.Monotonicity.WEAK_NEGATIVE
@@ -630,30 +668,22 @@ class BinnedDistribution(RealNumberDistribution):
     def get_value(self, parameter: float) -> float:
         self.check_parameter(parameter)
 
-        resident_bin: List[Union[float, int]] = list(filter(
-            lambda bin_info: (parameter - bin_info[self.BIN_START_PARAMETER_INDEX]) *
-                             (parameter - bin_info[self.BIN_END_PARAMETER_INDEX]) <= 0,
+        resident_bin: BinnedDistribution.BinInfo = list(filter(
+            lambda bin_info: (parameter - bin_info.start_parameter) *
+                             (parameter - bin_info.end_parameter) <= 0,
             self._bins
         ))[0]
 
         # interpolate linearly over the bin
-        return resident_bin[self.BIN_START_VALUE_INDEX] + \
-            (resident_bin[self.BIN_END_VALUE_INDEX] - resident_bin[self.BIN_START_VALUE_INDEX]) * \
-            (parameter - resident_bin[self.BIN_START_PARAMETER_INDEX]) / \
-            (resident_bin[self.BIN_END_PARAMETER_INDEX] - resident_bin[self.BIN_START_PARAMETER_INDEX])
-
-    BIN_START_VALUE_INDEX: int = 0
-    BIN_END_VALUE_INDEX: int = 1
-    BIN_COUNT_INDEX: int = 2
-    CUMULATIVE_COUNT_TO_BEFORE_THIS_BIN_INDEX: int = 3
-    BIN_START_PARAMETER_INDEX: int = 4
-    BIN_END_PARAMETER_INDEX: int = 5
+        return resident_bin.start_value + \
+            (resident_bin.end_value - resident_bin.start_value) * \
+            (parameter - resident_bin.start_parameter) / \
+            (resident_bin.end_parameter - resident_bin.start_parameter)
 
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)
 
-        # TODO Refactor this into a class with property names matching the indices.
-        self._bins: List[List[Union[float, int]]] = list()
+        self._bins: List[BinnedDistribution.BinInfo] = list()
 
         aggression_dictionary: Dict[str, int] = {
             DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_NONE: 0,
@@ -673,65 +703,56 @@ class BinnedDistribution(RealNumberDistribution):
             this_bin_count: int = int(bin_element.attrib[DistributionXmlNames.BinnedDistributions.BIN_COUNT_ATTR])
 
             self._bins.append(
-                [
+                BinnedDistribution.BinInfo(
                     float(bin_element.attrib[DistributionXmlNames.BinnedDistributions.BIN_MIN_VALUE_ATTR]),
                     float(bin_element.attrib[DistributionXmlNames.BinnedDistributions.BIN_MAX_VALUE_ATTR]),
                     this_bin_count,
                     cumulative_count_before,
-                    float(cumulative_count_before),  # for now
-                    float(cumulative_count_before + this_bin_count),  # for now
-                ]
+                )
             )
             cumulative_count_before += this_bin_count
 
-        total: int = self._bins[-1][self.CUMULATIVE_COUNT_TO_BEFORE_THIS_BIN_INDEX] + \
-            self._bins[-1][self.BIN_COUNT_INDEX]
-        for bin_info in self._bins:
-            bin_info[self.BIN_START_PARAMETER_INDEX] /= total
-            bin_info[self.BIN_END_PARAMETER_INDEX] /= total
+        total: int = self._bins[-1].total_observations_before_this_bin + \
+            self._bins[-1].observation_count
 
-        # # remainder of implementation depends on bins being sorted
-        # self._bins = list(sorted(self._bins, key=lambda bin_info_2: bin_info_2[self.BIN_START_VALUE_INDEX]))
+        for bin_info in self._bins:
+            bin_info.normalize(total)
 
         # check for continuity
-        def continuity_checker(args):
-            index: int = args[0]
-            item: Tuple[float, float, int, int] = args[1]
-
-            return item[self.BIN_START_VALUE_INDEX] == self._bins[index - 1][self.BIN_END_VALUE_INDEX] \
+        def continuity_checker(index: int, item: BinnedDistribution.BinInfo):
+            return item.start_value == self._bins[index - 1].end_value \
                 if index > 0 \
                 else True
 
-        spans_are_continuous: List[bool] = list(map(
-            continuity_checker,
-            enumerate(self._bins)
-        ))
+        spans_are_continuous: List[bool] = list(
+            map(lambda enum: continuity_checker(enum[0], enum[1]), enumerate(self._bins))
+        )
         if not all(spans_are_continuous):
             first_index: int = spans_are_continuous.index(False)
-            discontinuity_start: float = self._bins[first_index - 1][self.BIN_END_VALUE_INDEX]
-            discontinuity_end: float = self._bins[first_index][self.BIN_START_VALUE_INDEX]
+            discontinuity_start: float = self._bins[first_index - 1].end_value
+            discontinuity_end: float = self._bins[first_index].start_value
             raise ValueError(Localization.get_message(
                 'E0008', self.uuid, str(discontinuity_start), str(discontinuity_end)
             ))
 
     def get_parameter(self, value: float) -> Union[None, float]:
-        minimum_value: float = self._bins[0][self.BIN_START_VALUE_INDEX]
-        maximum_value: float = self._bins[-1][self.BIN_END_VALUE_INDEX]
+        minimum_value: float = self._bins[0].start_value
+        maximum_value: float = self._bins[-1].end_value
 
         if value < minimum_value or value > maximum_value:
             return None
 
-        resident_bin: List[Union[float, int]] = list(filter(
-            lambda bin_info: (value - bin_info[self.BIN_START_VALUE_INDEX]) *
-                             (value - bin_info[self.BIN_END_VALUE_INDEX]) <= 0,
+        resident_bin: BinnedDistribution.BinInfo = list(filter(
+            lambda bin_info: (value - bin_info.start_value) *
+                             (value - bin_info.end_value) <= 0,
             self._bins
         ))[0]
 
         # interpolate on the bin
-        return resident_bin[self.BIN_START_PARAMETER_INDEX] + \
-            (resident_bin[self.BIN_END_PARAMETER_INDEX] - resident_bin[self.BIN_START_PARAMETER_INDEX]) * \
-            (value - resident_bin[self.BIN_START_VALUE_INDEX]) / \
-            (resident_bin[self.BIN_END_VALUE_INDEX] - resident_bin[self.BIN_START_VALUE_INDEX])
+        return resident_bin.start_parameter + \
+            (resident_bin.end_parameter - resident_bin.start_parameter) * \
+            (value - resident_bin.start_value) / \
+            (resident_bin.end_value - resident_bin.start_value)
 
 
 class RealNumberDistributionFactory:
