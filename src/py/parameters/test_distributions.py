@@ -3,7 +3,8 @@ from tempfile import NamedTemporaryFile
 from lxml import etree
 from simulator.default_xml_files import DefaultXmlFiles
 from parameters.distributions import Distributions, DistributionXmlNames, T, DistributionSet, StringDistribution, \
-    DistanceDistribution, ColorDistribution, AccelerationFunction, DecelerationDistribution, RealNumberDistribution
+    DistanceDistribution, ColorDistribution, AccelerationFunction, DecelerationDistribution, RealNumberDistribution, \
+    SpeedDistribution
 import os
 from uuid import uuid4 as uuid
 from parameters.units import DistanceUnits, SpeedUnits, AccelerationUnits
@@ -199,10 +200,23 @@ def create_test_document_with_default_values() -> etree.ElementBase:
         DistributionXmlNames.TargetSpeedDistributions.UNITS_ATTR: SpeedUnits.MILES_PER_HOUR.name,
     })
     # item [8][0][0]
-    etree.SubElement(distribution_node, DistributionXmlNames.NormalDistributions.TAG, {
-        DistributionXmlNames.NormalDistributions.MEAN_ATTR: '50',
-        DistributionXmlNames.NormalDistributions.SD_ATTR: '10',
-    })
+    wrapped_distribution_node: etree.ElementBase = etree.SubElement(
+        distribution_node,
+        DistributionXmlNames.BinnedDistributions.TAG, {
+            DistributionXmlNames.BinnedDistributions.AGGRESSION_ATTR:
+                DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_POSITIVE
+        }
+    )
+    # items [8][0][0][0..10]
+    bin_low_speeds: List[float] = [30 + i * 5 for i in range(11)]
+    #                             30   35   40   45   50   55   60   65   70   75   80
+    bin_observations: List[int] = [2,   6,  11,  18,  25,  98, 231, 438, 211, 102,  30]  # total = 1172
+    for i in range(len(bin_low_speeds)):
+        etree.SubElement(wrapped_distribution_node, DistributionXmlNames.BinnedDistributions.BIN_TAG, {
+            DistributionXmlNames.BinnedDistributions.BIN_MIN_VALUE_ATTR: str(bin_low_speeds[i]),
+            DistributionXmlNames.BinnedDistributions.BIN_MAX_VALUE_ATTR: str(bin_low_speeds[i] + 5),
+            DistributionXmlNames.BinnedDistributions.BIN_COUNT_ATTR: str(bin_observations[i])
+        })
 
     # item [9]
     speed_deviations_node: etree.ElementBase = etree.SubElement(document, DistributionXmlNames.DistributionSets.TAG, {
@@ -351,6 +365,12 @@ class TestsForDefaultValues(TestOnDocument):
         acceleration_fraction_distribution = Distributions.desired_acceleration_fractions()[guid]
         self.assertEqual(acceleration_fraction_distribution.name, '')
         self.assertEqual(acceleration_fraction_distribution.uuid, guid)
+
+    def tests_for_target_speed_distributions(self):
+        guid: str = self.default_doc_root[8][0].attrib[DistributionXmlNames.SpeedDistributions.UUID_ATTR]
+        speed_distribution: SpeedDistribution = Distributions.target_speeds()[guid]
+        self.assertEqual(speed_distribution.name, '')
+        self.assertEqual(speed_distribution.uuid, guid)
 
 
 class TestsForSpecifiedValues(TestOnDocument):
@@ -602,6 +622,59 @@ class TestsForSpecifiedValues(TestOnDocument):
                 2
             )
 
+    def get_target_speed_guid(self) -> str:
+        return self.custom_doc_root[8][0].attrib[DistributionXmlNames.TargetSpeedDistributions.UUID_ATTR]
+
+    def test_that_target_speed_name_reads_correctly(self):
+        guid: str = self.get_target_speed_guid()
+        try:
+            self.custom_doc_root[8][0].attrib[
+                DistributionXmlNames.TargetSpeedDistributions.NAME_ATTR
+            ] = dummy_string_value
+            Distributions.read_from_xml(self.custom_doc_root)
+
+            self.assertEqual(Distributions.target_speeds()[guid].name, dummy_string_value)
+        finally:
+            self.custom_doc_root[8][0].attrib.pop(DistributionXmlNames.TargetSpeedDistributions.NAME_ATTR)
+
+    def test_target_speed_values(self):
+        guid: str = self.get_target_speed_guid()
+        dist: SpeedDistribution = Distributions.target_speeds()[guid]
+        test_tuples: List[Tuple[float, float]] = [
+            (0.01, 41.6909),
+            (0.05, 54.3200),
+            (0.45, 66.5571),
+            (0.90, 75.7255),
+            (0.99, 83.0467),
+        ]
+        for (parameter, expected_value) in test_tuples:
+            self.assertAlmostEqual(
+                dist.get_value(parameter),
+                dist.units.convert_to_base_units(expected_value),
+                3
+            )
+
+    def test_target_speed_inversion(self):
+        guid: str = self.get_target_speed_guid()
+        dist: SpeedDistribution = Distributions.target_speeds()[guid]
+        test_tuples: List[Tuple[float, Union[None, float]]] = [
+            (25, None),
+            (45, 0.0162),
+            (55, 0.0529),
+            (62, 0.2154),
+            (77, 0.9222),
+            (89, None),
+        ]
+        for (speed, expected_parameter) in test_tuples:
+            if expected_parameter is None:
+                self.assertIsNone(dist.get_parameter(dist.units.convert_to_base_units(speed)))
+            else:
+                self.assertAlmostEqual(
+                    dist.get_parameter(dist.units.convert_to_base_units(speed)),
+                    expected_parameter,
+                    3
+                )
+
 
 class TestsForMessages(TestOnDocument):
     def tests_for_connector_link_selection_behaviors(self):
@@ -751,6 +824,25 @@ class TestsForMessages(TestOnDocument):
         })
         with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
             Distributions.read_from_xml(test_doc)
+
+    def test_that_non_weakly_monotonic_increasing_target_speed_warns(self):
+        test_doc: etree.ElementBase = create_test_document_with_custom_values()
+        for value in [
+            DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_NEGATIVE,
+            DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_NONE,
+        ]:
+            test_doc[8][0][0].attrib[DistributionXmlNames.BinnedDistributions.AGGRESSION_ATTR] = value
+            with self.assertLogs(SimulatorLoggerWrapper.logger(), WARN):
+                Distributions.read_from_xml(test_doc)
+
+    def test_that_binned_distribution_with_domain_gaps_fails(self):
+        test_doc: etree.ElementBase = create_test_document_with_custom_values()
+        test_doc[8][0][0][3].attrib[DistributionXmlNames.BinnedDistributions.BIN_MAX_VALUE_ATTR] = '49'
+
+        def thrower():
+            Distributions.read_from_xml(test_doc)
+
+        self.assertRaises(ValueError, thrower)
 
 
 class TestsForRealNumberDistributions(unittest.TestCase):

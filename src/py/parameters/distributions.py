@@ -620,16 +620,118 @@ class RawEmpiricalDistribution(RealNumberDistribution):
 
 class BinnedDistribution(RealNumberDistribution):
     def get_monotonicity(self):
-        pass
+        if self._aggression < 0:
+            return RealNumberDistribution.Monotonicity.WEAK_NEGATIVE
+        elif self._aggression == 0:
+            return RealNumberDistribution.Monotonicity.NOT_MONOTONIC
+        else:
+            return RealNumberDistribution.Monotonicity.WEAK_POSITIVE
 
-    def get_value(self, parameter: float) -> T:
-        pass
+    def get_value(self, parameter: float) -> float:
+        self.check_parameter(parameter)
+
+        resident_bin: List[Union[float, int]] = list(filter(
+            lambda bin_info: (parameter - bin_info[self.BIN_START_PARAMETER_INDEX]) *
+                             (parameter - bin_info[self.BIN_END_PARAMETER_INDEX]) <= 0,
+            self._bins
+        ))[0]
+
+        # interpolate linearly over the bin
+        return resident_bin[self.BIN_START_VALUE_INDEX] + \
+            (resident_bin[self.BIN_END_VALUE_INDEX] - resident_bin[self.BIN_START_VALUE_INDEX]) * \
+            (parameter - resident_bin[self.BIN_START_PARAMETER_INDEX]) / \
+            (resident_bin[self.BIN_END_PARAMETER_INDEX] - resident_bin[self.BIN_START_PARAMETER_INDEX])
+
+    BIN_START_VALUE_INDEX: int = 0
+    BIN_END_VALUE_INDEX: int = 1
+    BIN_COUNT_INDEX: int = 2
+    CUMULATIVE_COUNT_TO_BEFORE_THIS_BIN_INDEX: int = 3
+    BIN_START_PARAMETER_INDEX: int = 4
+    BIN_END_PARAMETER_INDEX: int = 5
 
     def __init__(self, node: etree.ElementBase):
         super().__init__(node)
 
-    def get_parameter(self, value: T) -> Union[None, float]:
-        pass
+        # TODO Refactor this into a class with property names matching the indices.
+        self._bins: List[List[Union[float, int]]] = list()
+
+        aggression_dictionary: Dict[str, int] = {
+            DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_NONE: 0,
+            DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_NEGATIVE: -1,
+            DistributionXmlNames.BinnedDistributions.AGGRESSION_VALUE_POSITIVE: 1,
+        }
+        self._aggression: int = aggression_dictionary[
+            node.attrib[DistributionXmlNames.BinnedDistributions.AGGRESSION_ATTR]
+        ]
+
+        cumulative_count_before: int = 0
+        sorted_bins: Iterable[etree.ElementBase] = sorted(
+            node.iterfind(DistributionXmlNames.BinnedDistributions.BIN_TAG),
+            key=lambda nd: float(nd.attrib[DistributionXmlNames.BinnedDistributions.BIN_MIN_VALUE_ATTR])
+        )
+        for bin_element in sorted_bins:
+            this_bin_count: int = int(bin_element.attrib[DistributionXmlNames.BinnedDistributions.BIN_COUNT_ATTR])
+
+            self._bins.append(
+                [
+                    float(bin_element.attrib[DistributionXmlNames.BinnedDistributions.BIN_MIN_VALUE_ATTR]),
+                    float(bin_element.attrib[DistributionXmlNames.BinnedDistributions.BIN_MAX_VALUE_ATTR]),
+                    this_bin_count,
+                    cumulative_count_before,
+                    float(cumulative_count_before),  # for now
+                    float(cumulative_count_before + this_bin_count),  # for now
+                ]
+            )
+            cumulative_count_before += this_bin_count
+
+        total: int = self._bins[-1][self.CUMULATIVE_COUNT_TO_BEFORE_THIS_BIN_INDEX] + \
+            self._bins[-1][self.BIN_COUNT_INDEX]
+        for bin_info in self._bins:
+            bin_info[self.BIN_START_PARAMETER_INDEX] /= total
+            bin_info[self.BIN_END_PARAMETER_INDEX] /= total
+
+        # # remainder of implementation depends on bins being sorted
+        # self._bins = list(sorted(self._bins, key=lambda bin_info_2: bin_info_2[self.BIN_START_VALUE_INDEX]))
+
+        # check for continuity
+        def continuity_checker(args):
+            index: int = args[0]
+            item: Tuple[float, float, int, int] = args[1]
+
+            return item[self.BIN_START_VALUE_INDEX] == self._bins[index - 1][self.BIN_END_VALUE_INDEX] \
+                if index > 0 \
+                else True
+
+        spans_are_continuous: List[bool] = list(map(
+            continuity_checker,
+            enumerate(self._bins)
+        ))
+        if not all(spans_are_continuous):
+            first_index: int = spans_are_continuous.index(False)
+            discontinuity_start: float = self._bins[first_index - 1][self.BIN_END_VALUE_INDEX]
+            discontinuity_end: float = self._bins[first_index][self.BIN_START_VALUE_INDEX]
+            raise ValueError(Localization.get_message(
+                'E0008', self.uuid, str(discontinuity_start), str(discontinuity_end)
+            ))
+
+    def get_parameter(self, value: float) -> Union[None, float]:
+        minimum_value: float = self._bins[0][self.BIN_START_VALUE_INDEX]
+        maximum_value: float = self._bins[-1][self.BIN_END_VALUE_INDEX]
+
+        if value < minimum_value or value > maximum_value:
+            return None
+
+        resident_bin: List[Union[float, int]] = list(filter(
+            lambda bin_info: (value - bin_info[self.BIN_START_VALUE_INDEX]) *
+                             (value - bin_info[self.BIN_END_VALUE_INDEX]) <= 0,
+            self._bins
+        ))[0]
+
+        # interpolate on the bin
+        return resident_bin[self.BIN_START_PARAMETER_INDEX] + \
+            (resident_bin[self.BIN_END_PARAMETER_INDEX] - resident_bin[self.BIN_START_PARAMETER_INDEX]) * \
+            (value - resident_bin[self.BIN_START_VALUE_INDEX]) / \
+            (resident_bin[self.BIN_END_VALUE_INDEX] - resident_bin[self.BIN_START_VALUE_INDEX])
 
 
 class RealNumberDistributionFactory:
@@ -810,6 +912,27 @@ class AccelerationFractionDistribution(RealNumberDistributionWrapper):
         return PURE
 
 
+class SpeedDistribution(RealNumberDistributionWrapper):
+    @property
+    def wrapped_distribution(self) -> RealNumberDistribution:
+        return self._dist
+
+    @property
+    def units(self) -> Unit:
+        return self._units
+
+    def __init__(self, node: Union[etree.ElementBase, None]):
+        super(SpeedDistribution, self).__init__(node)
+
+        self._units: Unit = SpeedUnits.DICTIONARY()[node.attrib[DistributionXmlNames.SpeedDistributions.UNITS_ATTR]]
+        self._dist: RealNumberDistribution = RealNumberDistributionFactory.from_xml(node[0])
+
+        # check monotonicity
+        monotonicity: int = self._dist.get_monotonicity()
+        if monotonicity is None or monotonicity < 0:
+            Logger.logger().warning(Localization.get_message('W0007', self.uuid))
+
+
 class Distributions:
     _doc_root: etree.ElementBase = None
     _connector_link_selection_behaviors: DistributionSet[ConnectorLinkSelectionBehaviorDistribution] = None
@@ -820,6 +943,7 @@ class Distributions:
     _max_decelerations: DistributionSet[DecelerationDistribution] = None
     _desired_acceleration_fractions: DistributionSet[AccelerationFractionDistribution] = None
     _desired_deceleration_fractions: DistributionSet[AccelerationFractionDistribution] = None
+    _target_speeds: DistributionSet[SpeedDistribution] = None
 
     @classmethod
     def reset(cls):
@@ -840,6 +964,8 @@ class Distributions:
             cls._desired_acceleration_fractions.clear()
         if cls._desired_deceleration_fractions is not None:
             cls._desired_deceleration_fractions.clear()
+        if cls._target_speeds is not None:
+            cls._target_speeds.clear()
         # TODO add more here as collections are added
 
     @classmethod
@@ -873,6 +999,10 @@ class Distributions:
     @classmethod
     def desired_deceleration_fractions(cls) -> DistributionSet[AccelerationFractionDistribution]:
         return cls._desired_deceleration_fractions
+
+    @classmethod
+    def target_speeds(cls) -> DistributionSet[SpeedDistribution]:
+        return cls._target_speeds
 
     @classmethod
     def read_from_xml(cls, root_node: etree.ElementBase, *, filename: str = 'file unknown') -> None:
@@ -924,6 +1054,11 @@ class Distributions:
         cls._desired_deceleration_fractions = DistributionSet(
             get_distribution_set_node(DistributionXmlNames.DesiredDecelerationDistributions.TYPE),
             AccelerationFractionDistribution
+        )
+
+        cls._target_speeds = DistributionSet(
+            get_distribution_set_node(DistributionXmlNames.TargetSpeedDistributions.TYPE),
+            SpeedDistribution
         )
 
     @classmethod
